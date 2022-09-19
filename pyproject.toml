@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "Your package name"
+name = "bidding-dashboard"
 version = "0.1.0"
-description = "Package description"
-authors = ["UNSW CEEM"]
-license = "Licence"
+description = "A dashboard for visualising bidding data for the National Energy Market"
+authors = ["Patrick Chambers"]
+license = "BSD 3-clause"
 readme = "README.md"
 
 # Main dependencies for the package via poetry. Package users will need these dependencies.

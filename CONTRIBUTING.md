@@ -40,9 +40,9 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `your_package` for local development.
+Ready to contribute? Here's how to set up `bidding-dashboard` for local development.
 
-1. Download a copy of `your_package` locally.
+1. Download a copy of `bidding-dashboard` locally.
 2. Install `poetry`
     - `poetry` is changing the way dependencies are managed, so as of July 2022, install `v1.2.0b2` (we will transition to `v1.2.0` once it is released)
     - The command below applies to UNIX systems (Mac/Linux).
@@ -50,7 +50,7 @@ Ready to contribute? Here's how to set up `your_package` for local development.
         ```console
         $ curl -sSL https://install.python-poetry.org | python3 - --version 1.2.0b2
         ```
-        
+
     - The command below applies to Windows. Run it in PowerShell (make sure you run PowerShell as an administrator).
       - You will also need to add the Poetry bin directory (printed during install) [to your PATH environment variable](https://stackoverflow.com/questions/44272416/how-to-add-a-folder-to-path-environment-variable-in-windows-10-with-screensho)
       - For activating environments etc. you may need to alter your [PowerShell Execution Policy to `RemoteSigned`](https://windowsloop.com/change-powershell-execution-policy/)
@@ -62,7 +62,7 @@ Ready to contribute? Here's how to set up `your_package` for local development.
 4. Install the package using `poetry`:
     - Developers should install additional `poetry` groups for development:
       - `docs` for documentation dependencies
-      - `lint` for linters. `your_package` uses `flake8`
+      - `lint` for linters. `bidding-dashboard` uses `flake8`
       - `test` for testing utilities
       - (optional) `debug` for debugging tools
 
@@ -115,7 +115,7 @@ We will implement the fix described [here](https://github.com/python-poetry/poet
     - If they are not, run `poetry install -vv` to get a stack trace and find where `env.py` is located (this should be in the stack trace)
 2. Find the `_run` method of class `Env`
 3. Comment out and add lines as demonstrated below (this is done in the last three line of the code block below)
-    
+
     ```python
     def _run(self, cmd: list[str], **kwargs: Any) -> int | str:
     """
@@ -134,5 +134,5 @@ We will implement the fix described [here](https://github.com/python-poetry/poet
 
 ## Code of Conduct
 
-Please note that the `your_package` project is released with a
+Please note that the `bidding-dashboard` project is released with a
 [Code of Conduct](CONDUCT.md). By contributing to this project you agree to abide by its terms.
