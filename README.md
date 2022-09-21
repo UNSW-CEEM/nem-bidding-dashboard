@@ -32,7 +32,7 @@ Nothing helps as much as examples.
 1. [Choose a license](https://choosealicense.com/), and add the `LICENSE` file to the repo
 2. Update your [code of conduct](CONDUCT.md)
 3. Update the [*Get Started!* section](CONTRIBUTING.md#get-started) of the [contributing guidelines](CONTRIBUTING.md)
-    - Note that this currently has steps you would use to install poetry v1.2.0b2 and various dependency groups that are being used by [`nemseer`](https://github.com/UNSW-CEEM/NEMSEER)
+    - Note that this currently has steps you would use to install poetry v1.2.0 and various dependency groups that are being used by [`nemseer`](https://github.com/UNSW-CEEM/NEMSEER)
 4. (Optional) [Make your software citeable](https://citation-file-format.github.io/)
 
 #### Poetry
@@ -40,7 +40,7 @@ Nothing helps as much as examples.
 Poetry is used for dependency management, dependency resolution and can also be used as a build tool.
 
 1. Install [`poetry`](https://python-poetry.org/docs/master/)
-    - Note that this repo is using poetry v1.2.0b2, so install this version (see the [contributing guidelines](CONTRIBUTING.md#get-started)) 
+    - Note that this repo is using poetry v1.2.0, so install this version (see the [contributing guidelines](CONTRIBUTING.md#get-started)) 
     - As of August 2022, 1.2.0 is still pre-release, so make sure you are on the `master` version of the poetry documentation
     - Edit the project info in [`pyproject.toml`](pyproject.toml), or delete it and use `poetry init` to start from scratch (if you are proceeding to the next few sections, it is best not to delete the existig `pyproject.toml`)
     - You can add dependencies in the [`pyproject.toml`](pyproject.toml) or use the command line:

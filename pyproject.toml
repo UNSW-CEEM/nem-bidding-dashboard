@@ -64,5 +64,5 @@ addopts = "-ra --cov=src/ --cov-branch --cov-report xml:tests/coverage.xml --cov
 profile = "black"
 
 [build-system]
-requires = ["poetry-core>=1.1.0b2"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
