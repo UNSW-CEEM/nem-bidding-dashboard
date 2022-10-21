@@ -17,6 +17,7 @@ plotly = "^5.10.0"
 nemosis = "^3.1.0"
 numpy = "^1.23.3"
 dash = "^2.6.1"
+openpyxl = "^3.0.10"
 [tool.poetry.group.docs]
 optional = true
 

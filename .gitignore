@@ -143,3 +143,7 @@ dmypy.json
 
 # MacOS
 .DS_Store
+
+# NEMOSIS data cache files
+*.CSV
+*.feather

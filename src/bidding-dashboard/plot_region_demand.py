@@ -1,5 +1,5 @@
 from datetime import date
-import filter_region_demand
+import fetch_data
 
 import pandas as pd
 import plotly.express as px
@@ -7,10 +7,12 @@ from dash import Dash, dcc, html, Input, Output
 import dash
 
 
+raw_data_cache = "/home/pat/bidding-dashboard/src/bidding-dashboard/nemosis_data_cache"
+
 app = Dash(__name__)
 
 app.layout = html.Div([
-        html.H4("Total demand trends per region"), 
+        html.H2("Total demand trends per region"), 
         dcc.Checklist(
             id="region_checklist", 
             options=["NSW", "VIC", "TAS", "SA", "QLD"], 
@@ -62,13 +64,14 @@ def update(regions: list, start_date: str, end_date: str, num_clicks: int):
 
 
 """
-Plots the electricitydemand of Australian states/territories over time. Regions 
+Plots the electricity demand of Australian states/territories over time. Regions 
 to plot are listed in the regions argument
 Arguments:
     regions: List of regions to show on graph figure
     start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always 
         set to "00:00:00:)
-    end_date: Ending datetime, formatted identical to start_date Returns:
+    end_date: Ending datetime, formatted identical to start_date 
+Returns:
     fig: A px line graph showing the electricity demand of each region over time
 """
 def plot_region_demand(regions: list, start_date: str, end_date: str):
@@ -114,7 +117,7 @@ Returns:
 """
 def get_region_demand(start_date: str, end_date: str) -> pd.DataFrame:
     # TODO: Find proper location for data cache
-    df = filter_region_demand.get_region_demand_data(start_date, end_date,"/home/pat/bidding-dashboard/src/bidding-dashboard")
+    df = fetch_data.get_region_demand_data(start_date, end_date,raw_data_cache)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
     df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
             lambda txt: str(txt).replace("/", "-")
