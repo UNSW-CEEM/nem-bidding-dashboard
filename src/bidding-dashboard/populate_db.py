@@ -1,9 +1,7 @@
 import os
 
-import pandas as pd
-from supabase import create_client, Client
-
 import fetch_data
+from supabase import create_client
 
 """This module is used for populating the database used by the dashboard. The functions it contains co-ordinate
  fetching historical AEMO data, pre-processing to limit the work done by the dashboard (to improve responsiveness),
@@ -14,7 +12,8 @@ import fetch_data
 
 def insert_data_into_supabase(table_name, data):
     """Insert data into the supabase database. For this function to run the supabase url and key need to be configured
-    as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY
+    respectively.
 
     Arguments:
         table_name: str which is the name of the table in the supabase database
@@ -24,7 +23,7 @@ def insert_data_into_supabase(table_name, data):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_WRITE_KEY")
     supabase = create_client(url, key)
-    data = supabase.table(table_name).insert(data.to_dict('records')).execute()
+    data = supabase.table(table_name).insert(data.to_dict("records")).execute()
 
 
 def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
@@ -40,11 +39,17 @@ def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
-    demand_data = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
-    demand_data['SETTLEMENTDATE'] = demand_data['SETTLEMENTDATE'].dt.strftime('%Y-%m-%d %X')
-    insert_data_into_supabase('demand_data', demand_data)
+    demand_data = fetch_data.get_region_demand_data(
+        start_date, end_date, raw_data_cache
+    )
+    demand_data["SETTLEMENTDATE"] = demand_data["SETTLEMENTDATE"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    insert_data_into_supabase("demand_data", demand_data)
 
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    populate_supabase_demand_table("2019/01/23 00:00:00", "2019/01/24 00:00:00", raw_data_cache)
+    populate_supabase_demand_table(
+        "2019/01/23 00:00:00", "2019/01/24 00:00:00", raw_data_cache
+    )

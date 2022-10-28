@@ -40,11 +40,11 @@ Nothing helps as much as examples.
 Poetry is used for dependency management, dependency resolution and can also be used as a build tool.
 
 1. Install [`poetry`](https://python-poetry.org/docs/master/)
-    - Note that this repo is using poetry v1.2.0, so install this version (see the [contributing guidelines](CONTRIBUTING.md#get-started)) 
+    - Note that this repo is using poetry v1.2.0, so install this version (see the [contributing guidelines](CONTRIBUTING.md#get-started))
     - As of August 2022, 1.2.0 is still pre-release, so make sure you are on the `master` version of the poetry documentation
     - Edit the project info in [`pyproject.toml`](pyproject.toml), or delete it and use `poetry init` to start from scratch (if you are proceeding to the next few sections, it is best not to delete the existig `pyproject.toml`)
     - You can add dependencies in the [`pyproject.toml`](pyproject.toml) or use the command line:
-      - You can add a core dependency via `poetry add`, e.g. `poetry add pandas` 
+      - You can add a core dependency via `poetry add`, e.g. `poetry add pandas`
       - You can add dependencies to a group (adding to a group is optional) using `poetry add pytest --group test`
       - You can install the dependencies from `poetry.lock`, including optional groups, using `poetry install --with=test`
       - You can update dependencies and create a `poetry.lock` file using `poetry update`
@@ -56,7 +56,7 @@ Poetry is used for dependency management, dependency resolution and can also be 
 1. To install testing dependencies, use `poetry install --with=test`
 2. Put your tests in `tests/`
 3. Run your tests by running `pytest` in the project directory
-4. Test coverage will be in `tests/htmlcov/index.html` 
+4. Test coverage will be in `tests/htmlcov/index.html`
 
 ### Intermediate
 

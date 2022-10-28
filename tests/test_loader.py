@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-
 from nemseer.loader import Loader, _dt_converter, _tablestr_converter
 
 

@@ -1,12 +1,10 @@
 import os
 
 import pandas as pd
-from supabase import create_client, Client
+from supabase import create_client
 
-import fetch_data
-
-"""This module is used for query the database used by the dashboard. It will contain functions for both query the 
-   production database for the hosted version of the dashboard and functions for querying an sqlite database for use 
+"""This module is used for query the database used by the dashboard. It will contain functions for both query the
+   production database for the hosted version of the dashboard and functions for querying an sqlite database for use
    by user on their local machine."""
 
 
@@ -22,10 +20,13 @@ def query_supabase(table_name, query):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
-    data = supabase.table(table_name).select('*').\
-        gt('SETTLEMENTDATE', '2019/01/23 12:00:00'). \
-        lt('SETTLEMENTDATE', '2019/01/23 12:00:00'). \
-        execute()
+    data = (
+        supabase.table(table_name)
+        .select("*")
+        .gt("SETTLEMENTDATE", "2019/01/23 12:00:00")
+        .lt("SETTLEMENTDATE", "2019/01/23 12:00:00")
+        .execute()
+    )
     return data
 
 
@@ -43,10 +44,13 @@ def query_supabase_demand_data(start_date, end_date):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
-    data = supabase.table('demand_data').select('*').\
-        gt('SETTLEMENTDATE', start_date). \
-        lte('SETTLEMENTDATE', end_date). \
-        execute()
+    data = (
+        supabase.table("demand_data")
+        .select("*")
+        .gt("SETTLEMENTDATE", start_date)
+        .lte("SETTLEMENTDATE", end_date)
+        .execute()
+    )
     data = pd.DataFrame(data.data)
     return data
 
