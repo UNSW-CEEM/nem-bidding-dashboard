@@ -424,6 +424,23 @@ httpx = ">=0.23.0,<0.24.0"
 pydantic = ">=1.9.1,<2.0.0"
 
 [[package]]
+name = "gunicorn"
+version = "20.1.0"
+description = "WSGI HTTP Server for UNIX"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+setuptools = ">=3.0"
+
+[package.extras]
+eventlet = ["eventlet (>=0.24.1)"]
+gevent = ["gevent (>=1.4.0)"]
+setproctitle = ["setproctitle"]
+tornado = ["tornado (>=0.2)"]
+
+[[package]]
 name = "h11"
 version = "0.12.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
@@ -1169,7 +1186,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 name = "setuptools"
 version = "65.3.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -1554,7 +1571,7 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = ">= 3.8, < 3.11"
-content-hash = "b7f44ed007607c294d24041de4a05bd70e43aa694f739866251be43875ff82fb"
+content-hash = "e46153d8dc1e6545af793758b14f8559929b2a9d1e139ec4d57bd96fd77339f4"
 
 [metadata.files]
 alabaster = [
@@ -1914,6 +1931,10 @@ gitpython = [
 gotrue = [
     {file = "gotrue-0.5.4-py3-none-any.whl", hash = "sha256:38387269bbf2c0f11f4c788c4488d335e9c9319c21b8cc16c186cd09b88abe92"},
     {file = "gotrue-0.5.4.tar.gz", hash = "sha256:de3112486202b376e7caa68c531cf2033e349d8e81f696bfab68f1b70b7f74f1"},
+]
+gunicorn = [
+    {file = "gunicorn-20.1.0-py3-none-any.whl", hash = "sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e"},
+    {file = "gunicorn-20.1.0.tar.gz", hash = "sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8"},
 ]
 h11 = [
     {file = "h11-0.12.0-py3-none-any.whl", hash = "sha256:36a3cb8c0a032f56e2da7084577878a035d3b61d104230d4bd49c0c6b555a9c6"},

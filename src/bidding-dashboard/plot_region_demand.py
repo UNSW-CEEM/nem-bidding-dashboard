@@ -4,11 +4,15 @@ import dash
 import fetch_data
 import pandas as pd
 import plotly.express as px
+import query_db
 from dash import Dash, Input, Output, dcc, html
 
-raw_data_cache = "/home/pat/bidding-dashboard/src/bidding-dashboard/nemosis_data_cache"
+raw_data_cache = "D:/nemosis_cache"
+
+run_local = False
 
 app = Dash(__name__)
+server = app.server
 
 app.layout = html.Div(
     [
@@ -20,12 +24,12 @@ app.layout = html.Div(
         ),
         dcc.DatePickerSingle(
             id="start_date_picker",
-            date=date(2020, 1, 1),
+            date=date(2019, 1, 23),
             display_format="DD/MM/YY",
         ),
         dcc.DatePickerSingle(
             id="end_date_picker",
-            date=date(2020, 2, 1),
+            date=date(2019, 1, 24),
             display_format="DD/MM/YY",
         ),
         html.Button("Update Graph", id="update_graph_button", n_clicks=0),
@@ -123,7 +127,10 @@ Returns:
 
 def get_region_demand(start_date: str, end_date: str) -> pd.DataFrame:
     # TODO: Find proper location for data cache
-    df = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
+    if run_local:
+        df = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
+    else:
+        df = query_db.query_supabase_demand_data(start_date, end_date)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
     df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
         lambda txt: str(txt).replace("/", "-")
