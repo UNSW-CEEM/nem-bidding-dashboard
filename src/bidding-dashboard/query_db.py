@@ -34,5 +34,5 @@ def query_supabase_demand_data(start_date, end_date):
 
 
 if __name__ == "__main__":
-    data = query_supabase_demand_data("2019-01-23 12:00:00", "2019-01-23 12:05:00")
+    data = query_supabase_demand_data("2019/01/24 00:00:00", "2019/01/27 00:00:00")
     print(data)

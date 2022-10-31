@@ -23,7 +23,7 @@ def insert_data_into_supabase(table_name, data):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_WRITE_KEY")
     supabase = create_client(url, key)
-    data = supabase.table(table_name).insert(data.to_dict("records")).execute()
+    data = supabase.table(table_name).upsert(data.to_dict("records")).execute()
 
 
 def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
@@ -51,5 +51,5 @@ def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
     populate_supabase_demand_table(
-        "2019/01/23 00:00:00", "2019/01/24 00:00:00", raw_data_cache
+        "2019/06/01 00:00:00", "2019/07/01 00:00:00", raw_data_cache
     )
