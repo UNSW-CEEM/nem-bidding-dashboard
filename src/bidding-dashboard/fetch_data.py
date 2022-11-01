@@ -74,6 +74,45 @@ def get_duid_data(raw_data_cache: str):
     return duid_data
 
 
+def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
+    """
+    Fetch volume bid data using NEMOSIS. Also generates feather files for each month of data that is collected.
+
+    Arguments:
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        raw_data_cache: Filepath to directory for storing data that is fetched
+    Returns:
+        pd dataframe containing quantity of bids on a 5 minutely basis. Should have columns
+            INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BANDAVAIL1 . . . . BANDAVAIL10
+    """
+    volume_bids = dynamic_data_compiler(
+        start_time=start_time,
+        end_time=end_time,
+        table_name="BIDPEROFFER_D",
+        raw_data_location=raw_data_cache,
+        fformat="parquet",
+        keep_csv=False,
+        select_columns=[
+            "INTERVAL_DATETIME",
+            "SETTLEMENTDATE",
+            "DUID",
+            "BANDAVAIL1",
+            "BANDAVAIL2",
+            "BANDAVAIL3",
+            "BANDAVAIL4",
+            "BANDAVAIL5",
+            "BANDAVAIL6",
+            "BANDAVAIL7",
+            "BANDAVAIL8",
+            "BANDAVAIL9",
+            "BANDAVAIL10",
+        ],
+    )
+    return volume_bids
+
+
 if __name__ == "__main__":
     raw_data_cache = (
         "/home/pat/bidding-dashboard/src/bidding-dashboard/nemosis_data_cache/"
