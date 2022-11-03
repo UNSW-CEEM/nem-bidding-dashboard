@@ -56,10 +56,10 @@ def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: s
         "DISPATCHLOAD",
         raw_data_cache,
         keep_csv=True,
-        select_columns=["SETTLEMENTDATE", "DUID", "AVAILABILITY"],
+        select_columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"],
     )
-    # availability_data = availability_data.loc[availability_data["AVAILABILITY"] != 0]
-    return availability_data
+    availability_data = availability_data.loc[availability_data["INTERVENTION"] == 0]
+    return availability_data.loc[:, ["SETTLEMENTDATE", "DUID", "AVAILABILITY"]]
 
 
 def get_duid_data(raw_data_cache: str):
@@ -76,7 +76,8 @@ def get_duid_data(raw_data_cache: str):
 
 def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
     """
-    Fetch volume bid data using NEMOSIS. Also generates feather files for each month of data that is collected.
+    Fetch volume bid data using NEMOSIS. Caches feather file in specified directory for each month of data that is
+    collected.
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -98,6 +99,7 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
             "INTERVAL_DATETIME",
             "SETTLEMENTDATE",
             "DUID",
+            "BIDTYPE",
             "BANDAVAIL1",
             "BANDAVAIL2",
             "BANDAVAIL3",
@@ -108,6 +110,46 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
             "BANDAVAIL8",
             "BANDAVAIL9",
             "BANDAVAIL10",
+        ],
+    )
+    return volume_bids
+
+
+def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
+    """
+    Fetch price bid data using NEMOSIS. Caches feather file in specified directory for each month of data that is
+    collected.
+
+    Arguments:
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        raw_data_cache: Filepath to directory for storing data that is fetched
+    Returns:
+        pd dataframe containing prices of bids on a (market) daily basis. Should have columns
+            SETTLEMENTDATE, DUID, PRICEBAND1 . . . . PRICEBAND10
+    """
+    volume_bids = dynamic_data_compiler(
+        start_time=start_time,
+        end_time=end_time,
+        table_name="BIDDAYOFFER_D",
+        raw_data_location=raw_data_cache,
+        fformat="parquet",
+        keep_csv=False,
+        select_columns=[
+            "SETTLEMENTDATE",
+            "DUID",
+            "BIDTYPE",
+            "PRICEBAND1",
+            "PRICEBAND2",
+            "PRICEBAND3",
+            "PRICEBAND4",
+            "PRICEBAND5",
+            "PRICEBAND6",
+            "PRICEBAND7",
+            "PRICEBAND8",
+            "PRICEBAND9",
+            "PRICEBAND10",
         ],
     )
     return volume_bids

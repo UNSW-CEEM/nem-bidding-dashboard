@@ -93,3 +93,18 @@ def adjust_bids_for_availability(stacked_bids, unit_availability):
     return bids.loc[
         :, ["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"]
     ]
+
+
+def remove_number_from_region_names(region_column, data):
+    """
+    Removes the trailing 1 from region names in the specified column. Names in input data are expected to be of the
+    format NSW1, QLD1 etc. and the names in the output format will be NSW, QLD etc.
+
+    Arguments:
+        region_column: str the name of the column containing the region names.
+        data: pd dataframe with a column called the value of region_column.
+    Returns:
+        pd dataframe with names in region_column modified.
+    """
+    data.loc[:, region_column] = data[region_column].str[:-1]
+    return data
