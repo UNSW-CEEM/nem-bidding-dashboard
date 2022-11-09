@@ -12,7 +12,7 @@ raw_data_cache = "D:/nemosis_cache"
 run_local = False
 
 app = Dash(__name__)
-server = app.server
+application = app.server
 
 app.layout = html.Div(
     [
@@ -154,4 +154,4 @@ def correct_region_name(region_name: str) -> str:
 
 
 if __name__ == "__main__":
-    app.run()
+    application.run(debug=True, port=8080)

@@ -2,6 +2,7 @@ import math
 import os
 
 import fetch_data
+import nemosis
 import numpy as np
 import pandas as pd
 import preprocessing
@@ -34,12 +35,12 @@ def insert_data_into_supabase(table_name, data):
         _ = supabase.table(table_name).upsert(chunk.to_dict("records")).execute()
 
 
-def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
+def populate_supabase_demand_and_price_table(start_date, end_date, raw_data_cache):
     """
-    Function to populate database table containing electricity demand data by region. The only pre-processing done is
-    filtering out the intervention interval rows associated with the dispatch target runs, leaving just the pricing
-    run data. For this function to run the supabase url and key need to be configured as environment variables labeled
-    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing electricity demand and price data by region. The only pre-processing
+    done is filtering out the intervention interval rows associated with the dispatch target runs, leaving just the
+    pricing run data. For this function to run the supabase url and key need to be configured as environment variables
+    labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -47,13 +48,31 @@ def populate_supabase_demand_table(start_date, end_date, raw_data_cache):
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
-    demand_data = fetch_data.get_region_demand_data(
-        start_date, end_date, raw_data_cache
+    regional_data = nemosis.dynamic_data_compiler(
+        "DAILY_REGION_SUMMARY",
+        start_time=start_date,
+        end_time=end_date,
+        select_columns=[
+            "SETTLEMENTDATE",
+            "INTERVENTION",
+            "REGIONID",
+            "TOTALDEMAND",
+            "RRP",
+        ],
     )
-    demand_data["SETTLEMENTDATE"] = demand_data["SETTLEMENTDATE"].dt.strftime(
+    regional_data["SETTLEMENTDATE"] = regional_data["SETTLEMENTDATE"].dt.strftime(
         "%Y-%m-%d %X"
     )
-    insert_data_into_supabase("demand_data", demand_data)
+    regional_data = regional_data.loc[regional_data["INTERVENTION"] == 0]
+    regional_data = regional_data.rename(
+        columns={
+            "SETTLEMENTDATE": "interval_datetime",
+            "REGIONID": "duid",
+            "TOTALDEMAND": "bidband",
+            "RRP": "bidvolume",
+        }
+    )
+    insert_data_into_supabase("demand_data", regional_data)
 
 
 def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
@@ -99,9 +118,9 @@ def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
 
 def populate_supabase_duid_info_table(raw_data_cache):
     """
-    Function to populate database table containing bidding data by unit. For this function to run the supabase url and
-    key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing bidding data by unit. For this function to run
+    the supabase url and key need to be configured as environment variables labeled
+    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always

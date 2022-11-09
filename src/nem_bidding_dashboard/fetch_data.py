@@ -157,7 +157,7 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
 
 if __name__ == "__main__":
     raw_data_cache = (
-        "/home/pat/bidding-dashboard/src/bidding-dashboard/nemosis_data_cache/"
+        "/home/pat/nem_bidding_dashboard/src/nem_bidding_dashboard/nemosis_data_cache/"
     )
     get_duid_data(raw_data_cache)
     # get_region_demand_data("2019/01/23 00:00:00", "2019/01/28 00:00:00", raw_data_cache)
