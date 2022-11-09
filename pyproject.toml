@@ -20,6 +20,7 @@ dash = "^2.6.1"
 openpyxl = "^3.0.10"
 supabase = "^0.7.1"
 gunicorn = "^20.1.0"
+pandasql = "^0.7.3"
 [tool.poetry.group.docs]
 optional = true
 
