@@ -22,13 +22,8 @@ from nemosis import dynamic_data_compiler, static_table
 from query_supabase import aggregate_bids, demand_data, duid_data, duid_bids
 
 
-cwd = os.path.dirname(__file__)
-raw_data_cache = os.path.join(cwd, "nemosis_data_cache/")
-ffformat = "parquet"
-
 app = Dash(__name__)
 app.title = "NEM Dashboard"
-
 
 
 duid_options = sorted(duid_data()["duid"])
@@ -69,7 +64,7 @@ settings_content = [
     ),
     dcc.Dropdown(
         id="duid-dropdown", 
-        value=None,
+        value=["AGLHAL"],
         options=duid_options,
         multi=True,
     ),
@@ -81,6 +76,7 @@ settings_content = [
 ]
 graph_content = dcc.Graph(id="graph")
 app.layout = layout_template.build(title, settings_content, graph_content)
+
 
 """
 TODO
@@ -108,7 +104,6 @@ def update(start_date: str, hour: str, minute: str, duration: str, regions: list
     trigger_id = dash.ctx.triggered_id
     if trigger_id and trigger_id != "update-graph-button":
         return dash.no_update
-    # TODO: only update dataframe when required
     start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
     start_date_obj = datetime.strptime(start_date, "%Y/%m/%d %H:%M:%S")
     if (duration == "Daily"):
@@ -124,19 +119,67 @@ def update(start_date: str, hour: str, minute: str, duration: str, regions: list
     return fig
 
 
+def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list):
+    """
+    TODO:
+        Adjust for multiple units
+        Get all bid bands in legend
+        Hover text showing price for bid band 
+    """
+
+    stacked_bids = duid_bids(duids, start_time, end_time, resolution)
+
+    stacked_bids = stacked_bids.groupby(["interval_datetime", "bidband"], as_index=False).agg({"bidvolume": "sum"})
+    #legend_options = pd.DataFrame({
+    #    "interval_datetime": [None for i in range(10)], 
+    #    "bidband": [i + 1 for i in range(10)], 
+    #    "bidvolume": [None for i in range(10)],
+    #})
+    #pd.concat([stacked_bids, legend_options], ignore_index=True)
+
+    stacked_bids.sort_values(by=["bidband"], inplace=True)
+    stacked_bids["bidband"] = stacked_bids["bidband"].astype(str)
+    #color_map = {
+    #    "1": "lightsalmon", 
+    #    "2": "yellow",
+    #    "3": "red", 
+    #    "4": "orange", 
+    #    "5": "#00CC96", 
+    #    "6": "#636efa", 
+    #    "7": "purple", 
+    #    "8": "cyan", 
+    #    "9": "fuchsia", 
+    #    "10": "palegreen", 
+    #}
+    fig = px.bar(
+        stacked_bids, 
+        barmode="stack",
+        x='interval_datetime', 
+        y='bidvolume', 
+        #color_discrete_map=color_map,
+        color_discrete_sequence=px.colors.qualitative.Plotly,
+        color='bidband',
+        labels={
+            "bidband": "Bid Band", 
+        }
+    )
 
 
-def plot_bids(start_time:str, end_time:str, resolution:str, regions:list, duids: list):
-
-    if (duids):
-        #stacked_bids = duid_bids(duids, start_time, end_time, resolution)
-        stacked_bids = aggregate_bids(region_options, start_time, end_time, resolution)
-        stacked_bids = stacked_bids[stacked_bids["duid"].isin(duids)]
-        print(stacked_bids)
-    else: 
-        stacked_bids = aggregate_bids(regions, start_time, end_time, resolution)
-
+    fig.update_layout()
+    fig.update_yaxes(title="Volume (MW)")
+    if resolution == "hourly":
+        fig.update_xaxes(title=f"Time (Bid stack sampled on the hour)")
+    else:
+        fig.update_xaxes(title=f"Time (Bid stack sampled at 5 min intervals)")
+    fig.update_traces(
+        hovertemplate="%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>",
+    )
     
+    return fig
+
+
+def plot_aggregate_bids(start_time:str, end_time:str, resolution:str, regions:list):
+    stacked_bids = aggregate_bids(regions, start_time, end_time, resolution)
 
     stacked_bids = stacked_bids.groupby(["interval_datetime", "bin_name"], as_index=False).agg({"bidvolume": "sum"})
     bid_order = [ 
@@ -179,6 +222,9 @@ def plot_bids(start_time:str, end_time:str, resolution:str, regions:list, duids:
         category_orders={"bin_name": bid_order},
         color='bin_name',
         color_discrete_map=color_map,
+        labels={
+            "bin_name": "Price Bin",
+        }
     )
     fig.add_trace(go.Scatter(x=demand['settlementdate'], y=demand['totaldemand'],
                              marker=dict(color='blue', size=4), name='demand'))
@@ -190,14 +236,21 @@ def plot_bids(start_time:str, end_time:str, resolution:str, regions:list, duids:
     else:
         fig.update_xaxes(title=f"Time (Bid stack sampled at 5 min intervals)")
     fig.update_traces(
-        hovertemplate="%{x}<br>Bid Volume: %{y}<extra></extra>",
+        hovertemplate="%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>",
     )
     fig.update_traces(
-        hovertemplate="%{x}<br>Demand: %{y}<extra></extra>",
+        hovertemplate="%{x}<br>Demand: %{y:.0f} MW<extra></extra>",
         selector={"name": "demand"}
     )
 
     return fig
+
+
+def plot_bids(start_time:str, end_time:str, resolution:str, regions:list, duids: list):
+    if (duids):
+        return plot_duid_bids(start_time, end_time, resolution, duids)
+    else: 
+        return plot_aggregate_bids(start_time, end_time, resolution, regions)
 
 
 if __name__ == '__main__':

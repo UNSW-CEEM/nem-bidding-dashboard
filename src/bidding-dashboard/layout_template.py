@@ -29,13 +29,13 @@ def build_main_app(title:str, settings_content:list, graph_content:list):
                 html.H6(id="graph-name", children=title), 
             ),
             html.Div(
-                id="graph-selectors", 
-                children=settings_content,
-            ), 
-            html.Div(
                 id="graph-box", 
                 children=graph_content,
             ),
+            html.Div(
+                id="graph-selectors", 
+                children=settings_content,
+            ), 
         ]
     )
 
@@ -54,6 +54,3 @@ def build (title:str, settings_content:list, graph_content:list):
         ]
     )
 
-
-if __name__ == "__main__":
-    app.run()
