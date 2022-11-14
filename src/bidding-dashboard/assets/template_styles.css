@@ -369,45 +369,47 @@ body {
 /* Dropdown
 ----------------------------------------------*/
 
-/*Dropdown items*/
+/*
+/^^Dropdown items^^/
 .Select-control, .Select-multi-value-wrapper, .Select-menu-outer div {
-  background-color: #242633;
+  background-color: #ffffff;
 }
 
-/*Dropdown items*/
+/^^Dropdown items^^/
 .Select-control, .Select, .Select-value-label, .Select-clear-zone {
-  color: white;
+  color: #000000;
 }
 
 
-/*Dropdown items*/
+/^^Dropdown items^^/
 .Select-menu-outer {
   background-color: #242633;
   border: 1px solid darkgray !important;
 }
 
-/*Dropdown items*/
+/^^Dropdown items^^/
 .Select-menu-outer div:hover {
   background-color: rgba(36, 38, 51, 0.5) !important;
   cursor: pointer;
 }
 
-/*Dropdown arrow + delete button*/
+/^^Dropdown arrow + delete button^^/
 .Select-control, .Select-control > span {
   color: white;
   background: #242633 !important;
 }
 
-/*Placeholder*/
+/^^Placeholder^^/
 .Select.has-value.Select--single > .Select-control .Select-value .Select-value-label, .Select.has-value.is-pseudo-focused.Select--single > .Select-control .Select-value .Select-value-label {
   color: white !important;
 }
 
-/*Placeholder*/
+/^^Placeholder^^/
 .Select--single > .Select-control .Select-value, .Select-placeholder {
-  /*border: 1px solid darkgray;*/
+  /^^border: 1px solid darkgray;^^/
   border-radius: 4px;
-  background-color: #242633;
+  /^^background-color: #242633;^^/
+  background-color: #ffffff;
   cursor: pointer;
 }
 
@@ -415,7 +417,7 @@ body {
 .Select.is-focused:not(.is-open) > .Select-control {
   border-color: #91dfd2 !important;
 }
-
+*/
 /* Container
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
@@ -841,9 +843,25 @@ body {
 
 
 #date-selector {
-  display:inline-block;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
 }
 
+#start-hour-picker {
+  padding: 5px;
+  max-width: 40px;
+}
+
+#start-minute-picker {
+  padding: 5px;
+  max-width: 40px;
+}
+
+#duid-dropdown {
+  min-width: 150px;
+}
+/*
 #start-date-picker {
   display:inline-block;
 }
@@ -851,3 +869,4 @@ body {
 #duration-selector {
   display:inline-block;
 }
+*/

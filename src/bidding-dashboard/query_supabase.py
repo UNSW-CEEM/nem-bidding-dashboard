@@ -37,6 +37,19 @@ def demand_data(start_date, end_date):
     data = pd.DataFrame(data.data)
     return data
 
+def duid_data():
+    url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
+    key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
+    supabase = create_client(url, key)
+    data = (
+        supabase.table("duid_info")
+        .select("*")
+        .execute()
+    )
+    data = pd.DataFrame(data.data)
+    return data
+
+
 
 def aggregate_bids(regions, start_date, end_date, resolution):
     """

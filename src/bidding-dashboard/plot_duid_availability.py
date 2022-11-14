@@ -5,8 +5,10 @@ import pandas as pd
 import plotly.express as px
 from dash import Dash, dcc, html, Input, Output
 import dash
+import os
 
-raw_data_cache = "/home/pat/bidding-dashboard/src/bidding-dashboard/nemosis_data_cache"
+cwd = os.path.dirname(__file__)
+raw_data_cache = os.path.join(cwd, "nemosis_data_cache/")
 
 app = Dash(__name__)
 
