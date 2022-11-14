@@ -797,10 +797,7 @@ body {
 /*---------------------------------------*/
 
 
-#region-checklist {
-  padding: 5px;
-  
-}
+
 
 #app-container {
   background: #ffffff;
@@ -825,48 +822,101 @@ body {
 
 #graph-name {
   font-size: 2rem;
-
 }
 
 #graph-selectors {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
+  flex-direction: row;
   font-weight: 400;
   font-family: Arial, Helvetica, sans-serif;
   text-transform: uppercase;
+  /*
+  align-items: flex-start;
+  background-color: #f0f0f0;
+  gap: 5px;
+  */
 }
 
-#graph-box {
-}
+#graph-selectors > * {
+  flex: 1;
+  background-color: #f0f0f0;
+  margin: 5px;
+  padding: 10px;
 
+}
 
 #date-selector {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  padding: 10px;
   gap: 10px;
 }
 
+#datetime-picker {
+  display: flex;
+  flex-direction: row;
+  /*
+  padding: 10px;
+  */
+}
+
+#datetime-picker > * {
+  max-height: 50px;
+  margin: 0px;
+  padding: 0 !important;
+  border-radius: 0px !important;
+}
+
+#start-time-picker {
+  max-width: 80px;
+  border-radius: 0px;
+  padding: 22px;
+}
+#start-date-picker {
+  max-height: 50px;
+  height: 50px;
+  max-width: 80px;
+  width: 80px;
+}
+
 #start-hour-picker {
-  padding: 5px;
-  max-width: 40px;
+  border-radius: 0px;
 }
 
 #start-minute-picker {
-  padding: 5px;
-  max-width: 40px;
+  max-width: 80px;
+  border-radius: 0px;
 }
+
+#region-checklist {
+  margin-bottom: 10px;
+}
+
 
 #duid-dropdown {
   min-width: 150px;
 }
-/*
-#start-date-picker {
-  display:inline-block;
-}
 
 #duration-selector {
-  display:inline-block;
+  display:inline;
 }
-*/
+
+#footer {
+  height: 10rem;
+  margin-top: 5rem;
+  bottom: 0px;
+  bottom: 0px;
+}
+
+#update-graph-div {
+  margin: 5px;
+}
+
+.Select-control {
+  border-radius: 0;
+  height: 25px;
+}
+
+.selector-title {
+  font-size: 15px;
+}
