@@ -173,6 +173,7 @@ def get_duid_data(raw_data_cache: str):
             "Fuel Source - Descriptor",
             "Dispatch Type",
             "Technology Type - Descriptor",
+            "Station Name",
         ],
     )
     duid_data.columns = duid_data.columns.str.upper()
@@ -262,9 +263,10 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    region_data = get_region_data(
-        "2022/11/01 00:00:00", "2022/11/02 00:00:00", raw_data_cache
-    )
-    print(region_data)
-    x = 1
+    duid_data = get_duid_data(raw_data_cache)
+    # region_data = get_region_data(
+    #     "2022/11/01 00:00:00", "2022/11/02 00:00:00", raw_data_cache
+    # )
+    print(duid_data)
+    # x = 1
     # get_region_demand_data("2019/01/23 00:00:00", "2019/01/28 00:00:00", raw_data_cache)

@@ -104,7 +104,7 @@ def populate_supabase_duid_info_table(raw_data_cache):
     duid_info = fetch_data.get_duid_data(raw_data_cache)
     duid_info = preprocessing.remove_number_from_region_names("REGION", duid_info)
     duid_info = preprocessing.tech_namer(duid_info)
-    insert_data_into_supabase("duid_info", duid_info.loc[:, ["DUID", "REGION"]])
+    insert_data_into_supabase("duid_info", duid_info)
 
 
 def populate_supabase_price_bin_edges_table():
