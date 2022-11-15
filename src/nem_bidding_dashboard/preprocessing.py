@@ -108,3 +108,70 @@ def remove_number_from_region_names(region_column, data):
     """
     data.loc[:, region_column] = data[region_column].str[:-1]
     return data
+
+
+def tech_namer_by_row(fuel, tech_descriptor, dispatch_type):
+    """
+    Create a name for generation and loads using custom logic applied to the fuel type, technology descriptor, and
+    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file.
+
+    Arguments:
+        fuel: str should be the value from the column 'Fuel Source - Descriptor'
+        tech_descriptor: str should be the value from the column 'Technology Type - Descriptor'
+        dispatch_type: str should be the value from the column 'Dispatch Type'
+    Returns:
+        str a value categorising the technology of the generation or load unit
+    """
+    name = fuel
+    if fuel in ["Solar", "Wind", "Black Coal", "Brown Coal"]:
+        pass
+    elif tech_descriptor in ["Battery", "Battery and Inverter"]:
+        if dispatch_type == "Load":
+            name = "Battery Charge"
+        else:
+            name = "Battery Discharge"
+    elif tech_descriptor in ["Hydro - Gravity"]:
+        name = "Hydro"
+    elif tech_descriptor in ["Hydro - Gravity", "Run of River"]:
+        name = "Run of River Hydro"
+    elif tech_descriptor == "Pump Storage":
+        if dispatch_type == "Load":
+            name = "Pump Storage Charge"
+        else:
+            name = "Pump Storage Discharge"
+    elif tech_descriptor == "-" and fuel == "-" and dispatch_type == "Load":
+        name = "Pump Storage Charge"
+    elif tech_descriptor == "Open Cycle Gas turbines (OCGT)":
+        name = "OCGT"
+    elif tech_descriptor == "Combined Cycle Gas Turbine (CCGT)":
+        name = "CCGT"
+    elif (
+        fuel in ["Natural Gas / Fuel Oil", "Natural Gas"]
+        and tech_descriptor == "Steam Sub-Critical"
+    ):
+        name = "Gas Thermal"
+    elif isinstance(tech_descriptor, str) and "Engine" in tech_descriptor:
+        name = "Engine"
+    return name
+
+
+def tech_namer(duid_info):
+    """
+    Create a name for generation and load unit using custom logic applied to the fuel type, technology descriptor, and
+    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file.
+
+    Arguments:
+        duid_info: pd dataframe with columns 'FUEL SOURCE - DESCRIPTOR', 'TECHNOLOGY TYPE - DESCRIPTOR' and
+        'DISPATCH TYPE'
+    Returns:
+        pd dataframe with additional column 'UNIT_TYPE'
+    """
+    duid_info["UNIT_TYPE"] = duid_info.apply(
+        lambda x: tech_namer_by_row(
+            x["FUEL SOURCE - DESCRIPTOR"],
+            x["TECHNOLOGY TYPE - DESCRIPTOR"],
+            x["DISPATCH TYPE"],
+        ),
+        axis=1,
+    )
+    return duid_info

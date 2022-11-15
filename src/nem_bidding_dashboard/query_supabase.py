@@ -13,7 +13,7 @@ from supabase import create_client
    by user on their local machine."""
 
 
-def demand_data(start_date, end_date):
+def region_data(start_date, end_date):
     """
     Function to query demand data from supabase. For this function to run the supabase url and key need to be configured
     as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
@@ -35,6 +35,7 @@ def demand_data(start_date, end_date):
         .execute()
     )
     data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
     return data
 
 
@@ -130,6 +131,7 @@ def aggregate_bids(regions, start_date, end_date, resolution):
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
     return data
 
 
@@ -187,6 +189,7 @@ def duid_bids(regions, start_date, end_date, resolution):
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
     return data
 
 

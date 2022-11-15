@@ -1,34 +1,104 @@
+import nemosis.custom_errors
+import pandas as pd
 from nemosis import dynamic_data_compiler, static_table
 
 """
-Function to fetch electricity demand data using NEMOSIS for use in
-plot_region_demand. Simply returns fetched dataframe containing required data at
-the moment, may be updated if a different method is used to get or store data.
-Also generates feather files for each month of data that is collected.
+Function to fetch electricity price data using NEMOSIS. Simply returns fetched
+dataframe containing required data at the moment, may be updated if a different
+method is used to get or store data. Also generates feather files for each
+month of data that is collected.
+
 Arguments:
     start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
         set to "00:00:00:)
     end_date: Ending datetime, formatted identical to start_date
     raw_data_cache: Filepath to directory for storing data that is fetched
 Returns:
-    pd dataframe containing REGIONID, SETTLEMENTDATE and TOTALDEMAND columns
-    from the DISPATCHREGIONSUM table from AEMO, covering the specified time
+    pd dataframe containing REGIONID, SETTLEMENTDATE and RRP columns
+    from the DISPATCHPRICE table from AEMO, covering the specified time
     period.
 """
 
 
-def get_region_demand_data(start_time: str, end_time: str, raw_data_cache: str):
-    region_data = dynamic_data_compiler(
-        start_time,
-        end_time,
-        "DISPATCHREGIONSUM",
-        raw_data_cache,
-        keep_csv=True,
-        select_columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "INTERVENTION"],
+def get_region_data(start_time: str, end_time: str, raw_data_cache: str):
+    try:
+        price_data = dynamic_data_compiler(
+            start_time,
+            end_time,
+            "DISPATCHPRICE",
+            raw_data_cache,
+            keep_csv=True,
+            select_columns=["REGIONID", "SETTLEMENTDATE", "RRP", "INTERVENTION"],
+        )
+    except nemosis.custom_errors.NoDataToReturn:
+        price_data = pd.DataFrame(
+            columns=["REGIONID", "SETTLEMENTDATE", "RRP", "INTERVENTION"]
+        )
+
+    try:
+        demand_data = dynamic_data_compiler(
+            start_time,
+            end_time,
+            "DISPATCHREGIONSUM",
+            raw_data_cache,
+            keep_csv=True,
+            select_columns=[
+                "REGIONID",
+                "SETTLEMENTDATE",
+                "TOTALDEMAND",
+                "INTERVENTION",
+            ],
+        )
+    except nemosis.custom_errors.NoDataToReturn:
+        demand_data = pd.DataFrame(
+            columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "INTERVENTION"]
+        )
+
+    assert price_data.empty == demand_data.empty
+
+    if not price_data.empty:
+        assert price_data["SETTLEMENTDATE"].max() == demand_data["SETTLEMENTDATE"].max()
+        assert price_data["SETTLEMENTDATE"].min() == demand_data["SETTLEMENTDATE"].min()
+
+    price_and_demand_data = pd.merge(
+        price_data, demand_data, on=["SETTLEMENTDATE", "REGIONID", "INTERVENTION"]
     )
-    region_data = region_data.loc[region_data["INTERVENTION"] == 0]
-    region_data = region_data.filter(["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND"])
-    return region_data
+
+    if (
+        price_and_demand_data.empty
+        or price_and_demand_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X")
+        != end_time
+    ):
+        if not price_and_demand_data.empty:
+            start_time = (
+                price_and_demand_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X")
+            )
+        try:
+            recent_price_and_demand_data = dynamic_data_compiler(
+                start_time,
+                end_time,
+                "DAILY_REGION_SUMMARY",
+                raw_data_cache,
+                keep_csv=True,
+                select_columns=[
+                    "REGIONID",
+                    "SETTLEMENTDATE",
+                    "TOTALDEMAND",
+                    "RRP",
+                    "INTERVENTION",
+                ],
+            )
+            price_and_demand_data = pd.concat(
+                [price_and_demand_data, recent_price_and_demand_data]
+            )
+        except nemosis.custom_errors.NoDataToReturn:
+            pass
+    price_and_demand_data = price_and_demand_data.loc[
+        price_and_demand_data["INTERVENTION"] == 0
+    ]
+    return price_and_demand_data.loc[
+        :, ["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "RRP"]
+    ]
 
 
 """
@@ -50,14 +120,45 @@ Returns:
 
 
 def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: str):
-    availability_data = dynamic_data_compiler(
-        start_time,
-        end_time,
-        "DISPATCHLOAD",
-        raw_data_cache,
-        keep_csv=True,
-        select_columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"],
-    )
+    try:
+        availability_data = dynamic_data_compiler(
+            start_time,
+            end_time,
+            "DISPATCHLOAD",
+            raw_data_cache,
+            keep_csv=True,
+            select_columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"],
+        )
+    except nemosis.custom_errors.NoDataToReturn:
+        availability_data = pd.DataFrame(
+            columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"]
+        )
+
+    if (
+        availability_data.empty
+        or availability_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X") != end_time
+    ):
+        if not availability_data.empty:
+            start_time = (
+                availability_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X")
+            )
+        try:
+            recent_availability_data = dynamic_data_compiler(
+                start_time,
+                end_time,
+                "NEXT_DAY_DISPATCHLOAD",
+                raw_data_cache,
+                keep_csv=True,
+                select_columns=[
+                    "SETTLEMENTDATE",
+                    "INTERVENTION",
+                    "DUID",
+                    "AVAILABILITY",
+                ],
+            )
+            availability_data = pd.concat([availability_data, recent_availability_data])
+        except nemosis.custom_errors.NoDataToReturn:
+            pass
     availability_data = availability_data.loc[availability_data["INTERVENTION"] == 0]
     return availability_data.loc[:, ["SETTLEMENTDATE", "DUID", "AVAILABILITY"]]
 
@@ -66,11 +167,15 @@ def get_duid_data(raw_data_cache: str):
     duid_data = static_table(
         "Generators and Scheduled Loads",
         raw_data_cache,
-        select_columns=["Region", "Fuel Source - Primary", "DUID", "Dispatch Type"],
+        select_columns=[
+            "DUID",
+            "Region",
+            "Fuel Source - Descriptor",
+            "Dispatch Type",
+            "Technology Type - Descriptor",
+        ],
     )
-    duid_data = duid_data.loc[duid_data["Dispatch Type"] == "Generator"]
-    duid_data = duid_data.loc[duid_data["Fuel Source - Primary"] != ""]
-    duid_data = duid_data.filter(["Region", "Fuel Source - Primary", "DUID"])
+    duid_data.columns = duid_data.columns.str.upper()
     return duid_data
 
 
@@ -156,8 +261,10 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
 
 
 if __name__ == "__main__":
-    raw_data_cache = (
-        "/home/pat/nem_bidding_dashboard/src/nem_bidding_dashboard/nemosis_data_cache/"
+    raw_data_cache = "D:/nemosis_cache"
+    region_data = get_region_data(
+        "2022/11/01 00:00:00", "2022/11/02 00:00:00", raw_data_cache
     )
-    get_duid_data(raw_data_cache)
+    print(region_data)
+    x = 1
     # get_region_demand_data("2019/01/23 00:00:00", "2019/01/28 00:00:00", raw_data_cache)

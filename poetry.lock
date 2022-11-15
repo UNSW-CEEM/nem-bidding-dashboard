@@ -737,7 +737,7 @@ testing = ["beautifulsoup4", "coverage[toml]", "pytest (>=6,<7)", "pytest-cov", 
 
 [[package]]
 name = "nemosis"
-version = "3.1.0"
+version = "3.4.0"
 description = "A tool for accessing AEMO data."
 category = "main"
 optional = false
@@ -747,6 +747,7 @@ python-versions = "*"
 beautifulsoup4 = "*"
 feather-format = "*"
 joblib = "*"
+openpyxl = "*"
 pandas = "*"
 pyarrow = "*"
 requests = "*"
@@ -2071,8 +2072,8 @@ myst-parser = [
     {file = "myst_parser-0.18.0-py3-none-any.whl", hash = "sha256:4965e51918837c13bf1c6f6fe2c6bddddf193148360fbdaefe743a4981358f6a"},
 ]
 nemosis = [
-    {file = "nemosis-3.1.0-py3-none-any.whl", hash = "sha256:c28e37d256ff3ec2b0867c5a117edaf4703e9b231c0ed4634b1dac3593e644f6"},
-    {file = "nemosis-3.1.0.tar.gz", hash = "sha256:f7cf6261277989e9a56222a60c8deb5b1cb4ff48362818a745d70424b6f3f2b1"},
+    {file = "nemosis-3.4.0-py3-none-any.whl", hash = "sha256:ad5cc3211074ea33004b804d5467c37f96a98bdd91ba850df6c0bd5d80ee9e28"},
+    {file = "nemosis-3.4.0.tar.gz", hash = "sha256:3771bd0fe3f9b3acbd9c89218b05f44d86e2ccd18e0bd2820bc437a516499b2e"},
 ]
 nodeenv = [
     {file = "nodeenv-1.7.0-py2.py3-none-any.whl", hash = "sha256:27083a7b96a25f2f5e1d8cb4b6317ee8aeda3bdd121394e5ac54e498028a042e"},

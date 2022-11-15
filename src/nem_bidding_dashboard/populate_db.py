@@ -1,11 +1,12 @@
 import math
 import os
+from datetime import datetime, timedelta
 
 import fetch_data
-import nemosis
 import numpy as np
 import pandas as pd
 import preprocessing
+import pytz
 from supabase import create_client
 
 """This module is used for populating the database used by the dashboard. The functions it contains co-ordinate
@@ -29,13 +30,14 @@ def insert_data_into_supabase(table_name, data):
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_WRITE_KEY")
     supabase = create_client(url, key)
     rows_per_chunk = 10000
+    data.columns = data.columns.str.lower()
     number_of_chunks = math.ceil(data.shape[0] / rows_per_chunk)
     chunked_data = np.array_split(data, number_of_chunks)
     for chunk in chunked_data:
         _ = supabase.table(table_name).upsert(chunk.to_dict("records")).execute()
 
 
-def populate_supabase_demand_and_price_table(start_date, end_date, raw_data_cache):
+def populate_supabase_region_data(start_date, end_date, raw_data_cache):
     """
     Function to populate database table containing electricity demand and price data by region. The only pre-processing
     done is filtering out the intervention interval rows associated with the dispatch target runs, leaving just the
@@ -48,29 +50,9 @@ def populate_supabase_demand_and_price_table(start_date, end_date, raw_data_cach
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
-    regional_data = nemosis.dynamic_data_compiler(
-        "DAILY_REGION_SUMMARY",
-        start_time=start_date,
-        end_time=end_date,
-        select_columns=[
-            "SETTLEMENTDATE",
-            "INTERVENTION",
-            "REGIONID",
-            "TOTALDEMAND",
-            "RRP",
-        ],
-    )
+    regional_data = fetch_data.get_region_data(start_date, end_date, raw_data_cache)
     regional_data["SETTLEMENTDATE"] = regional_data["SETTLEMENTDATE"].dt.strftime(
         "%Y-%m-%d %X"
-    )
-    regional_data = regional_data.loc[regional_data["INTERVENTION"] == 0]
-    regional_data = regional_data.rename(
-        columns={
-            "SETTLEMENTDATE": "interval_datetime",
-            "REGIONID": "duid",
-            "TOTALDEMAND": "bidband",
-            "RRP": "bidvolume",
-        }
     )
     insert_data_into_supabase("demand_data", regional_data)
 
@@ -104,15 +86,6 @@ def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
     combined_bids["INTERVAL_DATETIME"] = combined_bids["INTERVAL_DATETIME"].dt.strftime(
         "%Y-%m-%d %X"
     )
-    combined_bids = combined_bids.rename(
-        columns={
-            "INTERVAL_DATETIME": "interval_datetime",
-            "DUID": "duid",
-            "BIDBAND": "bidband",
-            "BIDVOLUME": "bidvolume",
-            "BIDPRICE": "bidprice",
-        }
-    )
     insert_data_into_supabase("bidding_data", combined_bids)
 
 
@@ -129,8 +102,9 @@ def populate_supabase_duid_info_table(raw_data_cache):
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
     duid_info = fetch_data.get_duid_data(raw_data_cache)
-    duid_info = preprocessing.remove_number_from_region_names("Region", duid_info)
-    insert_data_into_supabase("duid_info", duid_info.loc[:, ["DUID", "Region"]])
+    duid_info = preprocessing.remove_number_from_region_names("REGION", duid_info)
+    duid_info = preprocessing.tech_namer(duid_info)
+    insert_data_into_supabase("duid_info", duid_info.loc[:, ["DUID", "REGION"]])
 
 
 def populate_supabase_price_bin_edges_table():
@@ -164,11 +138,44 @@ def populate_supabase_price_bin_edges_table():
     insert_data_into_supabase("price_bins", price_bins)
 
 
+def populate_db_all_tables_two_most_recent_market_days(cache):
+    """
+    Upload data to supabase for a window starting at 4 am of the current day and going back 48 hrs. Upload is
+    performed for all tables.
+
+    Arguments:
+        cache: str the directory to use for caching data prior to upload.
+    """
+    current_time = datetime.now(pytz.timezone("Etc/GMT-10"))
+    start_today = datetime(
+        year=current_time.year,
+        month=current_time.month,
+        day=current_time.day,
+        hour=4,
+    )
+    two_days_before_today = start_today - timedelta(days=2)
+    start_today = start_today.isoformat().replace("T", " ").replace("-", "/")
+    two_days_before_today = (
+        two_days_before_today.isoformat().replace("T", " ").replace("-", "/")
+    )
+
+    populate_supabase_region_data(
+        start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
+    )
+
+    populate_supabase_bid_table(
+        start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
+    )
+
+    populate_supabase_duid_info_table(raw_data_cache=cache)
+
+
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    populate_supabase_bid_table(
-        "2019/01/01 00:00:00", "2019/02/01 00:00:00", raw_data_cache
-    )
+    # populate_supabase_bid_table(
+    #     "2022/10/08 00:00:00", "2022/10/09 00:00:00", raw_data_cache
+    # )
+    populate_db_all_tables_two_most_recent_market_days(raw_data_cache)
     # populate_supabase_duid_info_table(
     #     raw_data_cache
     # )

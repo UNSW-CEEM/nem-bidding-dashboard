@@ -88,14 +88,14 @@ def plot_region_demand(regions: list, start_date: str, end_date: str):
     region_demand_data = get_region_demand(start_date, end_date)
     fig = px.line(
         region_demand_data[region_demand_data["regionid"].isin(regions)],
-        x="settlementdate",
-        y="totaldemand",
-        color="regionid",
+        x="SETTLEMENTDATE",
+        y="TOTALDEMAND",
+        color="REGIONID",
         title="Total Electricity Demand By Region",
         labels={
-            "settlementdate": "Settlement Date",
-            "totaldemand": "Electricity Demand (MW)",
-            "regionid": "State/Territory",
+            "SETTLEMENTDATE": "Settlement Date",
+            "TOTALDEMAND": "Electricity Demand (MW)",
+            "REGIONID": "State/Territory",
         },
         color_discrete_map={
             "NSW": "blue",
@@ -130,13 +130,13 @@ def get_region_demand(start_date: str, end_date: str) -> pd.DataFrame:
     if run_local:
         df = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
     else:
-        df = query_supabase.demand_data(start_date, end_date)
+        df = query_supabase.region_data(start_date, end_date)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
-    df["settlementdate"] = df["settlementdate"].apply(
+    df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
         lambda txt: str(txt).replace("/", "-")
     )
-    df["regionid"] = df["regionid"].apply(correct_region_name)
-    df = df.sort_values("settlementdate")
+    df["REGIONID"] = df["REGIONID"].apply(correct_region_name)
+    df = df.sort_values("SETTLEMENTDATE")
     return df
 
 
