@@ -176,6 +176,7 @@ def get_duid_data(raw_data_cache: str):
             "Station Name",
         ],
     )
+    duid_data = duid_data[~duid_data["DUID"].isin(["BLNKVIC", "BLNKTAS"])]
     duid_data.columns = duid_data.columns.str.upper()
     return duid_data
 

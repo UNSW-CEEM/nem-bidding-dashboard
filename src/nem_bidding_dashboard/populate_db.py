@@ -102,6 +102,7 @@ def populate_supabase_duid_info_table(raw_data_cache):
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
     duid_info = fetch_data.get_duid_data(raw_data_cache)
+    duid_info = preprocessing.hard_code_fix_fuel_source_and_tech_errors(duid_info)
     duid_info = preprocessing.remove_number_from_region_names("REGION", duid_info)
     duid_info = preprocessing.tech_namer(duid_info)
     insert_data_into_supabase("duid_info", duid_info)
@@ -175,8 +176,6 @@ if __name__ == "__main__":
     # populate_supabase_bid_table(
     #     "2022/10/08 00:00:00", "2022/10/09 00:00:00", raw_data_cache
     # )
-    populate_db_all_tables_two_most_recent_market_days(raw_data_cache)
-    # populate_supabase_duid_info_table(
-    #     raw_data_cache
-    # )
+    # populate_db_all_tables_two_most_recent_market_days(raw_data_cache)
+    populate_supabase_duid_info_table(raw_data_cache)
     # populate_supabase_price_bin_edges_table()

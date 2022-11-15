@@ -166,7 +166,7 @@ def tech_namer(duid_info):
     Returns:
         pd dataframe with additional column 'UNIT_TYPE'
     """
-    duid_info["UNIT_TYPE"] = duid_info.apply(
+    duid_info["UNIT TYPE"] = duid_info.apply(
         lambda x: tech_namer_by_row(
             x["FUEL SOURCE - DESCRIPTOR"],
             x["TECHNOLOGY TYPE - DESCRIPTOR"],
@@ -175,3 +175,13 @@ def tech_namer(duid_info):
         axis=1,
     )
     return duid_info
+
+
+def hard_code_fix_fuel_source_and_tech_errors(duid_data):
+    duid_data.loc[
+        duid_data["FUEL SOURCE - DESCRIPTOR"].isna(), "FUEL SOURCE - DESCRIPTOR"
+    ] = "-"
+    duid_data.loc[
+        duid_data["TECHNOLOGY TYPE - DESCRIPTOR"].isna(), "TECHNOLOGY TYPE - DESCRIPTOR"
+    ] = "-"
+    return duid_data
