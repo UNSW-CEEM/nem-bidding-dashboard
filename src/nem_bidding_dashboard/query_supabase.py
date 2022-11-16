@@ -3,7 +3,7 @@ import os
 import postgrest
 
 postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
-    15  # Change supabase client timeout
+    15000  # Change supabase client timeout
 )
 import pandas as pd
 from supabase import create_client
@@ -135,10 +135,10 @@ def aggregate_bids(regions, start_date, end_date, resolution):
     return data
 
 
-def duid_bids(regions, start_date, end_date, resolution):
+def duid_bids(duids, start_date, end_date, resolution):
     """
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided,
-    and returned on a duid basis. Data can queried at hourly or 5 minute resolution. If a hourly resolution is chosen
+    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
     only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
     need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
@@ -182,7 +182,175 @@ def duid_bids(regions, start_date, end_date, resolution):
     data = supabase.rpc(
         "get_bids_by_unit",
         {
-            "duids": regions,
+            "duids": duids,
+            "start_datetime": start_date,
+            "end_datetime": end_date,
+            "resolution": resolution,
+        },
+    ).execute()
+    data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
+    return data
+
+
+def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date):
+    """
+    Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
+    corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
+    variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+
+    Examples
+    --------
+
+    >>> stations_and_duids_in_regions_and_time_window(
+    ... ['NSW'],
+    ... "2019/01/21 00:00:00",
+    ... "2019/01/21 01:00:00")
+             DUID                STATION NAME
+    0     ANGAST1      Angaston Power Station
+    1       ARWF1            Ararat Wind Farm
+    2       BDL01    Bairnsdale Power Station
+    3       BDL02    Bairnsdale Power Station
+    4    BALDHWF1        Bald Hills Wind Farm
+    ..        ...                         ...
+    239     YWPS1  Yallourn 'W' Power Station
+    240     YWPS2  Yallourn 'W' Power Station
+    241     YWPS3  Yallourn 'W' Power Station
+    242     YWPS4  Yallourn 'W' Power Station
+    243  YARWUN_1        Yarwun Power Station
+    <BLANKLINE>
+    [244 rows x 2 columns]
+
+    Arguments:
+        duids: list[str] of duids to return in result.
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+    Returns:
+        pd dataframe
+    """
+    url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
+    key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
+    supabase = create_client(url, key)
+    data = supabase.rpc(
+        "get_duids_and_staions_in_regions_and_time_window",
+        {
+            "regions": regions,
+            "start_datetime": start_date,
+            "end_datetime": end_date,
+        },
+    ).execute()
+    data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
+    return data
+
+
+def get_aggregated_dispatch_data_by_region(regions, start_date, end_date, resolution):
+    """
+    Function to query dispatch data from supabase. Data is filter according to the regions and time window provided,
+    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
+    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
+    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
+    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+
+    Examples
+    --------
+
+    >>> duid_bids(
+    ... ['AGLHAL'],
+    ... "2019/01/21 00:00:00",
+    ... "2019/01/21 01:00:00",
+    ... 'hourly')
+         interval_datetime    duid  bidband  bidvolume  bidprice
+    0  2019-01-21T01:00:00  AGLHAL       10        110  13600.02
+    1  2019-01-21T00:00:00  AGLHAL        7         60    562.31
+    2  2019-01-21T01:00:00  AGLHAL        7         60    562.31
+    3  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+
+
+    >>> duid_bids(
+    ... ['AGLHAL'],
+    ... "2019/01/21 00:00:00",
+    ... "2019/01/21 00:05:00",
+    ... '5-min')
+         interval_datetime    duid  bidband  bidvolume  bidprice
+    0  2019-01-21T00:00:00  AGLHAL        7         60    562.31
+    1  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+    2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
+    3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
+
+    Arguments:
+        duids: list[str] of duids to return in result.
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        resolution: str 'hourly' or '5-min'
+    """
+    url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
+    key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
+    supabase = create_client(url, key)
+    data = supabase.rpc(
+        "aggregate_dispatch_data_regions",
+        {
+            "regions": regions,
+            "start_datetime": start_date,
+            "end_datetime": end_date,
+            "resolution": resolution,
+        },
+    ).execute()
+    data = pd.DataFrame(data.data)
+    data.columns = data.columns.str.upper()
+    return data
+
+
+def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolution):
+    """
+    Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
+    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
+    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
+    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
+    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+
+    Examples
+    --------
+
+    >>> duid_bids(
+    ... ['AGLHAL'],
+    ... "2019/01/21 00:00:00",
+    ... "2019/01/21 01:00:00",
+    ... 'hourly')
+         interval_datetime    duid  bidband  bidvolume  bidprice
+    0  2019-01-21T01:00:00  AGLHAL       10        110  13600.02
+    1  2019-01-21T00:00:00  AGLHAL        7         60    562.31
+    2  2019-01-21T01:00:00  AGLHAL        7         60    562.31
+    3  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+
+
+    >>> duid_bids(
+    ... ['AGLHAL'],
+    ... "2019/01/21 00:00:00",
+    ... "2019/01/21 00:05:00",
+    ... '5-min')
+         interval_datetime    duid  bidband  bidvolume  bidprice
+    0  2019-01-21T00:00:00  AGLHAL        7         60    562.31
+    1  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+    2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
+    3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
+
+    Arguments:
+        duids: list[str] of duids to return in result.
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        resolution: str 'hourly' or '5-min'
+    """
+    url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
+    key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
+    supabase = create_client(url, key)
+    data = supabase.rpc(
+        "aggregate_dispatch_data_duids",
+        {
+            "duids": duids,
             "start_datetime": start_date,
             "end_datetime": end_date,
             "resolution": resolution,

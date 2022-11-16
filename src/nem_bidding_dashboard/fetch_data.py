@@ -1,6 +1,8 @@
 import nemosis.custom_errors
 import pandas as pd
-from nemosis import dynamic_data_compiler, static_table
+from nemosis import defaults, dynamic_data_compiler, static_table
+
+defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCUP"]
 
 """
 Function to fetch electricity price data using NEMOSIS. Simply returns fetched
@@ -127,11 +129,29 @@ def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: s
             "DISPATCHLOAD",
             raw_data_cache,
             keep_csv=True,
-            select_columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"],
+            select_columns=[
+                "SETTLEMENTDATE",
+                "INTERVENTION",
+                "DUID",
+                "AVAILABILITY",
+                "TOTALCLEARED",
+                "INITIALMW",
+                "RAMPDOWNRATE",
+                "RAMPUPRATE",
+            ],
         )
     except nemosis.custom_errors.NoDataToReturn:
         availability_data = pd.DataFrame(
-            columns=["SETTLEMENTDATE", "INTERVENTION", "DUID", "AVAILABILITY"]
+            columns=[
+                "SETTLEMENTDATE",
+                "INTERVENTION",
+                "DUID",
+                "AVAILABILITY",
+                "TOTALCLEARED",
+                "INITIALMW",
+                "RAMPDOWNRATE",
+                "RAMPUPRATE",
+            ]
         )
 
     if (
@@ -154,13 +174,28 @@ def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: s
                     "INTERVENTION",
                     "DUID",
                     "AVAILABILITY",
+                    "TOTALCLEARED",
+                    "INITIALMW",
+                    "RAMPDOWNRATE",
+                    "RAMPUPRATE",
                 ],
             )
             availability_data = pd.concat([availability_data, recent_availability_data])
         except nemosis.custom_errors.NoDataToReturn:
             pass
     availability_data = availability_data.loc[availability_data["INTERVENTION"] == 0]
-    return availability_data.loc[:, ["SETTLEMENTDATE", "DUID", "AVAILABILITY"]]
+    return availability_data.loc[
+        :,
+        [
+            "SETTLEMENTDATE",
+            "DUID",
+            "AVAILABILITY",
+            "TOTALCLEARED",
+            "INITIALMW",
+            "RAMPDOWNRATE",
+            "RAMPUPRATE",
+        ],
+    ]
 
 
 def get_duid_data(raw_data_cache: str):
@@ -200,8 +235,7 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
         end_time=end_time,
         table_name="BIDPEROFFER_D",
         raw_data_location=raw_data_cache,
-        fformat="parquet",
-        keep_csv=False,
+        fformat="csv",
         select_columns=[
             "INTERVAL_DATETIME",
             "SETTLEMENTDATE",
@@ -217,6 +251,10 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
             "BANDAVAIL8",
             "BANDAVAIL9",
             "BANDAVAIL10",
+            "MAXAVAIL",
+            "ROCUP",
+            "ROCDOWN",
+            "PASAAVAILABILITY",
         ],
     )
     return volume_bids

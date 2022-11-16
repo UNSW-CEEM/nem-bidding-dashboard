@@ -1,3 +1,5 @@
+import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -185,3 +187,54 @@ def hard_code_fix_fuel_source_and_tech_errors(duid_data):
         duid_data["TECHNOLOGY TYPE - DESCRIPTOR"].isna(), "TECHNOLOGY TYPE - DESCRIPTOR"
     ] = "-"
     return duid_data
+
+
+def calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics):
+    after_dispatch_metrics = after_dispatch_metrics.rename(
+        {"SETTLEMENTDATE": "INTERVAL_DATETIME"}, axis=1
+    )
+    unit_time_series_metrics = pd.merge(
+        as_bid_metrics, after_dispatch_metrics, on=["INTERVAL_DATETIME", "DUID"]
+    )
+
+    unit_time_series_metrics["ASBIDRAMPUPMAXAVAIL"] = (
+        unit_time_series_metrics["INITIALMW"] + unit_time_series_metrics["ROCUP"] * 5
+    )
+    unit_time_series_metrics["ASBIDRAMPDOWNMINAVAIL"] = (
+        unit_time_series_metrics["INITIALMW"] - unit_time_series_metrics["ROCDOWN"] * 5
+    )
+    unit_time_series_metrics["RAMPUPMAXAVAIL"] = (
+        unit_time_series_metrics["INITIALMW"]
+        + unit_time_series_metrics["RAMPUPRATE"] / 12
+    )
+    unit_time_series_metrics["RAMPDOWNMINAVAIL"] = (
+        unit_time_series_metrics["INITIALMW"]
+        - unit_time_series_metrics["RAMPDOWNRATE"] / 12
+    )
+
+    final_mw = unit_time_series_metrics.loc[
+        :, ["INTERVAL_DATETIME", "DUID", "INITIALMW"]
+    ]
+    final_mw["INTERVAL_DATETIME"] -= datetime.timedelta(minutes=5)
+    final_mw = final_mw.rename({"INITIALMW": "FINALMW"}, axis=1)
+
+    unit_time_series_metrics = pd.merge(
+        unit_time_series_metrics, final_mw, on=["INTERVAL_DATETIME", "DUID"]
+    )
+
+    return unit_time_series_metrics.loc[
+        :,
+        [
+            "INTERVAL_DATETIME",
+            "DUID",
+            "AVAILABILITY",
+            "TOTALCLEARED",
+            "FINALMW",
+            "ASBIDRAMPUPMAXAVAIL",
+            "ASBIDRAMPDOWNMINAVAIL",
+            "RAMPUPMAXAVAIL",
+            "RAMPDOWNMINAVAIL",
+            "PASAAVAILABILITY",
+            "MAXAVAIL",
+        ],
+    ]

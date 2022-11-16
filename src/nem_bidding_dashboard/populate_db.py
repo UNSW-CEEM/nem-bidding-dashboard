@@ -2,6 +2,12 @@ import math
 import os
 from datetime import datetime, timedelta
 
+import postgrest
+
+postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
+    300000  # Change supabase client timeout
+)
+
 import fetch_data
 import numpy as np
 import pandas as pd
@@ -29,7 +35,7 @@ def insert_data_into_supabase(table_name, data):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_WRITE_KEY")
     supabase = create_client(url, key)
-    rows_per_chunk = 10000
+    rows_per_chunk = 5000
     data.columns = data.columns.str.lower()
     number_of_chunks = math.ceil(data.shape[0] / rows_per_chunk)
     chunked_data = np.array_split(data, number_of_chunks)
@@ -108,6 +114,45 @@ def populate_supabase_duid_info_table(raw_data_cache):
     insert_data_into_supabase("duid_info", duid_info)
 
 
+def populate_db_unit_dispatch(start_date, end_date, raw_data_cache):
+    """
+    Function to populate database table containing unit time series metrics. For this function to run the supabase url
+    and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
+    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+
+    Arguments:
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        raw_data_cache: Filepath to directory for storing data that is fetched
+    """
+    as_bid_metrics = fetch_data.get_volume_bids(start_date, end_date, raw_data_cache)
+    as_bid_metrics = as_bid_metrics[as_bid_metrics["BIDTYPE"] == "ENERGY"].drop(
+        columns=["BIDTYPE"]
+    )
+    as_bid_metrics = as_bid_metrics.loc[
+        :,
+        [
+            "INTERVAL_DATETIME",
+            "DUID",
+            "MAXAVAIL",
+            "ROCUP",
+            "ROCDOWN",
+            "PASAAVAILABILITY",
+        ],
+    ]
+    after_dispatch_metrics = fetch_data.get_duid_availability_data(
+        start_date, end_date, raw_data_cache
+    )
+    unit_time_series_metrics = preprocessing.calculate_unit_time_series_metrics(
+        as_bid_metrics, after_dispatch_metrics
+    )
+    unit_time_series_metrics["INTERVAL_DATETIME"] = unit_time_series_metrics[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    insert_data_into_supabase("unit_dispatch", unit_time_series_metrics)
+
+
 def populate_supabase_price_bin_edges_table():
     """
     Function to populate database table containing bin definitions for aggregating bids. For this function to run the
@@ -159,23 +204,27 @@ def populate_db_all_tables_two_most_recent_market_days(cache):
     two_days_before_today = (
         two_days_before_today.isoformat().replace("T", " ").replace("-", "/")
     )
-
     populate_supabase_region_data(
         start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
     )
-
     populate_supabase_bid_table(
         start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
     )
-
     populate_supabase_duid_info_table(raw_data_cache=cache)
+    populate_db_unit_dispatch(
+        start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
+    )
 
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    # populate_supabase_bid_table(
-    #     "2022/10/08 00:00:00", "2022/10/09 00:00:00", raw_data_cache
-    # )
-    # populate_db_all_tables_two_most_recent_market_days(raw_data_cache)
+    start = "2020/02/01 00:00:00"
+    end = "2020/03/01 00:00:00"
+    import time
+
+    t0 = time.time()
     populate_supabase_duid_info_table(raw_data_cache)
-    # populate_supabase_price_bin_edges_table()
+    populate_supabase_bid_table(start, end, raw_data_cache)
+    populate_supabase_region_data(start, end, raw_data_cache)
+    populate_db_unit_dispatch(start, end, raw_data_cache)
+    print("upload dispatch data {}".format(time.time() - t0))
