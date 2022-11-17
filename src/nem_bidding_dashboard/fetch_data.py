@@ -29,7 +29,8 @@ def get_region_data(start_time: str, end_time: str, raw_data_cache: str):
             end_time,
             "DISPATCHPRICE",
             raw_data_cache,
-            keep_csv=True,
+            keep_csv=False,
+            fformat="parquet",
             select_columns=["REGIONID", "SETTLEMENTDATE", "RRP", "INTERVENTION"],
         )
     except nemosis.custom_errors.NoDataToReturn:
@@ -43,7 +44,8 @@ def get_region_data(start_time: str, end_time: str, raw_data_cache: str):
             end_time,
             "DISPATCHREGIONSUM",
             raw_data_cache,
-            keep_csv=True,
+            keep_csv=False,
+            fformat="parquet",
             select_columns=[
                 "REGIONID",
                 "SETTLEMENTDATE",
@@ -81,7 +83,8 @@ def get_region_data(start_time: str, end_time: str, raw_data_cache: str):
                 end_time,
                 "DAILY_REGION_SUMMARY",
                 raw_data_cache,
-                keep_csv=True,
+                keep_csv=False,
+                fformat="parquet",
                 select_columns=[
                     "REGIONID",
                     "SETTLEMENTDATE",
@@ -128,7 +131,8 @@ def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: s
             end_time,
             "DISPATCHLOAD",
             raw_data_cache,
-            keep_csv=True,
+            keep_csv=False,
+            fformat="parquet",
             select_columns=[
                 "SETTLEMENTDATE",
                 "INTERVENTION",
@@ -168,7 +172,8 @@ def get_duid_availability_data(start_time: str, end_time: str, raw_data_cache: s
                 end_time,
                 "NEXT_DAY_DISPATCHLOAD",
                 raw_data_cache,
-                keep_csv=True,
+                keep_csv=False,
+                fformat="parquet",
                 select_columns=[
                     "SETTLEMENTDATE",
                     "INTERVENTION",
@@ -235,7 +240,8 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
         end_time=end_time,
         table_name="BIDPEROFFER_D",
         raw_data_location=raw_data_cache,
-        fformat="csv",
+        keep_csv=False,
+        fformat="parquet",
         select_columns=[
             "INTERVAL_DATETIME",
             "SETTLEMENTDATE",
@@ -279,8 +285,8 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
         end_time=end_time,
         table_name="BIDDAYOFFER_D",
         raw_data_location=raw_data_cache,
-        fformat="parquet",
         keep_csv=False,
+        fformat="parquet",
         select_columns=[
             "SETTLEMENTDATE",
             "DUID",
