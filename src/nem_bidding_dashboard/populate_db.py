@@ -217,15 +217,13 @@ def populate_db_all_tables_two_most_recent_market_days(cache):
 
 
 if __name__ == "__main__":
-    # raw_data_cache = "D:/nemosis_cache"
-    # start = "2020/02/01 00:00:00"
-    # end = "2020/03/01 00:00:00"
-    import time
-
-    t0 = time.time()
-    # populate_supabase_duid_info_table(raw_data_cache)
-    # populate_supabase_bid_table(start, end, raw_data_cache)
-    # populate_supabase_region_data(start, end, raw_data_cache)
-    # populate_db_unit_dispatch(start, end, raw_data_cache)
-    populate_db_all_tables_two_most_recent_market_days("D:/bidding_daily_update_test")
-    print("upload dispatch data {}".format(time.time() - t0))
+    raw_data_cache = "D:/nemosis_cache"
+    for m in [8, 9, 10, 11]:
+        start = "2020/{}/01 00:00:00".format((str(m)).zfill(2))
+        end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
+        print(start)
+        print(end)
+        populate_supabase_duid_info_table(raw_data_cache)
+        populate_supabase_bid_table(start, end, raw_data_cache)
+        populate_supabase_region_data(start, end, raw_data_cache)
+        populate_db_unit_dispatch(start, end, raw_data_cache)
