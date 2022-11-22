@@ -1,3 +1,5 @@
+import time
+
 import nemosis.custom_errors
 import pandas as pd
 from nemosis import defaults, dynamic_data_compiler, static_table
@@ -308,10 +310,12 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    duid_data = get_duid_data(raw_data_cache)
+    # duid_data = get_duid_data(raw_data_cache)
     # region_data = get_region_data(
     #     "2022/11/01 00:00:00", "2022/11/02 00:00:00", raw_data_cache
     # )
-    print(duid_data)
+    # print(duid_data)
     # x = 1
-    # get_region_demand_data("2019/01/23 00:00:00", "2019/01/28 00:00:00", raw_data_cache)
+    t0 = time.time()
+    get_volume_bids("2020/01/23 00:00:00", "2020/01/24 00:00:00", raw_data_cache)
+    print(t0 - time.time())

@@ -91,9 +91,17 @@ def adjust_bids_for_availability(stacked_bids, unit_availability):
     bids["SPAREBIDVOLUME"] = np.where(
         bids["SPAREBIDVOLUME"] < 0, 0, bids["SPAREBIDVOLUME"]
     )
-    bids["BIDVOLUME"] = bids[["BIDVOLUME", "SPAREBIDVOLUME"]].min(axis=1)
+    bids["BIDVOLUMEADJUSTED"] = bids[["BIDVOLUME", "SPAREBIDVOLUME"]].min(axis=1)
     return bids.loc[
-        :, ["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"]
+        :,
+        [
+            "INTERVAL_DATETIME",
+            "DUID",
+            "BIDBAND",
+            "BIDVOLUME",
+            "BIDVOLUMEADJUSTED",
+            "BIDPRICE",
+        ],
     ]
 
 
@@ -127,6 +135,8 @@ def tech_namer_by_row(fuel, tech_descriptor, dispatch_type):
     name = fuel
     if fuel in ["Solar", "Wind", "Black Coal", "Brown Coal"]:
         pass
+    elif fuel == "solar":
+        name = "Solar"
     elif tech_descriptor in ["Battery", "Battery and Inverter"]:
         if dispatch_type == "Load":
             name = "Battery Charge"

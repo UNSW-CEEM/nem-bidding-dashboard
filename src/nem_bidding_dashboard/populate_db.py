@@ -57,6 +57,9 @@ def populate_supabase_region_data(start_date, end_date, raw_data_cache):
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
     regional_data = fetch_data.get_region_data(start_date, end_date, raw_data_cache)
+    regional_data = preprocessing.remove_number_from_region_names(
+        "REGIONID", regional_data
+    )
     regional_data["SETTLEMENTDATE"] = regional_data["SETTLEMENTDATE"].dt.strftime(
         "%Y-%m-%d %X"
     )
@@ -227,3 +230,4 @@ if __name__ == "__main__":
         populate_supabase_bid_table(start, end, raw_data_cache)
         populate_supabase_region_data(start, end, raw_data_cache)
         populate_db_unit_dispatch(start, end, raw_data_cache)
+    # populate_supabase_duid_info_table(raw_data_cache)
