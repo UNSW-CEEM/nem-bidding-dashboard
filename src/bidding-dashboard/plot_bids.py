@@ -39,7 +39,7 @@ settings_content = [
                 children=[
                     dcc.DatePickerSingle(
                         id="start-date-picker",
-                        date=date(2019, 1, 21), 
+                        date=date(2020, 1, 21), 
                         display_format="DD/MM/YY",
                     ), 
                     dcc.Dropdown(
@@ -165,7 +165,7 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
 
     stacked_bids = duid_bids(duids, start_time, end_time, resolution)
 
-    stacked_bids = stacked_bids.groupby(["interval_datetime", "bidband"], as_index=False).agg({"bidvolume": "sum"})
+    stacked_bids = stacked_bids.groupby(["interval_datetime", "bidprice"], as_index=False).agg({"bidvolume": "sum"})
     #legend_options = pd.DataFrame({
     #    "interval_datetime": [None for i in range(10)], 
     #    "bidband": [i + 1 for i in range(10)], 
@@ -173,8 +173,8 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
     #})
     #pd.concat([stacked_bids, legend_options], ignore_index=True)
 
-    stacked_bids.sort_values(by=["bidband"], inplace=True)
-    stacked_bids["bidband"] = stacked_bids["bidband"].astype(str)
+    stacked_bids.sort_values(by=["bidprice"], inplace=True)
+    #stacked_bids["bidband"] = stacked_bids["bidband"].astype(str)
     #color_map = {
     #    "1": "lightsalmon", 
     #    "2": "yellow",
@@ -193,11 +193,19 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
         x='interval_datetime', 
         y='bidvolume', 
         #color_discrete_map=color_map,
-        color_discrete_sequence=px.colors.qualitative.Plotly,
-        color='bidband',
+        #color_discrete_sequence=px.colors.qualitative.Plotly,
+        color='bidprice',
         labels={
-            "bidband": "Bid Band", 
-        }
+            "bidprice": "Bid Price", 
+            'bidvolume': "Bid Volume",
+        },
+        #hover_data=["interval_datetime", "bidprice", "bidvolume"],
+        hover_data={
+            'interval_datetime': True, 
+            'bidprice': ':.0f', 
+            'bidvolume': ':.0f',
+        }, 
+        custom_data=['bidprice'],
     )
 
 
@@ -207,8 +215,10 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
         fig.update_xaxes(title=f"Time (Bid stack sampled on the hour)")
     else:
         fig.update_xaxes(title=f"Time (Bid stack sampled at 5 min intervals)")
+
+    prices = stacked_bids["bidprice"]
     fig.update_traces(
-        hovertemplate="%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>",
+        hovertemplate="%{x}<br>Bid Price: $%{customdata[0]:.0f}<br>Bid Volume: %{y:.0f} MW"
     )
     
     return fig
