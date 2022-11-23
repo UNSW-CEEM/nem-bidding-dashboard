@@ -157,7 +157,7 @@ def populate_supabase_all_tables_two_most_recent_market_days(cache):
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_cache"
-    for m in [8, 9, 10, 11]:
+    for m in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
         start = "2020/{}/01 00:00:00".format((str(m)).zfill(2))
         end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
         print(start)
