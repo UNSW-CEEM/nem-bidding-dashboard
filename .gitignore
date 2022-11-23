@@ -147,3 +147,4 @@ dmypy.json
 # NEMOSIS data cache files
 *.CSV
 *.feather
+src/nem_bidding_dashboard/smoke.py

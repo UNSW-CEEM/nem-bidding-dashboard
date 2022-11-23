@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "bidding-dashboard"
-version = "0.1.0"
+name = "nem-bidding-dashboard"
+version = "0.4.0"
 description = "A dashboard for visualising bidding data for the National Energy Market"
-authors = ["Patrick Chambers"]
+authors = ["Patrick Chambers", "Nicholas Gorman"]
 license = "BSD 3-clause"
 readme = "README.md"
 
@@ -53,6 +53,8 @@ pytest = "^7"
 pytest-cov = "^3"
 
 # Config for pytest and pytest-cov
+memory-profiler = "^0.61.0"
+matplotlib = "^3.6.2"
 [tool.pytest.ini_options]
 # path to tests for pytest
 testpaths = ["tests"]
