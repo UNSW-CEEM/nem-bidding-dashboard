@@ -6,29 +6,43 @@ TODO:
 
 
 from datetime import datetime, date, timedelta 
-import time
-import fetch_data
 import layout_template
 
-import pandas as pd
-import os
-from pandasql import sqldf
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 from dash import Dash, dcc, html, Input, Output
 import dash
-from nemosis import dynamic_data_compiler, static_table
-from query_supabase import aggregate_bids, demand_data, duid_data, duid_bids
+from query_supabase import aggregate_bids, stations_and_duids_in_regions_and_time_window, region_data, duid_bids
+
+
+
+
+def get_duid_station_options(start_date: str, regions: list, duration: str) -> list:
+    start_date_obj = datetime.strptime(start_date, "%Y/%m/%d %H:%M:%S")
+    if duration == 'Daily':
+        end_date = (start_date_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")
+        return stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
+    if duration == 'Weekly':
+        end_date = (start_date_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
+        return stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
+    
 
 
 app = Dash(__name__)
 app.title = "NEM Dashboard"
 
 
-duid_options = sorted(duid_data()["duid"])
-region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
 title = "NEM Bidding Data"
+
+region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
+initial_regions = region_options
+initial_start_date_obj = date(2020, 1, 21)
+initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
+initial_duration = "Daily"
+
+duid_station_options = get_duid_station_options(initial_start_date_str, initial_regions, initial_duration)
+duid_options = sorted(duid_station_options["DUID"])
+station_options = sorted(list(set(duid_station_options["STATION NAME"])))
 settings_content = [
     html.Div(
         id="date-selector",
@@ -39,7 +53,7 @@ settings_content = [
                 children=[
                     dcc.DatePickerSingle(
                         id="start-date-picker",
-                        date=date(2020, 1, 21), 
+                        date=initial_start_date_obj, 
                         display_format="DD/MM/YY",
                     ), 
                     dcc.Dropdown(
@@ -61,7 +75,7 @@ settings_content = [
             dcc.RadioItems(
                 id="duration-selector",
                 options=["Daily", "Weekly"],
-                value="Daily",
+                value=initial_duration,
                 inline=True,
             )
         ]
@@ -73,7 +87,7 @@ settings_content = [
             dcc.Checklist(
                 id="region-checklist",
                 options=region_options,
-                value=region_options,
+                value=initial_regions,
                 inline=True,
             ),
             
@@ -88,6 +102,12 @@ settings_content = [
                 value=None,
                 options=duid_options,
                 multi=True,
+            ),
+            dcc.Dropdown(
+                id="station-dropdown", 
+                value=None,
+                options=station_options,
+                multi=False,
             ),
         ]
     ),
@@ -107,6 +127,76 @@ settings_content = [
 graph_content = dcc.Graph(id="graph")
 app.layout = layout_template.build(title, settings_content, graph_content)
 
+#@app.callback(
+#    Output("duid-dropdown", "options"),
+#    Input("start-date-picker", "date"),
+#    Input("start-hour-picker", "value"),
+#    Input("start-minute-picker", "value"),
+#    Input("duration-selector", "value"),
+#    Input("station-dropdown", "value"),
+#    Input("region-checklist", "value"))
+#def update_duids_from_date_region(start_date: str, hour: str, minute: str, duration: str, station: str, regions: list):
+#    print("DUID options callback executed")
+#    start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
+#    duid_options = get_duid_station_options(start_date, regions, duration)
+#    if station:
+#        print(station)
+#        print(duid_options["STATION NAME"])
+#        duid_options = duid_options.loc[duid_options["STATION NAME"] == station]
+#        duid_options = sorted(duid_options["DUID"])
+#    else:
+#        duid_options = sorted(duid_options["DUID"])
+#    print("\n\n\n")
+#    print(f"Amount of duid options: {len(duid_options)}")
+#    print("\n\n\n")
+#    return duid_options
+#
+
+@app.callback(
+    Output("duid-dropdown", "value"),
+    Output("station-dropdown", "value"),
+    Input("start-date-picker", "date"),
+    Input("start-hour-picker", "value"),
+    Input("start-minute-picker", "value"),
+    Input("duration-selector", "value"),
+    Input("station-dropdown", "value"),
+    Input("duid-dropdown", "value"),
+    Input("region-checklist", "value"))
+def update_duids_from_date_region(start_date: str, hour: str, minute: str, duration: str, station: str, duids: list, regions: list):
+    print("DUID station options callback executed")
+    print(dash.ctx.triggered)
+
+    trigger_id = dash.ctx.triggered_id
+    # if trigger_id and trigger_id == "duid-dropdown":
+    #     return dash.no_update, None
+
+    if trigger_id and trigger_id not in ["station-dropdown", "duid-dropdown"]:
+        print("Not updating duid options")
+        return dash.no_update, dash.no_update
+
+    start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
+    duid_options = get_duid_station_options(start_date, regions, duration)
+    if station:
+        print(station)
+        print(duid_options["STATION NAME"])
+        duid_options = duid_options.loc[duid_options["STATION NAME"] == station]
+        duid_options = sorted(duid_options["DUID"])
+    else:
+        return dash.no_update, None
+    
+    if duids and sorted(duids) != duid_options:
+        return duid_options, None
+
+
+    print(f"Amount of duid options: {len(duid_options)}")
+    return duid_options, dash.no_update
+
+# @app.callback(
+#     Output("station-dropdown", "value"),
+#     Input("duid-dropdown", "value"))
+# def remove_station_from_duid_update(duids:list):
+#     print("remove station")
+#     return None
 
 """
 TODO
@@ -132,11 +222,7 @@ Returns:
     Input("show-demand-checkbox", "value"),
     Input("update-graph-button", "n_clicks"))
 def update(start_date: str, hour: str, minute: str, duration: str, regions: list, duids: list, demand_checkbox: str, num_clicks: int):
-
-    trigger_id = dash.ctx.triggered_id
-    if trigger_id and trigger_id != "update-graph-button":
-        return dash.no_update
-
+    print("Regular callback executed")
     start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
     start_date_obj = datetime.strptime(start_date, "%Y/%m/%d %H:%M:%S")
     if (duration == "Daily"):
@@ -145,6 +231,10 @@ def update(start_date: str, hour: str, minute: str, duration: str, regions: list
     elif (duration == "Weekly"):
         end_date = (start_date_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
         resolution = "hourly"
+
+    #trigger_id = dash.ctx.triggered_id
+    #if trigger_id and trigger_id != "update-graph-button":
+    #    return dash.no_update
 
     show_demand = True if demand_checkbox == "Show" else False
     fig = plot_bids(start_date, end_date, resolution, regions, duids, show_demand)
@@ -164,48 +254,29 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
     """
 
     stacked_bids = duid_bids(duids, start_time, end_time, resolution)
+    if stacked_bids.empty:
+        print("DUID bids dataframe is empty")
+        return None
 
-    stacked_bids = stacked_bids.groupby(["interval_datetime", "bidprice"], as_index=False).agg({"bidvolume": "sum"})
-    #legend_options = pd.DataFrame({
-    #    "interval_datetime": [None for i in range(10)], 
-    #    "bidband": [i + 1 for i in range(10)], 
-    #    "bidvolume": [None for i in range(10)],
-    #})
-    #pd.concat([stacked_bids, legend_options], ignore_index=True)
+    stacked_bids = stacked_bids.groupby(["INTERVAL_DATETIME", "BIDPRICE"], as_index=False).agg({"BIDVOLUME": "sum"})
 
-    stacked_bids.sort_values(by=["bidprice"], inplace=True)
-    #stacked_bids["bidband"] = stacked_bids["bidband"].astype(str)
-    #color_map = {
-    #    "1": "lightsalmon", 
-    #    "2": "yellow",
-    #    "3": "red", 
-    #    "4": "orange", 
-    #    "5": "#00CC96", 
-    #    "6": "#636efa", 
-    #    "7": "purple", 
-    #    "8": "cyan", 
-    #    "9": "fuchsia", 
-    #    "10": "palegreen", 
-    #}
+    stacked_bids.sort_values(by=["BIDPRICE"], inplace=True)
     fig = px.bar(
         stacked_bids, 
         barmode="stack",
-        x='interval_datetime', 
-        y='bidvolume', 
-        #color_discrete_map=color_map,
-        #color_discrete_sequence=px.colors.qualitative.Plotly,
-        color='bidprice',
+        x='INTERVAL_DATETIME', 
+        y='BIDVOLUME', 
+        color='BIDPRICE',
         labels={
-            "bidprice": "Bid Price", 
-            'bidvolume': "Bid Volume",
+            "BIDPRICE": "Bid Price", 
+            'BIDVOLUME': "Bid Volume",
         },
-        #hover_data=["interval_datetime", "bidprice", "bidvolume"],
         hover_data={
-            'interval_datetime': True, 
-            'bidprice': ':.0f', 
-            'bidvolume': ':.0f',
+            'INTERVAL_DATETIME': True, 
+            'BIDPRICE': ':.0f', 
+            'BIDVOLUME': ':.0f',
         }, 
-        custom_data=['bidprice'],
+        custom_data=['BIDPRICE'],
     )
 
 
@@ -216,7 +287,6 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
     else:
         fig.update_xaxes(title=f"Time (Bid stack sampled at 5 min intervals)")
 
-    prices = stacked_bids["bidprice"]
     fig.update_traces(
         hovertemplate="%{x}<br>Bid Price: $%{customdata[0]:.0f}<br>Bid Volume: %{y:.0f} MW"
     )
@@ -226,8 +296,12 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
 
 def plot_aggregate_bids(start_time:str, end_time:str, resolution:str, regions:list, show_demand: bool):
     stacked_bids = aggregate_bids(regions, start_time, end_time, resolution)
+    
+    if stacked_bids.empty:
+        print("Aggregate bids dataframe is empty")
+        return None
 
-    stacked_bids = stacked_bids.groupby(["interval_datetime", "bin_name"], as_index=False).agg({"bidvolume": "sum"})
+    stacked_bids = stacked_bids.groupby(["INTERVAL_DATETIME", "BIN_NAME"], as_index=False).agg({"BIDVOLUME": "sum"})
     bid_order = [ 
         "[-1000, -100)", 
         "[-100, 0)", 
@@ -256,20 +330,20 @@ def plot_aggregate_bids(start_time:str, end_time:str, resolution:str, regions:li
         "[10000, 15500)": "lightblue", 
     }
 
-    demand = demand_data(start_time, end_time)
-    demand.loc[:,"regionid"] = demand["regionid"].str[:-1]
-    demand = demand[demand["regionid"].isin(regions)]
-    demand = demand.groupby(["settlementdate"], as_index=False).agg({"totaldemand": "sum"})
+    demand = region_data(start_time, end_time)
+    demand.loc[:,"REGIONID"] = demand["REGIONID"].str[:-1]
+    demand = demand[demand["REGIONID"].isin(regions)]
+    demand = demand.groupby(["SETTLEMENTDATE"], as_index=False).agg({"TOTALDEMAND": "sum"})
 
     fig = px.bar(
         stacked_bids, 
-        x='interval_datetime', 
-        y='bidvolume', 
-        category_orders={"bin_name": bid_order},
-        color='bin_name',
+        x='INTERVAL_DATETIME', 
+        y='BIDVOLUME', 
+        category_orders={"BIN_NAME": bid_order},
+        color='BIN_NAME',
         color_discrete_map=color_map,
         labels={
-            "bin_name": "Price Bin",
+            "BIN_NAME": "Price Bin",
         }
     )
 
@@ -283,7 +357,7 @@ def plot_aggregate_bids(start_time:str, end_time:str, resolution:str, regions:li
         hovertemplate="%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>",
     )
     if show_demand:
-        fig.add_trace(go.Scatter(x=demand['settlementdate'], y=demand['totaldemand'],
+        fig.add_trace(go.Scatter(x=demand['SETTLEMENTDATE'], y=demand['TOTALDEMAND'],
                                  marker=dict(color='blue', size=4), name='demand'))
         fig.update_traces(
             hovertemplate="%{x}<br>Demand: %{y:.0f} MW<extra></extra>",
@@ -298,6 +372,8 @@ def plot_bids(start_time:str, end_time:str, resolution:str, regions:list, duids:
         return plot_duid_bids(start_time, end_time, resolution, duids)
     else: 
         return plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand)
+
+
 
 
 if __name__ == '__main__':
