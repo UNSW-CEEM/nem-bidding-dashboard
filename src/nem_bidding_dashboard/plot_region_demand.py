@@ -4,7 +4,7 @@ import dash
 import fetch_data
 import pandas as pd
 import plotly.express as px
-import query_supabase
+import query_supabase_db
 from dash import Dash, Input, Output, dcc, html
 
 raw_data_cache = "D:/nemosis_cache"
@@ -130,7 +130,7 @@ def get_region_demand(start_date: str, end_date: str) -> pd.DataFrame:
     if run_local:
         df = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
     else:
-        df = query_supabase.region_data(start_date, end_date)
+        df = query_supabase_db.region_data(start_date, end_date)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
     df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
         lambda txt: str(txt).replace("/", "-")
