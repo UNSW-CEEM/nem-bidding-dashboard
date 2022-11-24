@@ -10,8 +10,5 @@ Please note that this project is released with a [Code of Conduct](CONDUCT.md). 
 
 ## License
 
-`your_package` was created by `your_name`. It is licensed under the terms of the `licence_type`.
+`nem-bidding-dashboard` was created by `Nicholas Gorman` and `Patrick Chambers`. It is licensed under the terms of the `BSD-3-Clause license`.
 
-## Credits
-
-This template was created using [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/), the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter) and using Marwan Debbiche's excellent [walkthrough](https://www.marwandebbiche.com/posts/python-package-tooling/)
