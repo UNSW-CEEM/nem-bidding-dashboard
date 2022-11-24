@@ -214,6 +214,53 @@ _create_get_bids_by_unit_function = """
     $func$;
     """
 
+_create_aggregate_dispatch_data_duids_function = """
+    CREATE OR REPLACE FUNCTION aggregate_dispatch_data_duids(duids text[], start_datetime timestamp,
+                                                             end_datetime timestamp, resolution text)
+      RETURNS TABLE (interval_datetime timestamp, availability float4, totalcleared float4, finalmw float4,
+                     asbidrampupmaxavail float4, asbidrampdownminavail float4, rampupmaxavail float4,
+                     rampdownminavail float4, pasaavailability float4, maxavail float4)
+      LANGUAGE plpgsql AS
+    $func$
+    BEGIN
+
+      DROP TABLE IF EXISTS time_filtered_dispatch;
+      DROP TABLE IF EXISTS duids_filtered_dispatch;
+
+      IF resolution = 'hourly' THEN
+        CREATE TEMP TABLE time_filtered_dispatch as
+        SELECT * FROM unit_dispatch d WHERE EXTRACT(MINUTE FROM d.interval_datetime) = 0
+                                        AND d.interval_datetime between start_datetime and end_datetime;
+      ELSE
+       CREATE TEMP TABLE time_filtered_dispatch as
+        SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_datetime and end_datetime;
+      END IF;
+
+      CREATE TEMP TABLE duids_filtered_dispatch as
+      SELECT * FROM time_filtered_dispatch WHERE duid = ANY(duids);
+
+      UPDATE duids_filtered_dispatch d SET asbidrampupmaxavail = d.maxavail WHERE d.asbidrampupmaxavail > d.maxavail;
+      UPDATE duids_filtered_dispatch d SET asbidrampdownminavail = 0  WHERE d.asbidrampdownminavail < 0;
+
+      UPDATE duids_filtered_dispatch d SET rampupmaxavail = d.availability WHERE d.rampupmaxavail > d.maxavail;
+      UPDATE duids_filtered_dispatch d SET rampdownminavail = 0 WHERE d.rampdownminavail < 0;
+
+      RETURN QUERY SELECT d.interval_datetime,
+                          SUM(d.availability) as availability,
+                          SUM(d.totalcleared) as totalcleared,
+                          SUM(d.finalmw) as finalmw,
+                          SUM(d.asbidrampupmaxavail) as asbidrampupmaxavail,
+                          SUM(d.asbidrampdownminavail) as asbidrampdownminavail,
+                          SUM(d.rampupmaxavail) as rampupmaxavail,
+                          SUM(d.rampdownminavail) as rampdownminavail,
+                          SUM(d.pasaavailability) as pasaavailability,
+                          SUM(d.maxavail) as maxavail
+                     FROM duids_filtered_dispatch d group by d.interval_datetime;
+
+    END
+    $func$;
+    """
+
 _create_get_duids_for_stations = """
     CREATE OR REPLACE FUNCTION get_duids_for_stations(stations text[])
       RETURNS TABLE (duid text)
@@ -293,6 +340,7 @@ _create_statements = [
     _create_get_duids_for_stations,
     _create_get_duids_and_stations_function,
     _create_aggregate_prices_function,
+    _create_aggregate_dispatch_data_duids_function,
 ]
 
 

@@ -30,7 +30,7 @@ def region_data(start_date, end_date):
     data = (
         supabase.table("demand_data")
         .select("*")
-        .gt("settlementdate", start_date)
+        .gte("settlementdate", start_date)
         .lte("settlementdate", end_date)
         .execute()
     )
