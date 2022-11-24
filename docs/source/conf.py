@@ -18,12 +18,12 @@ sys.path.insert(0, os.path.abspath("../../src/"))
 
 # -- Project information -----------------------------------------------------
 
-project = "NEMSEER"
-copyright = "2022, Abhijith (Abi) Prakash"
-author = "Abhijith (Abi) Prakash"
+project = "nem-bidding-dashboard"
+copyright = "2022, Nicholas Gorman and Patrick Chambers"
+author = "Nicholas Gorman and Patrick Chambers"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = "0.7.0"
 
 
 # -- General configuration ---------------------------------------------------
