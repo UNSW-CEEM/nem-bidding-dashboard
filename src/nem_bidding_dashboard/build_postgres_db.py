@@ -297,17 +297,27 @@ _create_statements = [
 
 
 def create_db_tables_and_functions(connection_string):
-    """
-    Examples
-    --------
+    """Creates the tables and functions needed to store and retreive data in a PostgresSQL database. This function
+    should be run after creating an empty database, then functions in the :py:mod:populate_postgres_db can be used to
+    add data to the database.
+
+    Examples:
     >>> from nem_bidding_dashboard import postgress_helpers
+
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
     ... password='1234abcd',
     ... port=5433)
+
     >>> create_db_tables_and_functions(con_string)
+
+    Args:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
     """
     with psycopg.connect(connection_string) as conn:
         with conn.cursor() as cur:
