@@ -30,7 +30,7 @@ def region_data(start_date, end_date):
     data = (
         supabase.table("demand_data")
         .select("*")
-        .gt("settlementdate", start_date)
+        .gte("settlementdate", start_date)
         .lte("settlementdate", end_date)
         .execute()
     )
@@ -206,9 +206,9 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
     --------
 
     >>> stations_and_duids_in_regions_and_time_window(
-    ... ['NSW'],
-    ... "2019/01/21 00:00:00",
-    ... "2019/01/21 01:00:00")
+    ... ['NSW', 'VIC'],
+    ... "2020/01/21 00:00:00",
+    ... "2020/01/21 01:00:00")
              DUID                                    STATION NAME
     0       APPIN                               Appin Power Plant
     1     GUTHEGA                           Guthega Power Station

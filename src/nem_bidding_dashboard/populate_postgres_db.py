@@ -81,8 +81,8 @@ def populate_postgres_region_data(
 
     >>> populate_postgres_region_data(
     ... con_string,
-    ... "2020/01/21 02:00:00",
-    ... "2020/01/21 03:00:00",
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
     ... "D:/nemosis_cache")
     """
 
@@ -119,8 +119,8 @@ def populate_postgres_bid_table(
 
     >>> populate_postgres_bid_table(
     ... con_string,
-    ...."2020/01/21 02:00:00",
-    ... "2020/01/21 03:00:00",
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
     ... "D:/nemosis_cache")
     """
     combined_bids = fetch_and_preprocess.bid_table(start_date, end_date, raw_data_cache)
@@ -180,8 +180,8 @@ def populate_postgres_unit_dispatch(
 
     >>> populate_postgres_unit_dispatch(
     ... con_string,
-    ... "2020/01/21 02:00:00",
-    ... "2020/01/21 03:00:00",
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
     ... "D:/nemosis_cache")
 
     Arguments:
@@ -277,7 +277,7 @@ if __name__ == "__main__":
         password="1234abcd",
         port=5433,
     )
-    for m in [8, 9, 10, 11]:
+    for m in [1]:
         start = "2020/{}/01 00:00:00".format((str(m)).zfill(2))
         end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
         print(start)
@@ -286,4 +286,4 @@ if __name__ == "__main__":
         populate_postgres_bid_table(con_string, start, end, raw_data_cache)
         populate_postgres_region_data(con_string, start, end, raw_data_cache)
         populate_postgres_unit_dispatch(con_string, start, end, raw_data_cache)
-    # populate_supabase_duid_info_table(raw_data_cache)
+    populate_postgres_price_bin_edges_table(con_string)
