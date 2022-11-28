@@ -72,7 +72,7 @@ def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
-    combined_bids = fetch_and_preprocess.bid_table(start_date, end_date, raw_data_cache)
+    combined_bids = fetch_and_preprocess.bid_data(start_date, end_date, raw_data_cache)
     insert_data_into_supabase("bidding_data", combined_bids)
 
 
@@ -88,7 +88,7 @@ def populate_supabase_duid_info_table(raw_data_cache):
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
-    duid_info = fetch_and_preprocess.duid_info_table(raw_data_cache)
+    duid_info = fetch_and_preprocess.duid_info(raw_data_cache)
     insert_data_into_supabase("duid_info", duid_info)
 
 

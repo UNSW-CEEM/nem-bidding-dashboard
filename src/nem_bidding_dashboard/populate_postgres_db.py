@@ -123,7 +123,7 @@ def populate_postgres_bid_table(
     ... "2020/01/02 00:00:00",
     ... "D:/nemosis_cache")
     """
-    combined_bids = fetch_and_preprocess.bid_table(start_date, end_date, raw_data_cache)
+    combined_bids = fetch_and_preprocess.bid_data(start_date, end_date, raw_data_cache)
     insert_data_into_postgres(connection_string, "bidding_data", combined_bids)
 
 
@@ -155,7 +155,7 @@ def populate_postgres_duid_info_table(connection_string, raw_data_cache):
         raw_data_cache: Filepath to directory for storing data that is fetched
 
     """
-    duid_info = fetch_and_preprocess.duid_info_table(raw_data_cache)
+    duid_info = fetch_and_preprocess.duid_info(raw_data_cache)
     insert_data_into_postgres(connection_string, "duid_info", duid_info)
 
 

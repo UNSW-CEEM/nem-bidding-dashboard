@@ -8,6 +8,19 @@ def stack_unit_bids(volume_bids, price_bids):
     """Combine volume and price components of energy market offers and reformat them such that each price quantity pair
        is on a separate row of the dataframe.
 
+    Examples:
+    >>> volume_bids = pd.DataFrame(
+    ... columns=["INTERVAL_DATETIME", "SETTLEMENTDATE", "DUID", "BANDAVAIL1", "BANDAVAIL2", "BANDAVAIL3",
+    ...          "BANDAVAIL4", "BANDAVAIL5", "BANDAVAIL6", "BANDAVAIL7", "BANDAVAIL8", "BANDAVAIL9", "BANDAVAIL10"]
+    ... data=[('2020/01/01 00:45:00', '2019/12/31 00:00:00', 'AGLHAL', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)])
+
+    >>> volume_bids = pd.DataFrame(
+    ... columns=["SETTLEMENTDATE", "DUID", "PRICEBAND1", "PRICEBAND2", "PRICEBAND3", "PRICEBAND4", "PRICEBAND5",
+    ...          "PRICEBAND6", "PRICEBAND7", "PRICEBAND8", "PRICEBAND9", "PRICEBAND10"]
+    ... data=[('2019/12/31 00:00:00', 'AGLHAL', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)])
+
+    >>> stack_unit_bids(volume_bids, price_bids)
+
     Arguments:
         volume_bids: pd dataframe containing quantity of bids on a 5 minutely basis. Should have columns
             INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BANDAVAIL1 . . . . BANDAVAIL10
@@ -63,6 +76,20 @@ def stack_unit_bids(volume_bids, price_bids):
 
 def adjust_bids_for_availability(stacked_bids, unit_availability):
     """Adjust bid volumes where the unit availability would restrict a bid from actually being fully dispatched.
+    Starting from the highest bid bands bid volumes are adjusted down until the total bid volume is equal to the
+    availability, if the total bid volume is already equal to or less than availability no adjustments are made.
+
+    Examples:
+    >>> bid_data = pd.DataFrame(
+    ... columns=["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"]
+    ... data=[('2020/01/01 00:45:00', 'AGLHAL', 1, 50, 120),
+    ...       ('2020/01/01 00:45:00', 'AGLHAL', 2, 50, 200)])
+
+    >>> unit_availability = pd.DataFrame(
+    ... columns=["SETTLEMENTDATE", "DUID", "AVAILABILITY"],
+    ... data=['2020/01/01 00:45:00', 'AGLHAL', 80])
+
+    >>> adjust_bids_for_availability(bid_data, unit_availability)
 
     Arguments:
         stacked_bids: pd dataframe containing matched quantity and price pairs on a 5 minutely basis with bid bands on
@@ -71,10 +98,9 @@ def adjust_bids_for_availability(stacked_bids, unit_availability):
             SETTLEMENTDATE, DUID, AVAILABILITY
      Returns:
         pd dataframe containing matched quantity and price pairs on a 5 minutely basis with bid bands on
-        row basis. Bid volumes have been adjusted so total bid volume doesn't exceed unit availability. Should have
-        columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME and BIDPRICE
-
-
+        row basis. An extra column is added in which did volumes have been adjusted so total bid volume doesn't exceed
+        unit availability. Should have columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, BIDVOLUMEADJUSTED and
+        BIDPRICE
     """
 
     bids = stacked_bids.sort_values("BIDBAND")
