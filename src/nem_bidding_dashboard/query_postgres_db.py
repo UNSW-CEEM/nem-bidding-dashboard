@@ -217,12 +217,12 @@ def duid_bids(connection_string, duids, start_date, end_date, resolution):
     """
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
-    query = """SELECT * FROM get_bids_by_unit(
+    query = """SELECT * FROM get_bids_by_unit_v2(
                 '{{{duids}}}',
                 (timestamp '{start_date}'),
                 (timestamp '{end_date}'),
                 '{resolution}'
-                )"""
+                'adjusted')"""
     query = query.format(
         duids=duids, start_date=start_date, end_date=end_date, resolution=resolution
     )

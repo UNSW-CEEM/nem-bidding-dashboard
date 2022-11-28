@@ -170,7 +170,7 @@ BEGIN
   UPDATE region_filtered_dispatch d SET asbidrampupmaxavail = d.maxavail WHERE d.asbidrampupmaxavail > d.maxavail;
   UPDATE region_filtered_dispatch d SET asbidrampdownminavail = 0  WHERE d.asbidrampdownminavail < 0;
 
-  UPDATE region_filtered_dispatch d SET rampupmaxavail = d.availability WHERE d.rampupmaxavail > d.maxavail;
+  UPDATE region_filtered_dispatch d SET rampupmaxavail = d.availability WHERE d.rampupmaxavail > d.availability;
   UPDATE region_filtered_dispatch d SET rampdownminavail = 0 WHERE d.rampdownminavail < 0;
 
   RETURN QUERY SELECT d.interval_datetime,
@@ -190,29 +190,38 @@ $func$;
 """
 
 _create_get_bids_by_unit_function = """
-    CREATE OR REPLACE FUNCTION get_bids_by_unit(duids text[], start_datetime timestamp, end_datetime timestamp,
-                                                resolution text)
+    CREATE OR REPLACE FUNCTION get_bids_by_unit_v2(duids text[], start_datetime timestamp, end_datetime timestamp, resolution text, adjusted text)
       RETURNS TABLE (interval_datetime timestamp, duid text, bidband int, bidvolume float4, bidprice float4)
       LANGUAGE plpgsql AS
     $func$
     BEGIN
+    
       DROP TABLE IF EXISTS time_filtered_bids;
-
+      DROP TABLE IF EXISTS correct_volume_column;
+    
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0
-                                       AND b.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0 AND b.interval_datetime between
+        start_datetime and end_datetime;
       ELSE
        CREATE TEMP TABLE time_filtered_bids as
         SELECT * FROM bidding_data b WHERE b.interval_datetime between start_datetime and end_datetime;
       END IF;
-
-      RETURN QUERY SELECT b.interval_datetime, b.duid, b.bidband, b.bidvolume, b.bidprice FROM time_filtered_bids b
-                                                                                         WHERE b.duid = ANY(duids);
-
+    
+      IF adjusted = 'adjusted' THEN
+        CREATE TEMP TABLE correct_volume_column as
+        SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolumeadjusted as bidvolume, t.bidprice
+          FROM time_filtered_bids t;
+      ELSE
+        CREATE TEMP TABLE correct_volume_column as
+        SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolume, t.bidprice FROM time_filtered_bids t;
+      END IF;
+    
+      RETURN QUERY SELECT b.interval_datetime, b.duid, b.bidband, b.bidvolume, b.bidprice FROM correct_volume_column b WHERE b.duid = ANY(duids);
+      
     END
     $func$;
-    """
+"""
 
 _create_aggregate_dispatch_data_duids_function = """
     CREATE OR REPLACE FUNCTION aggregate_dispatch_data_duids(duids text[], start_datetime timestamp,

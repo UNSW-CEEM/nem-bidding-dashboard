@@ -93,6 +93,8 @@ Returns the unique values in the "unit type" column in the table duid_info.
 
 Args: None
 
+Returns: TABLE ("unit type" text)
+
 ### aggregate_bids_v2(regions text[], start_datetime timestamp, end_datetime timestamp, resolution text, dispatch_type text, adjusted text, tech_types text[])
 Filters and aggregates the data in the table bidding_data. Filters bids by the given regions, start_datetime, 
 end_datetime, resolution, dispatch_type, and tech_type. Bids are then classified into the bins defined in table 
@@ -102,7 +104,17 @@ bidvolume is used.
 
 Examples:
 
-
+```
+SELECT * FROM aggregate_bids_v2(
+             '{"SA", "TAS"}',
+             (timestamp '2020/01/01 00:00:00'),
+             (timestamp '2020/01/01 2:00:00'),
+             'hourly',
+             'Generator',
+             'adjusted',
+             '{}'
+             )
+```
 
 Args: 
 - regions: array of text values, regions to return bids from e.g. QLD, NSW, VIC, SA, TAS
@@ -115,4 +127,123 @@ Otherwise, data for all intervals is returned.
 bidvolume is used.
 - tech_type: array of text values. Used to filter values by "unit type" column in duid_info. If an empty array is 
 provided filtering by this value is not performed.
-  
+
+Returns: TABLE (interval_datetime timestamp, bin_name text, bidvolume float4)
+
+### aggregate_dispatch_data(regions text[], start_datetime timestamp, end_datetime timestamp, resolution text, dispatch_type text, tech_types text[])
+Filters and aggregates the data in the table unit_dispatch. Filters data by the given regions, start_datetime, 
+end_datetime, resolution, dispatch_type, and tech_type. Aggregation is on interval datetime by summing. Before summing
+the column rampupmaxavail is capped at the unit's availability so that the aggregate ramping capability is not
+over represented. Similarly, asbidrampupmaxavail is capped at the unit maxavail value, and the columns 
+asbidrampdownminavail and rampdownminavail are limited to greater than or equal to zero.
+
+
+Examples:
+
+```
+SELECT * FROM aggregate_dispatch_data(
+             '{"SA", "TAS"}',
+             (timestamp '2020/01/01 00:00:00'),
+             (timestamp '2020/01/01 2:00:00'),
+             'hourly',
+             'Generator',
+             '{}'
+             )
+```
+
+Args: 
+- regions: array of text values, regions to return bids from e.g. QLD, NSW, VIC, SA, TAS
+- start_datetime: timestamp, select bids with an interval_datetime equal to or greater than this value
+- end_datetime: timestamp, select bids with an interval_datetime equal to or less than this value
+- resolution: text, if the value "hourly" is provided than only bids with an interval datetime on the hour selected.
+Otherwise, data for all intervals is returned.
+- dispatch_type: text, should be Generator or Load, used to filter bids
+- tech_type: array of text values. Used to filter values by "unit type" column in duid_info. If an empty array is 
+provided filtering by this value is not performed.
+
+Returns: TABLE (interval_datetime timestamp, availability float4, totalcleared float4, finalmw float4,
+asbidrampupmaxavail float4, asbidrampdownminavail float4, rampupmaxavail float4, rampdownminavail float4, 
+pasaavailability float4, maxavail float4)
+
+### get_bids_by_unit_v2(duids text[], start_datetime timestamp, end_datetime timestamp, resolution text, adjusted text)
+Filters the data in the table bidding_data. Filters bids by duid, start_datetime, end_datetime, and 
+resolution. If the adjusted argument is set to "adjusted" then the bid volume is taken from column bidvolumeadjusted, 
+otherwise the column bidvolume is used.
+
+Examples:
+
+```
+SELECT * FROM aggregate_bids_v2(
+             '{"AGLHAL", "HDWF1"}',
+             (timestamp '2020/01/01 00:00:00'),
+             (timestamp '2020/01/01 2:00:00'),
+             'hourly',
+             'adjusted',
+             '{}'
+             )
+```
+
+Args: 
+- duids: array of text values, duids to return bids from.
+- start_datetime: timestamp, select bids with an interval_datetime equal to or greater than this value
+- end_datetime: timestamp, select bids with an interval_datetime equal to or less than this value
+- resolution: text, if the value "hourly" is provided than only bids with an interval datetime on the hour selected.
+Otherwise, data for all intervals is returned.
+- adjusted: text, If "adjusted" then the bid volume is taken from column bidvolumeadjusted, otherwise the column 
+bidvolume is used.
+
+Returns: TABLE (interval_datetime timestamp, duid text, bidband int, bidvolume float4, bidprice float4)
+
+### get_duids_for_stations(stations text[])
+Filters list of duids in duid_info based on a list of station names. Used to update filters on dashboard when the user
+selects a station name.
+
+Examples:
+```SELECT * FROM get_duids_for_stations('{"Adelaide Desalination Plant", "Yawong Wind Farm"}')```
+
+Args:
+- stations: array of text values, stations to get duids of.
+
+Returns: TABLE (duid text)
+
+### get_duids_and_stations(regions text[], start_datetime timestamp, end_datetime timestamp, dispatch_type text, tech_types text[])
+Finds the set of stations and duids with bids in a given set of regions, of a given dispatch_type, tech_type, and
+between a given start_datetime and end_datetime. Used to update duid and station name filters on dashboard.
+
+```
+SELECT * FROM get_duids_and_staions_in_regions_and_time_window_v2(
+  '{"NSW"}', 
+  (timestamp '2020/01/21 00:00:00'), 
+  (timestamp '2020/01/21 02:00:00'), 
+  'Generator', 
+  '{"OCGT"}')
+```
+
+Args: 
+- regions: array of text values, regions to return bids from e.g. QLD, NSW, VIC, SA, TAS
+- start_datetime: timestamp, look for bids with an interval_datetime equal to or greater than this value
+- end_datetime: timestamp, look for bids with an interval_datetime equal to or less than this value
+- dispatch_type: text, should be Generator or Load, used to filter bids
+- tech_type: array of text values. Used to filter values by "unit type" column in duid_info. If an empty array is 
+provided filtering by this value is not performed.
+
+Returns: TABLE (duid text, "station name" text)
+
+
+### aggregate_prices(regions text[], start_datetime timestamp, end_datetime timestamp)
+Filters and aggregates regional energy prices. Filters by regions and between start_datetime and end_datetime. 
+Aggregation is volume weighted.
+
+```
+SELECT * FROM aggregate_prices(
+  '{"NSW", "VIC"}', 
+  (timestamp '2020/03/21 00:00:00'), 
+  (timestamp '2020/03/21 02:00:00'))
+```
+
+Args: 
+- regions: array of text values, regions to return bids from e.g. QLD, NSW, VIC, SA, TAS
+- start_datetime: timestamp, look for bids with an interval_datetime equal to or greater than this value
+- end_datetime: timestamp, look for bids with an interval_datetime equal to or less than this value
+
+Returns: TABLE (settlementdate timestamp, price float)
