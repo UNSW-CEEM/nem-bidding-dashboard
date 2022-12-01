@@ -1,5 +1,6 @@
 from datetime import datetime, date, timedelta 
-from dash import Dash, dcc, html, Input, Output
+import dash
+from dash import Dash, dcc, html, Input, Output, State
 
 import layout_template
 from create_plots import *
@@ -18,7 +19,7 @@ initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
 initial_duration = "Daily"
 
 duid_station_options = get_duid_station_options(initial_start_date_str, initial_regions, initial_duration)
-duid_options = sorted(duid_station_options["DUID"])
+duid_options = sorted(duid_station_options["DUID"])[1:]
 station_options = sorted(list(set(duid_station_options["STATION NAME"])))
 settings_content = [
     html.Div(
@@ -80,6 +81,7 @@ settings_content = [
                 options=duid_options,
                 multi=True,
             ),
+            html.H6("Select Units by Station", className="selector-title"),
             dcc.Dropdown(
                 id="station-dropdown", 
                 value=None,
@@ -104,44 +106,36 @@ graph_content = dcc.Graph(id="graph")
 app.layout = layout_template.build(title, settings_content, graph_content)
 
 
-# @app.callback(
-#     Output("duid-dropdown", "value"),
-#     Output("station-dropdown", "value"),
-#     Input("start-date-picker", "date"),
-#     Input("start-hour-picker", "value"),
-#     Input("start-minute-picker", "value"),
-#     Input("duration-selector", "value"),
-#     Input("station-dropdown", "value"),
-#     Input("duid-dropdown", "value"),
-#     Input("region-checklist", "value"))
-# def update_duids_from_date_region(start_date: str, hour: str, minute: str, duration: str, station: str, duids: list, regions: list):
-#     print("DUID station options callback executed")
-#     print(dash.ctx.triggered)
-
-#     trigger_id = dash.ctx.triggered_id
-#     # if trigger_id and trigger_id == "duid-dropdown":
-#     #     return dash.no_update, None
-
-#     if trigger_id and trigger_id not in ["station-dropdown", "duid-dropdown"]:
-#         print("Not updating duid options")
-#         return dash.no_update, dash.no_update
-
-#     start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
-#     duid_options = get_duid_station_options(start_date, regions, duration)
-#     if station:
-#         print(station)
-#         print(duid_options["STATION NAME"])
-#         duid_options = duid_options.loc[duid_options["STATION NAME"] == station]
-#         duid_options = sorted(duid_options["DUID"])
-#     else:
-#         return dash.no_update, None
+@app.callback(
+    Output("duid-dropdown", "value"),
+    Output("station-dropdown", "value"),
+    Input("station-dropdown", "value"),
+    Input("duid-dropdown", "value"),
+    State("start-date-picker", "date"),
+    State("start-hour-picker", "value"),
+    State("start-minute-picker", "value"),
+    State("duration-selector", "value"),
+    State("region-checklist", "value"))
+def update_duids_from_date_region(station: str, duids: list, start_date: str, hour: str, minute: str, duration: str, regions: list):
+    trigger_id = dash.ctx.triggered_id
+    if trigger_id and trigger_id not in ["station-dropdown", "duid-dropdown"]:
+        return dash.no_update, dash.no_update
     
-#     if duids and sorted(duids) != duid_options:
-#         return duid_options, None
+    if trigger_id == "duid-dropdown":
+        return dash.no_update, None
 
+    start_date = f"{start_date.replace('-', '/')} {hour}:{minute}:00"
+    duid_options = get_duid_station_options(start_date, regions, duration)
+    if station:
+        duid_options = duid_options.loc[duid_options["STATION NAME"] == station]
+        duid_options = sorted(duid_options["DUID"])
+    else:
+        return dash.no_update, None
+    
+    if duids and sorted(duids) != duid_options:
+        return duid_options, None
 
-    # print(f"Amount of duid options: {len(duid_options)}")
-    # return duid_options, dash.no_update
+    return duid_options, dash.no_update
      
      
 """
