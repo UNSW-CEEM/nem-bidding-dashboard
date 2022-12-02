@@ -6,6 +6,7 @@ Electricity Market (NEM).
 import dash
 from dash import Dash, dcc, html, Input, Output, State
 from datetime import datetime, date, timedelta 
+from typing import List, Tuple
 
 import layout_template
 from create_plots import *
@@ -107,38 +108,44 @@ settings_content = [
         ]
     ) 
 ]
-title = 'NEM Bidding Data'
-graph_content = dcc.Graph(id='graph')
+title = ''
+graph_content = dcc.Graph(
+    id='graph',
+    figure={
+        'layout':go.Layout(margin={'t': 20}),
+    }, 
+)
 app.layout = layout_template.build(title, settings_content, graph_content)
 
 
 @app.callback(
     Output('duid-dropdown', 'value'),
     Output('station-dropdown', 'value'),
-    Input('station-dropdown', 'value'),
     Input('duid-dropdown', 'value'),
+    Input('station-dropdown', 'value'),
     State('start-date-picker', 'date'),
     State('start-hour-picker', 'value'),
     State('start-minute-picker', 'value'),
     State('duration-selector', 'value'),
     State('region-checklist', 'value'))
 def update_duids_from_date_region(
+    duids: List[str], 
     station: str, 
-    duids: list, 
     start_date: str, 
     hour: str, 
     minute: str, 
     duration: str, 
-    regions: list
-) -> list:
+    regions: List[str]
+):
+#) -> Tuple[List[str], str]:
     """
     Callback to update the duid dropdown when a station name is selected and 
     remove the value from the station dropdown when the duid options are 
     changed. 
     
     Arguments:
-        station: The currently selected station name in the station dropdown
         duids: List of DUIDs currently selected in the DUID dropdown
+        station: The currently selected station name in the station dropdown
         start_date: Date of initial datetime 
         hour: Hour of initial datetime (in 24 hour format)
         minute: Minute of initial datetime
@@ -152,28 +159,78 @@ def update_duids_from_date_region(
             the 'duid-dropdown' was the component that triggered the callback, 
             this value is empty. 
     """
-    trigger_id = dash.ctx.triggered_id
-    if trigger_id and trigger_id not in ['station-dropdown', 'duid-dropdown']:
+
+    trigger_id = dash.callback_context.triggered_id
+    if not trigger_id:
         return dash.no_update, dash.no_update
     if trigger_id == 'duid-dropdown':
-        return dash.no_update, None
+        if not station:
+            return dash.no_update, dash.no_update
 
-    start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-    duid_options = get_duid_station_options(start_date, regions, duration)
-    if station:
+        start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+        duid_options = get_duid_station_options(start_date, regions, duration)
         duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
         duid_options = sorted(duid_options['DUID'])
-    else:
-        return dash.no_update, None
-    
-    if duids and sorted(duids) != duid_options:
-        return duid_options, None
+        print(f"duids for station: {duid_options}")
+        print(f"duids selected: {duids}")
+        if duids and sorted(duids) != duid_options:
+            
+            return dash.no_update, None
 
-    return duid_options, dash.no_update
+        return dash.no_update, dash.no_update
+
+    if trigger_id == 'station-dropdown':
+        if not station:
+            return dash.no_update, dash.no_update
+    
+        start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+        duid_options = get_duid_station_options(start_date, regions, duration)
+        if station:
+            duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
+            duid_options = sorted(duid_options['DUID'])
+
+        return duid_options, dash.no_update
+        
+    
      
+
+# @app.callback(
+    # Output('duid-dropdown', 'value'),
+    # Input('station-dropdown', 'value'),
+    # State('duid-dropdown', 'value'),
+    # State('start-date-picker', 'date'),
+    # State('start-hour-picker', 'value'),
+    # State('start-minute-picker', 'value'),
+    # State('duration-selector', 'value'),
+    # State('region-checklist', 'value'))
+# def update_duids_from_date_region(
+    # station: str, 
+    # duids: List[str], 
+    # start_date: str, 
+    # hour: str, 
+    # minute: str, 
+    # duration: str, 
+    # regions: List[str]
+# ) -> Tuple[List[str], str]:
+    # """
+    # Update duids based on station name
+    # """
+    # if not station:
+        # return dash.no_update
+    # 
+    # start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+    # duid_options = get_duid_station_options(start_date, regions, duration)
+    # if station:
+        # duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
+        # duid_options = sorted(duid_options['DUID'])
+# 
+    # return duid_options
+
+
      
 @app.callback(
     Output('graph', 'figure'),
+    Output('graph-name', 'children'),
     Input('start-date-picker', 'date'),
     Input('start-hour-picker', 'value'),
     Input('start-minute-picker', 'value'),
@@ -186,8 +243,8 @@ def update(
     hour: str, 
     minute: str, 
     duration: str, 
-    regions: list, 
-    duids: list, 
+    regions: List[str], 
+    duids: List[str], 
     price_demand_checkbox: str
 ) -> Figure:
     """
@@ -220,7 +277,10 @@ def update(
     show_demand = 'Demand' in price_demand_checkbox
     show_price = 'Price' in price_demand_checkbox
     fig = plot_bids(start_date, end_date, resolution, regions, duids, show_demand, show_price)
-    return fig
+    fig = adjust_fig_layout(fig)
+    graph_name = get_graph_name(duids)
+
+    return fig, graph_name
 
 
 if __name__ == '__main__':

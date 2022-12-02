@@ -9,10 +9,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
+from typing import List, Tuple
 from query_supabase import *
 
 
-def get_duid_station_options(start_time: str, regions: list, duration: str) -> pd.DataFrame:
+def get_duid_station_options(
+    start_time: str, regions: List[str], duration: str
+) -> pd.DataFrame:
     """
     Gets the duids and corresponding station names of all units that are 
     based within the given regions and have made bids during the specified 
@@ -35,7 +38,34 @@ def get_duid_station_options(start_time: str, regions: list, duration: str) -> p
         return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time)
 
 
-def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list) -> Figure:
+def adjust_fig_layout(fig: Figure) -> Figure:
+    """
+    Adjusts the layout for a figure. Reduces the top margin of the given figure. 
+
+    Arguments:
+        fig: Plotly express/plotly go figure to format
+    Returns:
+        Formatted figure
+    """
+    fig.update_layout(
+        margin={'t': 20}
+    )
+    return fig
+
+
+def get_graph_name(duids: List[str]):
+    """
+    Returns graph name based on the data being presented. 
+    """
+    if duids:
+        return "Aggregated Bids by Unit"
+    else:
+        return "Aggregated Bids by Region"
+
+
+def plot_duid_bids(
+    start_time: str, end_time: str, resolution: str, duids: List[str]
+) -> Figure:
     """
     Plots a stacked bar chart showing the bid volumes for each unit specified in 
     the 'duids' list. 
@@ -73,6 +103,7 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
             'BIDVOLUME': ':.0f',
         }, 
         custom_data=['BIDPRICE'],
+        range_color=[-1000, 20000], 
     )
 
     fig.update_yaxes(title='Volume (MW)')
@@ -87,10 +118,10 @@ def plot_duid_bids(start_time: str, end_time: str, resolution: str, duids: list)
 
 
 def plot_aggregate_bids(
-    start_time:str, 
-    end_time:str, 
-    resolution:str, 
-    regions:list, 
+    start_time: str, 
+    end_time: str, 
+    resolution: str, 
+    regions: List[str], 
     show_demand: bool
 ) -> Figure:
     """
@@ -154,7 +185,9 @@ def plot_aggregate_bids(
     return fig
 
 
-def add_demand_trace(fig: Figure, start_time: str, end_time: str, regions: list) -> Figure:
+def add_demand_trace(
+    fig: Figure, start_time: str, end_time: str, regions: List[str]
+) -> Figure:
     """
     Adds the line plot showing electricity demand to an existing figure. Plots 
     total demand over the given time period for the specified regions. Relies on 
@@ -187,11 +220,11 @@ def add_demand_trace(fig: Figure, start_time: str, end_time: str, regions: list)
 
 
 def plot_bids(
-    start_time:str, 
-    end_time:str, 
-    resolution:str, 
-    regions:list, 
-    duids: list, 
+    start_time: str, 
+    end_time: str, 
+    resolution: str, 
+    regions: List[str], 
+    duids: List[str], 
     show_demand: bool, 
     show_price: bool
 ) -> Figure:
@@ -222,7 +255,18 @@ def plot_bids(
         fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand)
     
     if show_price:
-        return add_price_subplot(fig, start_time, end_time, regions, resolution)
+        fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
+    
+    fig.update_layout(
+        coloraxis_colorscale=[
+            (0.00, 'blue'), 
+            (0.05, 'purple'), 
+            (0.15, 'red'), 
+            (0.25, 'orange'), 
+            (0.50, 'yellow'), 
+            (1.00, 'green'), 
+        ],
+    )
     return fig
 
 
@@ -231,7 +275,7 @@ def add_price_subplot(
     fig: Figure, 
     start_time: str, 
     end_time: str, 
-    regions: list, 
+    regions: List[str], 
     resolution: str
 ) -> Figure:
     """
@@ -277,7 +321,6 @@ def add_price_subplot(
 
     plot.update_layout(
         {'barmode': 'stack', 'height': 600},
-        coloraxis_colorscale='Plasma',
     )
     plot.update_yaxes(
         title_text='Volume (MW)', 
@@ -286,7 +329,7 @@ def add_price_subplot(
     )
     plot.update_yaxes(
         title_text='Average electricity<br>price ($/MWh)',
-        range=[0, 199],
+        # range=[0, 199],
         row=2, 
         col=1
     )
@@ -295,13 +338,15 @@ def add_price_subplot(
     else:
         plot.update_xaxes(title_text='Time (Bid stack sampled at 5 min intervals)', row=2, col=1)
     
+    fig.update_coloraxes()  
+    
     return plot
 
 
 def plot_price(
     start_time: str, 
     end_time: str, 
-    regions: list, 
+    regions: List[str], 
     resolution: str
 ) -> Figure:
     """
@@ -337,7 +382,5 @@ def plot_price(
     )
     price_graph.update_traces(hovertemplate='%{x}<br>Price: $%{y:.2f}/MWh<extra></extra>')
     return price_graph
-
-
 
     

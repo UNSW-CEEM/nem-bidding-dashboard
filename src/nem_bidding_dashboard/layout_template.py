@@ -21,6 +21,7 @@ def build_banner():
         ],
     )
 
+
 def build_main_app(title:str, settings_content:list, graph_content:list):
     return html.Div(
         id="main-app-container", 
