@@ -373,7 +373,7 @@ def create_db_tables_and_functions(connection_string):
     Args:
         connection_string: str for connecting to PostgresSQL database, the function
         :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL
+        or alternative any string that matches the format allowed by PostgresSQL can be used
         (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
     """
     with psycopg.connect(connection_string) as conn:

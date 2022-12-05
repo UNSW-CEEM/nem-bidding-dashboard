@@ -5,24 +5,27 @@ import postgrest
 postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
     15000  # Change supabase client timeout
 )
+
 import pandas as pd
 from supabase import create_client
-
-"""This module is used for query the database used by the dashboard. It will contain functions for both query the
-   production database for the hosted version of the dashboard and functions for querying an sqlite database for use
-   by user on their local machine."""
 
 
 def region_data(start_date, end_date):
     """
-    Function to query demand data from supabase. For this function to run the supabase url and key need to be configured
+    Query demand and price data from supabase. For this function to run the supabase url and key need to be configured
     as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
     respectively.
 
-    Arguments:
+    Examples:
+    >>> region_data("2022/01/01 00:00:00", "2022/01/02 00:00:00")
+
+    Args:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
+    Returns: pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
+    semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -47,8 +50,7 @@ def aggregate_bids(regions, start_date, end_date, resolution):
     supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> aggregate_bids(
     ... ['QLD', 'NSW', 'SA'],
@@ -110,12 +112,15 @@ def aggregate_bids(regions, start_date, end_date, resolution):
     21  2020-01-21T00:05:00     [500, 1000)    737.000
 
 
-    Arguments:
+    Args:
         regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
+    BIDVOLUME (total volume bid by units within price bin).
     """
 
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
@@ -146,15 +151,14 @@ def duid_bids(duids, start_date, end_date, resolution):
     need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> duid_bids(
     ... ['AGLHAL'],
     ... "2019/01/21 00:00:00",
     ... "2019/01/21 01:00:00",
     ... 'hourly')
-         interval_datetime    duid  bidband  bidvolume  bidprice
+         INTERVAL_DATETIME    DUID  BIDBAND  BIDVOLUME  BIDPRICE
     0  2019-01-21T01:00:00  AGLHAL       10        110  13600.02
     1  2019-01-21T00:00:00  AGLHAL        7         60    562.31
     2  2019-01-21T01:00:00  AGLHAL        7         60    562.31
@@ -166,18 +170,20 @@ def duid_bids(duids, start_date, end_date, resolution):
     ... "2019/01/21 00:00:00",
     ... "2019/01/21 00:05:00",
     ... '5-min')
-         interval_datetime    duid  bidband  bidvolume  bidprice
+         INTERVAL_DATETIME    DUID  BIDBAND  BIDVOLUME  BIDPRICE
     0  2019-01-21T00:00:00  AGLHAL        7         60    562.31
     1  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
     2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
     3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
 
-    Arguments:
+    Args:
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -202,8 +208,7 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
     corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
     variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> stations_and_duids_in_regions_and_time_window(
     ... ['NSW', 'VIC'],
@@ -224,13 +229,14 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
     <BLANKLINE>
     [467 rows x 2 columns]
 
-    Arguments:
+    Args:
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
     Returns:
-        pd dataframe
+        pd.DataFrame with columns DUID and STATION NAME
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -258,8 +264,7 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
     need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> get_aggregated_dispatch_data(
     ... ['NSW'],
@@ -290,6 +295,13 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+    interval).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -313,15 +325,14 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
 def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolution):
     """
     Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
+    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution is chosen
     only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
     need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
-    >>> duid_bids(
+    >>> get_aggregated_dispatch_data_by_duids(
     ... ['AGLHAL'],
     ... "2019/01/21 00:00:00",
     ... "2019/01/21 01:00:00",
@@ -333,7 +344,7 @@ def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolutio
     3  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
 
 
-    >>> duid_bids(
+    >>> get_aggregated_dispatch_data_by_duids(
     ... ['AGLHAL'],
     ... "2019/01/21 00:00:00",
     ... "2019/01/21 00:05:00",
@@ -344,12 +355,19 @@ def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolutio
     2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
     3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
 
-    Arguments:
+    Args:
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+    interval).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -372,11 +390,10 @@ def get_aggregated_vwap(regions, start_date, end_date):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
-    region selected For this function to run the supabase url and key need to be configured as environment variables
+    region selected. For this function to run the supabase url and key need to be configured as environment variables
     labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> get_aggregated_vwap(
     ... ['NSW1'],
@@ -397,11 +414,13 @@ def get_aggregated_vwap(regions, start_date, end_date):
     11  2020-01-21T00:00:00  48.52000
     12  2020-01-21T00:05:00  60.72276
 
-    Arguments:
+    Args:
         regions: list[str] of region to aggregate.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
+    Returns: pd.DataFrame with column SETTLEMENTDATE and PRICE
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -425,8 +444,7 @@ def unit_types():
     configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
     respectively.
 
-    Examples
-    --------
+    Examples:
 
     >>> unit_types()
                      UNIT TYPE
@@ -446,6 +464,8 @@ def unit_types():
     13              Brown Coal
     14      Run of River Hydro
 
+    Returns: pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
+    :py:preprocessing.tech_namer_by_row)
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")

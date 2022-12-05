@@ -67,7 +67,7 @@ Columns:
 - interval_datetime timestamp
 - duid text
 - availability float4
-  (unit availability in MW, presumed to be the lesser of the unit bid availability (MAXAVAIL column) and forecast 
+  (unit availability in MW, presumed to be the lesser of the unit bid availability (MAXAVAIL column)) and forecast 
   availability for variable renewables, so for non-variable renewables should be equal to MAXAVAIL)
 - totalcleared float4 (The dispatch target for unit at the end of interval)
 - finalmw float4 (The SCADA generation/consumption value recorded for this unit at the end of the interval)

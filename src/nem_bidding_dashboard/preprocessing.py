@@ -136,6 +136,13 @@ def remove_number_from_region_names(region_column, data):
     Removes the trailing 1 from region names in the specified column. Names in input data are expected to be of the
     format NSW1, QLD1 etc. and the names in the output format will be NSW, QLD etc.
 
+    Examples:
+    >>> region_data = pd.DataFrame({
+    ... 'region': ['QLD1', 'TAS1'],
+    ... 'dummy_values': [55.7, 102.9]})
+
+    >>> remove_number_from_region_names('region', region_data)
+
     Arguments:
         region_column: str the name of the column containing the region names.
         data: pd dataframe with a column called the value of region_column.
@@ -148,8 +155,18 @@ def remove_number_from_region_names(region_column, data):
 
 def tech_namer_by_row(fuel, tech_descriptor, dispatch_type):
     """
-    Create a name for generation and loads using custom logic applied to the fuel type, technology descriptor, and
-    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file.
+    Create a name for generation and loads using custom logic that considers the fuel type, technology descriptor, and
+    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file. See the
+    `source code <https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/6468e6b5506c778d12b3d3653af1cf11bd28807b/src/nem_bidding_dashboard/preprocessing.py#L123>`_
+    for logic that this function applies:
+
+    Examples:
+    >>> tech_namer_by_row("Natural Gas", "Steam Sub-Critical", "Generator")
+
+    >>> tech_namer_by_row("solar", "PV - Tracking", "Generator")
+
+    >>> tech_namer_by_row("-", "Battery", "Load")
+
 
     Arguments:
         fuel: str should be the value from the column 'Fuel Source - Descriptor'
@@ -196,7 +213,9 @@ def tech_namer_by_row(fuel, tech_descriptor, dispatch_type):
 def tech_namer(duid_info):
     """
     Create a name for generation and load unit using custom logic applied to the fuel type, technology descriptor, and
-    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file.
+    dispatch type supplied by AEMO in the NEM Registration and Exemption List.xls file. See the
+    `source code <https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/6468e6b5506c778d12b3d3653af1cf11bd28807b/src/nem_bidding_dashboard/preprocessing.py#L123>`_
+    for logic that this function applies:
 
     Arguments:
         duid_info: pd dataframe with columns 'FUEL SOURCE - DESCRIPTOR', 'TECHNOLOGY TYPE - DESCRIPTOR' and
@@ -216,6 +235,19 @@ def tech_namer(duid_info):
 
 
 def hard_code_fix_fuel_source_and_tech_errors(duid_data):
+    """
+    Where NA values occur in columns FUEL SOURCE - DESCRIPTOR or TECHNOLOGY TYPE - DESCRIPTOR replace these with the
+    value '-'. This function is used to clean data before passing to :py:tech_namer.
+
+    Args:
+        duid_data: pd.DataFrame containing at least the columns FUEL SOURCE - DESCRIPTOR and
+        TECHNOLOGY TYPE - DESCRIPTOR
+
+    Returns:
+        pd.DataFrame with the same columns as input data. Columns FUEL SOURCE - DESCRIPTOR and
+        TECHNOLOGY TYPE - DESCRIPTOR have NA values replaced with '-'.
+
+    """
     duid_data.loc[
         duid_data["FUEL SOURCE - DESCRIPTOR"].isna(), "FUEL SOURCE - DESCRIPTOR"
     ] = "-"
@@ -226,6 +258,59 @@ def hard_code_fix_fuel_source_and_tech_errors(duid_data):
 
 
 def calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics):
+    """
+    Calculate some additional values associated with unit dispatch. These are used to populate the database table
+    unit_dispatch and should be helpful in understanding unit dispatch outcomes, e.g. show when a plant is limited
+    by its ramp rate, or if a unit's availability is the same as the availability submitted for the PASA process
+    indicating that output is probably limited by a technical constraint.
+
+    Examples:
+    >>> as_bid_metrics = pd.DataFrame({
+    ... 'INTERVAL_DATETIME': ['2022/01/01 00:00:00', '2022/01/01 00:05:00', '2022/01/01 00:10:00'],
+    ... 'DUID': ['AGLHAL', 'AGLHAL', 'AGLHAL'],
+    ... 'ROCUP': [10, 15, 60],
+    ... 'ROCDOWN': [20, 25, 30],
+    ... 'MAXAVAIL': [100, 90,  105],
+    ... 'PASAAVAILBILITY': [120, 90, 110],
+    ... })
+
+    >>> as_bid_metrics
+
+    >>> after_dispatch_metrics = pd.DataFrame({
+    ... 'SETTLEMENTDATE': ['2022/01/01 00:00:00', '2022/01/01 00:05:00', '2022/01/01 00:10:00'],
+    ... 'DUID': ['AGLHAL', 'AGLHAL', 'AGLHAL'],
+    ... 'RAMPUPRATE': [9*60, 14*60, 50*60],
+    ... 'RAMPDOWNRATE': [18*60, 24*60, 28*60],
+    ... 'AVAILABILITY': [100, 90,  105],
+    ... 'INITIALMW': [80.1, 88.9,  84.5],
+    ... 'TOTALCLEARED': [80, 90,  85],
+    ...})
+
+
+    >>> after_dispatch_metrics
+
+    >>> calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics)
+
+    Args:
+        as_bid_metrics: pd.DataFrame containing values submitted by unit's as part of the bidding process. Should
+        contain columns INTERVAL_DATETIME, DUID, ROCUP (ramp up rate in MW per min), ROCDOWN (ramp down rate in MW per
+        min), MAXAVAIL (limit the unit can be dispatched up to), PASAAVAILABILITY (The technical maximum availability of
+        unit given 24h notice, not used in dispatch)
+        after_dispatch_metrics: pd.DataFrame containing values calculated by AEMO as part of the dispatch process.
+        Should contain columns SETTLEMENTDATE, DUID, AVAILABILITY (presumed to be the lesser of the unit bid
+        availability (MAXAVAIL column) and unit forecast availability for variable renewables), RAMPUPRATE, RAMPDOWNRATE
+        (lesser of bid and telemetry ramp rates, MW per hour), INITIALMW (operating level of unit at start of dispatch
+        interval), TOTALCLEARED (dispatch target for unit to ramp to by end of dispatch interval).
+
+    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, DUID, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+    interval).
+    """
+
+
     after_dispatch_metrics = after_dispatch_metrics.rename(
         {"SETTLEMENTDATE": "INTERVAL_DATETIME"}, axis=1
     )

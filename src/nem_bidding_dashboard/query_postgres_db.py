@@ -5,8 +5,11 @@ from psycopg.rows import dict_row
 
 def run_query_return_dataframe(connection_string, query):
     """
-    Examples
-    --------
+    Sends an arbitary query to the specified postgres database and return the result as a pd.DataFrame. Should only be
+    used for queries that return a result as a table. Handles opening and closing connection to database.
+
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -30,6 +33,15 @@ def run_query_return_dataframe(connection_string, query):
     9     ARWF1    VIC  ...                Wind             Ararat Wind Farm
     <BLANKLINE>
     [10 rows x 7 columns]
+
+    Args:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        query: str which is postgres select query
+
+    Returns: pd.DataFrame column as per the query provided
     """
     with psycopg.connect(connection_string) as conn:
         with conn.cursor(row_factory=dict_row) as cur:
@@ -42,12 +54,10 @@ def run_query_return_dataframe(connection_string, query):
 
 def region_data(connection_string, start_date, end_date):
     """
-    Function to query demand data from supabase. For this function to run the supabase url and key need to be configured
-    as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
-    respectively.
+    Function to query demand and price data from a postgres database.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -74,9 +84,16 @@ def region_data(connection_string, start_date, end_date):
     9 2020-01-01 00:10:00      VIC      4224.61  64.83524
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
+    Returns: pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
+    semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
     """
     query = "select * from demand_data where settlementdate >= '{start_date}' and settlementdate <= '{end_date}'"
     query = query.format(start_date=start_date, end_date=end_date)
@@ -86,14 +103,12 @@ def region_data(connection_string, start_date, end_date):
 
 def aggregate_bids(connection_string, regions, start_date, end_date, resolution):
     """
-    Function to query bidding data from supabase. Data is filter according to the regions and time window provided, it
-    is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute resolution. If a hourly
-    resolution is chosen only bid for 5 minute interval ending on the hour are returned. For this function to run the
-    supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query and aggregate bidding data from postgres database. Data is filter according to the regions and
+    time window provided, it is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute
+    resolution. If an hourly resolution is chosen only bid for 5 minute interval ending on the hour are returned.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -144,11 +159,18 @@ def aggregate_bids(connection_string, regions, start_date, end_date, resolution)
 
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
+    BIDVOLUME (total volume bid by units within price bin).
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
@@ -170,14 +192,12 @@ def aggregate_bids(connection_string, regions, start_date, end_date, resolution)
 
 def duid_bids(connection_string, duids, start_date, end_date, resolution):
     """
-    Function to query bidding data from supabase. Data is filter according to the regions and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
-    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
-    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query bidding data from a postgres database. Data is filter according to the regions and time window
+    provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution
+    is chosen only bid for 5 minute interval ending on the hour are returned.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -209,11 +229,17 @@ def duid_bids(connection_string, duids, start_date, end_date, resolution):
     1 2020-01-01 00:05:00  AGLHAL       10      195.0  13646.22
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
@@ -235,11 +261,10 @@ def stations_and_duids_in_regions_and_time_window(
 ):
     """
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
-    corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
-    variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    corresponding Station Names.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -270,12 +295,17 @@ def stations_and_duids_in_regions_and_time_window(
     [467 rows x 2 columns]
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
     Returns:
-        pd dataframe
+        pd.DataFrame with columns DUID and STATION NAME
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
@@ -295,14 +325,12 @@ def get_aggregated_dispatch_data(
     connection_string, regions, start_date, end_date, resolution
 ):
     """
-    Function to query dispatch data from supabase. Data is filter according to the regions and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
-    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
-    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query dispatch data from a postgres database. Data is filter according to the regions and time window
+    provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is
+    chosen only bid for 5 minute interval ending on the hour are returned.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -336,11 +364,22 @@ def get_aggregated_dispatch_data(
     [1 rows x 10 columns]
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+    interval).
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
@@ -363,14 +402,12 @@ def get_aggregated_dispatch_data_by_duids(
     connection_string, duids, start_date, end_date, resolution
 ):
     """
-    Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
-    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
-    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query dispatch data from a postgres database. Data is filter according to the duids and time window
+    provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is
+    chosen only bid for 5 minute interval ending on the hour are returned.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -404,11 +441,22 @@ def get_aggregated_dispatch_data_by_duids(
     [1 rows x 10 columns]
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         duids: list[str] of duids to return in result.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         resolution: str 'hourly' or '5-min'
+
+    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+    interval).
     """
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
@@ -432,8 +480,8 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
     region selected For this function to run the supabase url and key need to be configured as environment variables
     labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -463,10 +511,16 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
     11 2020-01-01 00:15:00  49.01042
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         regions: list[str] of region to aggregate.
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
+
+    Returns: pd.DataFrame with column SETTLEMENTDATE and PRICE
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
@@ -482,12 +536,10 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
 
 def unit_types(connection_string):
     """
-    Function to query distinct unit types from supabase. For this function to run the supabase url and key need to be
-    configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
-    respectively.
+    Function to query distinct unit types from postgres database.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -515,6 +567,14 @@ def unit_types(connection_string):
     13              Brown Coal
     14      Run of River Hydro
 
+    Args:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+
+    Returns: pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
+    :py:preprocessing.tech_namer_by_row)
     """
     query = """SELECT * FROM distinct_unit_types()"""
     data = run_query_return_dataframe(connection_string, query)

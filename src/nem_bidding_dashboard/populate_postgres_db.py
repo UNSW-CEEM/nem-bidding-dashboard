@@ -15,11 +15,13 @@ import pytz
 
 
 def insert_data_into_postgres(connection_string, table_name, data):
-    """Insert data into the supabase database. For this function to run the supabase url and key need to be configured
-    as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY
-    respectively.
+    """Insert data into the postgres database.
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         table_name: str which is the name of the table in the supabase database
         data: pd dataframe of data to be uploaded
     """
@@ -57,19 +59,11 @@ def populate_postgres_region_data(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
-    Function to populate database table containing electricity demand and price data by region. The only pre-processing
-    done is filtering out the intervention interval rows associated with the dispatch target runs, leaving just the
-    pricing run data. For this function to run the supabase url and key need to be configured as environment variables
-    labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing electricity demand and price data by region. Data is preped for
+    loading by the function :py:fetch_and_preprocess.define_and_return_price_bins.
 
-    Arguments:
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
-        raw_data_cache: Filepath to directory for storing data that is fetched
+    Examples:
 
-    Examples
-    --------
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -84,6 +78,16 @@ def populate_postgres_region_data(
     ... "2020/01/01 00:00:00",
     ... "2020/01/02 00:00:00",
     ... "D:/nemosis_cache")
+
+    Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+            set to "00:00:00:)
+        end_date: Ending datetime, formatted identical to start_date
+        raw_data_cache: Filepath to directory for storing data that is fetched
     """
 
     regional_data = fetch_and_preprocess.region_data(
@@ -92,22 +96,25 @@ def populate_postgres_region_data(
     insert_data_into_postgres(connection_string, "demand_data", regional_data)
 
 
-def populate_postgres_bid_table(
+def populate_postgres_bid_data(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
-    Function to populate database table containing bidding data by unit. For this function to run the supabase url and
-    key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing bidding data by unit. Data is preped for loading by the
+    function :py:fetch_and_preprocess.bid_data.
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
         raw_data_cache: Filepath to directory for storing data that is fetched
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -117,7 +124,7 @@ def populate_postgres_bid_table(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_bid_table(
+    >>> populate_postgres_bid_data(
     ... con_string,
     ... "2020/01/01 00:00:00",
     ... "2020/01/02 00:00:00",
@@ -127,14 +134,13 @@ def populate_postgres_bid_table(
     insert_data_into_postgres(connection_string, "bidding_data", combined_bids)
 
 
-def populate_postgres_duid_info_table(connection_string, raw_data_cache):
+def populate_postgres_duid_info(connection_string, raw_data_cache):
     """
-    Function to populate database table containing bidding data by unit. For this function to run
-    the supabase url and key need to be configured as environment variables labeled
-    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing bidding data by unit. Data is preped for loading by the
+    function :py:fetch_and_preprocess.duid_info.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -144,11 +150,15 @@ def populate_postgres_duid_info_table(connection_string, raw_data_cache):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_duid_info_table(
+    >>> populate_postgres_duid_info(
     ...  con_string,
     ... "D:/nemosis_cache",)
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
@@ -163,12 +173,11 @@ def populate_postgres_unit_dispatch(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
-    Function to populate database table containing unit time series metrics. For this function to run the supabase url
-    and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing unit time series metrics. Data is preped for loading by the
+    function :py:fetch_and_preprocess.unit_dispatch.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -185,6 +194,10 @@ def populate_postgres_unit_dispatch(
     ... "D:/nemosis_cache")
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
             set to "00:00:00:)
         end_date: Ending datetime, formatted identical to start_date
@@ -200,12 +213,10 @@ def populate_postgres_unit_dispatch(
 
 def populate_postgres_price_bin_edges_table(connection_string):
     """
-    Function to populate database table containing bin definitions for aggregating bids. For this function to run the
-    supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing bin definitions for aggregating bids.
 
-    Examples
-    --------
+    Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -219,7 +230,10 @@ def populate_postgres_price_bin_edges_table(connection_string):
     ... con_string)
 
     Arguments:
-        None
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
     """
     price_bins = fetch_and_preprocess.define_and_return_price_bins()
     insert_data_into_postgres(connection_string, "price_bins", price_bins)
@@ -227,10 +241,14 @@ def populate_postgres_price_bin_edges_table(connection_string):
 
 def populate_postgres_all_tables_two_most_recent_market_days(connection_string, cache):
     """
-    Upload data to supabase for a window starting at 4 am of the current day and going back 48 hrs. Upload is
+    Load data to postgres database for a window starting at 4 am of the current day and going back 48 hrs. Loading is
     performed for all tables.
 
     Arguments:
+        connection_string: str for connecting to PostgresSQL database, the function
+        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
+        or alternative any string that matches the format allowed by PostgresSQL can be used
+        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
         cache: str the directory to use for caching data prior to upload.
     """
     current_time = datetime.now(pytz.timezone("Etc/GMT-10"))
@@ -251,13 +269,13 @@ def populate_postgres_all_tables_two_most_recent_market_days(connection_string, 
         end_date=start_today,
         raw_data_cache=cache,
     )
-    populate_postgres_bid_table(
+    populate_postgres_bid_data(
         connection_string=connection_string,
         start_date=two_days_before_today,
         end_date=start_today,
         raw_data_cache=cache,
     )
-    populate_postgres_duid_info_table(
+    populate_postgres_duid_info(
         connection_string=connection_string, raw_data_cache=cache
     )
     populate_postgres_unit_dispatch(
@@ -282,8 +300,8 @@ if __name__ == "__main__":
         end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
         print(start)
         print(end)
-        populate_postgres_duid_info_table(con_string, raw_data_cache)
-        populate_postgres_bid_table(con_string, start, end, raw_data_cache)
+        populate_postgres_duid_info(con_string, raw_data_cache)
+        populate_postgres_bid_data(con_string, start, end, raw_data_cache)
         populate_postgres_region_data(con_string, start, end, raw_data_cache)
         populate_postgres_unit_dispatch(con_string, start, end, raw_data_cache)
     populate_postgres_price_bin_edges_table(con_string)

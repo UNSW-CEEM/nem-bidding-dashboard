@@ -43,10 +43,17 @@ def insert_data_into_supabase(table_name, data):
 
 def populate_supabase_region_data(start_date, end_date, raw_data_cache):
     """
-    Function to populate database table containing electricity demand and price data by region. The only pre-processing
-    done is filtering out the intervention interval rows associated with the dispatch target runs, leaving just the
-    pricing run data. For this function to run the supabase url and key need to be configured as environment variables
-    labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    Function to populate database table containing electricity demand and price data by region. For this function to run
+    the supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
+    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively. Data is preped for loading by the function
+    :py:fetch_and_preprocess.region_data.
+
+    Examples:
+
+    >>> populate_supabase_region_data(
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
+    ... "D:/nemosis_cache")
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -60,11 +67,19 @@ def populate_supabase_region_data(start_date, end_date, raw_data_cache):
     insert_data_into_supabase("demand_data", regional_data)
 
 
-def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
+def populate_supabase_bid_data(start_date, end_date, raw_data_cache):
     """
     Function to populate database table containing bidding data by unit. For this function to run the supabase url and
     key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively. Data is preped for loading by the function
+    :py:fetch_and_preprocess.bid_data.
+
+    Examples:
+
+    >>> populate_supabase_bid_data(
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
+    ... "D:/nemosis_cache")
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -76,11 +91,19 @@ def populate_supabase_bid_table(start_date, end_date, raw_data_cache):
     insert_data_into_supabase("bidding_data", combined_bids)
 
 
-def populate_supabase_duid_info_table(raw_data_cache):
+def populate_supabase_duid_info(raw_data_cache):
     """
     Function to populate database table containing bidding data by unit. For this function to run
     the supabase url and key need to be configured as environment variables labeled
-    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively. Data is preped for loading by
+    the function :py:fetch_and_preprocess.duid_info.
+
+    Examples:
+
+    >>> populate_supabase_duid_info(
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
+    ... "D:/nemosis_cache")
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -96,7 +119,15 @@ def populate_supabase_unit_dispatch(start_date, end_date, raw_data_cache):
     """
     Function to populate database table containing unit time series metrics. For this function to run the supabase url
     and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively. Data is preped for loading by the function
+    :py:fetch_and_preprocess.unit_dispatch.
+
+    Examples:
+
+    >>> populate_supabase_unit_dispatch(
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/02 00:00:00",
+    ... "D:/nemosis_cache")
 
     Arguments:
         start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
@@ -114,10 +145,12 @@ def populate_supabase_price_bin_edges_table():
     """
     Function to populate database table containing bin definitions for aggregating bids. For this function to run the
     supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively.
+    SUPABASE_BIDDING_DASHBOARD_WRITE_KEY respectively. Data is preped for loading by the function
+    :py:fetch_and_preprocess.region_data.
 
-    Arguments:
-        None
+    Examples:
+
+    >>> populate_supabase_price_bin_edges_table()
     """
     price_bins = fetch_and_preprocess.define_and_return_price_bins()
     insert_data_into_supabase("price_bins", price_bins)
@@ -127,6 +160,11 @@ def populate_supabase_all_tables_two_most_recent_market_days(cache):
     """
     Upload data to supabase for a window starting at 4 am of the current day and going back 48 hrs. Upload is
     performed for all tables.
+
+    Examples:
+
+    >>> populate_supabase_all_tables_two_most_recent_market_days(
+    ... "D:/nemosis_cache")
 
     Arguments:
         cache: str the directory to use for caching data prior to upload.
@@ -146,10 +184,10 @@ def populate_supabase_all_tables_two_most_recent_market_days(cache):
     populate_supabase_region_data(
         start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
     )
-    populate_supabase_bid_table(
+    populate_supabase_bid_data(
         start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
     )
-    populate_supabase_duid_info_table(raw_data_cache=cache)
+    populate_supabase_duid_info(raw_data_cache=cache)
     populate_supabase_unit_dispatch(
         start_date=two_days_before_today, end_date=start_today, raw_data_cache=cache
     )
@@ -162,9 +200,9 @@ if __name__ == "__main__":
     #     end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
     #     print(start)
     #     print(end)
-    #     populate_supabase_duid_info_table(raw_data_cache)
-    #     populate_supabase_bid_table(start, end, raw_data_cache)
+    #     populate_supabase_duid_info(raw_data_cache)
+    #     populate_supabase_bid_data(start, end, raw_data_cache)
     #     populate_supabase_region_data(start, end, raw_data_cache)
     #     populate_supabase_unit_dispatch(start, end, raw_data_cache)
-    # populate_supabase_duid_info_table(raw_data_cache)
+    # populate_supabase_duid_info(raw_data_cache)
     populate_supabase_all_tables_two_most_recent_market_days(raw_data_cache)
