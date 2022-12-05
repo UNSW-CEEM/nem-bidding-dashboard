@@ -21,6 +21,7 @@ def build_banner():
         ],
     )
 
+
 def build_main_app(title:str, settings_content:list, graph_content:list):
     return html.Div(
         id="main-app-container", 
@@ -36,14 +37,6 @@ def build_main_app(title:str, settings_content:list, graph_content:list):
                 id="graph-selectors", 
                 children=settings_content,
             ), 
-            html.Div(
-                html.Button(
-                    "Update Graph", 
-                    id="update-graph-button",
-                    n_clicks=0,
-                ), 
-                id="update-graph-div",
-            )
         ]
     )
 
