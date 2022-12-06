@@ -2,3 +2,5 @@
 from importlib.metadata import version
 
 __version__ = version("nem_bidding_dashboard")
+
+import postgress_helpers

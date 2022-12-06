@@ -9,7 +9,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
-from typing import List, Tuple
+from typing import List
 
 import query_supabase_db
 

@@ -10,7 +10,7 @@ def run_query_return_dataframe(connection_string, query):
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -58,7 +58,7 @@ def region_data(connection_string, start_date, end_date):
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -109,7 +109,7 @@ def aggregate_bids(connection_string, regions, start_date, end_date, resolution)
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -198,7 +198,7 @@ def duid_bids(connection_string, duids, start_date, end_date, resolution):
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -265,7 +265,7 @@ def stations_and_duids_in_regions_and_time_window(
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -331,7 +331,7 @@ def get_aggregated_dispatch_data(
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -408,7 +408,7 @@ def get_aggregated_dispatch_data_by_duids(
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -482,7 +482,7 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',
@@ -540,7 +540,7 @@ def unit_types(connection_string):
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from src.nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
     ... hostname='localhost',

@@ -359,6 +359,7 @@ def create_db_tables_and_functions(connection_string):
     add data to the database.
 
     Examples:
+
     >>> from nem_bidding_dashboard import postgress_helpers
 
     >>> con_string = postgress_helpers.build_connection_string(
@@ -371,10 +372,11 @@ def create_db_tables_and_functions(connection_string):
     >>> create_db_tables_and_functions(con_string)
 
     Args:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:postgress_helpers.build_connection_string
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
+
     """
     with psycopg.connect(connection_string) as conn:
         with conn.cursor() as cur:

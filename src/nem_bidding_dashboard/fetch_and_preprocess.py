@@ -1,6 +1,7 @@
-import fetch_data
 import pandas as pd
-import preprocessing
+
+from . import preprocessing
+from . import fetch_data
 
 
 def region_data(start_date, end_date, raw_data_cache):
@@ -14,7 +15,7 @@ def region_data(start_date, end_date, raw_data_cache):
     Examples:
     >>> region_data(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 01:00:00',
     ... 'D:/nemosis_data_cache')
 
     Args:
@@ -53,8 +54,22 @@ def bid_data(start_date, end_date, raw_data_cache):
     Examples:
     >>> bid_data(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
+           INTERVAL_DATETIME      DUID  ...  BIDVOLUMEADJUSTED  BIDPRICE
+    0    2020-01-01 00:05:00    BALBL1  ...                0.0    -48.06
+    1    2020-01-01 00:05:00    RT_SA4  ...                0.0  -1000.00
+    2    2020-01-01 00:05:00    RT_SA5  ...                0.0  -1000.00
+    3    2020-01-01 00:05:00    RT_SA6  ...                0.0  -1000.00
+    4    2020-01-01 00:05:00   RT_TAS1  ...                0.0  -1000.00
+    ..                   ...       ...  ...                ...       ...
+    523  2020-01-01 00:05:00   GSTONE6  ...                0.0  13557.81
+    524  2020-01-01 00:05:00   GUTHEGA  ...               67.0  13253.52
+    525  2020-01-01 00:05:00  JBUTTERS  ...                0.0  12309.16
+    526  2020-01-01 00:05:00   GSTONE1  ...                0.0  13557.81
+    527  2020-01-01 00:05:00     LBBG1  ...               25.0  14585.34
+    <BLANKLINE>
+    [528 rows x 6 columns]
 
     Args:
        start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
@@ -126,7 +141,7 @@ def unit_dispatch(start_date, end_date, raw_data_cache):
     Examples:
     >>> unit_dispatch(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 01:00:00',
     ... 'D:/nemosis_data_cache')
 
     Args:

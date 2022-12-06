@@ -6,8 +6,7 @@ Electricity Market (NEM).
 
 import dash
 from dash import Dash, dcc, html, Input, Output, State
-from datetime import datetime, date, timedelta 
-from typing import List, Tuple
+from datetime import date
 
 import layout_template
 from create_plots import *

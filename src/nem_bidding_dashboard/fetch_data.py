@@ -15,8 +15,14 @@ def get_region_data(start_time, end_time, raw_data_cache):
 
     >>> get_region_data(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
+      REGIONID      SETTLEMENTDATE  TOTALDEMAND       RRP
+    0     NSW1 2020-01-01 00:05:00      7245.31  49.00916
+    1     QLD1 2020-01-01 00:05:00      6095.75  50.81148
+    2      SA1 2020-01-01 00:05:00      1466.53  68.00000
+    3     TAS1 2020-01-01 00:05:00      1010.06  81.79115
+    4     VIC1 2020-01-01 00:05:00      4267.32  65.67826
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
@@ -120,8 +126,22 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
     Examples:
     >>> get_duid_availability_data(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
+             SETTLEMENTDATE     DUID  ...  RAMPDOWNRATE  RAMPUPRATE
+    0   2020-01-01 00:05:00   AGLHAL  ...        720.00      720.00
+    1   2020-01-01 00:05:00   AGLSOM  ...        480.00      480.00
+    2   2020-01-01 00:05:00  ANGAST1  ...        840.00      840.00
+    3   2020-01-01 00:05:00    APD01  ...          0.00        0.00
+    4   2020-01-01 00:05:00    ARWF1  ...        600.00     1200.00
+    ..                  ...      ...  ...           ...         ...
+    305 2020-01-01 00:05:00  YENDWF1  ...       1680.00     1680.00
+    306 2020-01-01 00:05:00    YWPS1  ...        180.00      180.00
+    307 2020-01-01 00:05:00    YWPS2  ...        176.62      176.62
+    308 2020-01-01 00:05:00    YWPS3  ...        177.75      177.75
+    309 2020-01-01 00:05:00    YWPS4  ...        180.00      180.00
+    <BLANKLINE>
+    [310 rows x 7 columns]
 
     Args:
        start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
@@ -218,6 +238,20 @@ def get_duid_data(raw_data_cache):
 
     Examples:
     >>> get_duid_data('D:/nemosis_data_cache')
+                           STATION NAME  ...      DUID
+    0       Adelaide Desalination Plant  ...   ADPBA1G
+    1       Adelaide Desalination Plant  ...   ADPBA1L
+    4       Adelaide Desalination Plant  ...    ADPMH1
+    5       Adelaide Desalination Plant  ...    ADPPV3
+    6       Adelaide Desalination Plant  ...    ADPPV2
+    ..                              ...  ...       ...
+    578  Yarrawonga Hydro Power Station  ...  YWNGAHYD
+    579            Yarwun Power Station  ...  YARWUN_1
+    580              Yatpool Solar Farm  ...    YATSF1
+    581                Yawong Wind Farm  ...    YAWWF1
+    582                Yendon Wind Farm  ...   YENDWF1
+    <BLANKLINE>
+    [490 rows x 6 columns]
 
     Args:
         raw_data_cache: Filepath to directory for caching files downloaded from AEMO
@@ -251,8 +285,22 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
     Examples:
     >>> get_volume_bids(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 01:00:00',
     ... 'D:/nemosis_data_cache')
+            SETTLEMENTDATE      DUID  ... PASAAVAILABILITY   INTERVAL_DATETIME
+    9547382     2019-12-31    AGLHAL  ...            181.0 2020-01-01 00:05:00
+    9547383     2019-12-31    AGLSOM  ...            140.0 2020-01-01 00:05:00
+    9547384     2019-12-31   ANGAST1  ...             44.0 2020-01-01 00:05:00
+    9547385     2019-12-31     APD01  ...              0.0 2020-01-01 00:05:00
+    9547386     2019-12-31     APD01  ...              NaN 2020-01-01 00:05:00
+    ...                ...       ...  ...              ...                 ...
+    9563967     2019-12-31  VSSEL1V1  ...              0.0 2020-01-01 01:00:00
+    9563970     2019-12-31  VSSEL1V1  ...              0.0 2020-01-01 01:00:00
+    9563971     2019-12-31  VSSEL1V1  ...              0.0 2020-01-01 01:00:00
+    9563974     2019-12-31  VSSEL1V1  ...              0.0 2020-01-01 01:00:00
+    9563975     2019-12-31  VSSEL1V1  ...              0.0 2020-01-01 01:00:00
+    <BLANKLINE>
+    [12912 rows x 18 columns]
 
     Args:
        start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
@@ -302,8 +350,22 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
     Examples:
     >>> get_price_bids(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:01:00',
+    ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
+          SETTLEMENTDATE      DUID     BIDTYPE  ...  PRICEBAND8  PRICEBAND9  PRICEBAND10
+    3936      2019-12-31    ASSEL1   LOWER5MIN  ...        8.00       10.00     13000.00
+    3937      2019-12-31    BALBL1      ENERGY  ...      116.11      297.18       942.29
+    3938      2019-12-31    BNGSF2      ENERGY  ...        7.77        8.75         9.72
+    3939      2019-12-31  BRAEMAR2   LOWER5MIN  ...       64.00      128.00       256.00
+    3940      2019-12-31  BRAEMAR2    LOWERREG  ...       64.00      128.00       256.00
+    ...              ...       ...         ...  ...         ...         ...          ...
+    33328     2019-12-31   POAT110  LOWER60SEC  ...      400.00     4300.00     14500.00
+    33329     2019-12-31   POAT110    RAISEREG  ...      500.00     1000.00     14500.00
+    33330     2019-12-31   POAT220    LOWERREG  ...      930.00     4300.00     14500.00
+    33331     2019-12-31    REECE2   LOWER6SEC  ...      400.00     4300.00     14500.00
+    33332     2019-12-31   TRIBUTE    RAISEREG  ...      500.00     1000.00     14500.00
+    <BLANKLINE>
+    [1076 rows x 13 columns]
 
     Args:
        start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned

@@ -1,11 +1,11 @@
 import math
 from datetime import datetime, timedelta
-
-import fetch_and_preprocess
 import numpy as np
-import postgress_helpers
 import psycopg
 import pytz
+
+from . import fetch_and_preprocess
+from . import postgress_helpers
 
 """This module is used for populating the database used by the dashboard. The functions it contains co-ordinate
  fetching historical AEMO data, pre-processing to limit the work done by the dashboard (to improve responsiveness),
@@ -55,7 +55,7 @@ def insert_data_into_postgres(connection_string, table_name, data):
                 conn.commit()
 
 
-def populate_postgres_region_data(
+def region_data(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
@@ -73,7 +73,7 @@ def populate_postgres_region_data(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_region_data(
+    >>> region_data(
     ... con_string,
     ... "2020/01/01 00:00:00",
     ... "2020/01/02 00:00:00",
@@ -96,7 +96,7 @@ def populate_postgres_region_data(
     insert_data_into_postgres(connection_string, "demand_data", regional_data)
 
 
-def populate_postgres_bid_data(
+def bid_data(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
@@ -124,7 +124,7 @@ def populate_postgres_bid_data(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_bid_data(
+    >>> bid_data(
     ... con_string,
     ... "2020/01/01 00:00:00",
     ... "2020/01/02 00:00:00",
@@ -134,7 +134,7 @@ def populate_postgres_bid_data(
     insert_data_into_postgres(connection_string, "bidding_data", combined_bids)
 
 
-def populate_postgres_duid_info(connection_string, raw_data_cache):
+def duid_info(connection_string, raw_data_cache):
     """
     Function to populate database table containing bidding data by unit. Data is preped for loading by the
     function :py:fetch_and_preprocess.duid_info.
@@ -150,7 +150,7 @@ def populate_postgres_duid_info(connection_string, raw_data_cache):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_duid_info(
+    >>> duid_info(
     ...  con_string,
     ... "D:/nemosis_cache",)
 
@@ -169,7 +169,7 @@ def populate_postgres_duid_info(connection_string, raw_data_cache):
     insert_data_into_postgres(connection_string, "duid_info", duid_info)
 
 
-def populate_postgres_unit_dispatch(
+def unit_dispatch(
     connection_string, start_date, end_date, raw_data_cache
 ):
     """
@@ -187,7 +187,7 @@ def populate_postgres_unit_dispatch(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_unit_dispatch(
+    >>> unit_dispatch(
     ... con_string,
     ... "2020/01/01 00:00:00",
     ... "2020/01/02 00:00:00",
@@ -211,7 +211,7 @@ def populate_postgres_unit_dispatch(
     )
 
 
-def populate_postgres_price_bin_edges_table(connection_string):
+def price_bin_edges_table(connection_string):
     """
     Function to populate database table containing bin definitions for aggregating bids.
 
@@ -226,7 +226,7 @@ def populate_postgres_price_bin_edges_table(connection_string):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> populate_postgres_price_bin_edges_table(
+    >>> price_bin_edges_table(
     ... con_string)
 
     Arguments:
@@ -239,7 +239,7 @@ def populate_postgres_price_bin_edges_table(connection_string):
     insert_data_into_postgres(connection_string, "price_bins", price_bins)
 
 
-def populate_postgres_all_tables_two_most_recent_market_days(connection_string, cache):
+def all_tables_two_most_recent_market_days(connection_string, cache):
     """
     Load data to postgres database for a window starting at 4 am of the current day and going back 48 hrs. Loading is
     performed for all tables.
@@ -263,22 +263,22 @@ def populate_postgres_all_tables_two_most_recent_market_days(connection_string, 
     two_days_before_today = (
         two_days_before_today.isoformat().replace("T", " ").replace("-", "/")
     )
-    populate_postgres_region_data(
+    region_data(
         connection_string=connection_string,
         start_date=two_days_before_today,
         end_date=start_today,
         raw_data_cache=cache,
     )
-    populate_postgres_bid_data(
+    bid_data(
         connection_string=connection_string,
         start_date=two_days_before_today,
         end_date=start_today,
         raw_data_cache=cache,
     )
-    populate_postgres_duid_info(
+    duid_info(
         connection_string=connection_string, raw_data_cache=cache
     )
-    populate_postgres_unit_dispatch(
+    unit_dispatch(
         connection_string=connection_string,
         start_date=two_days_before_today,
         end_date=start_today,
@@ -300,8 +300,8 @@ if __name__ == "__main__":
         end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
         print(start)
         print(end)
-        populate_postgres_duid_info(con_string, raw_data_cache)
-        populate_postgres_bid_data(con_string, start, end, raw_data_cache)
-        populate_postgres_region_data(con_string, start, end, raw_data_cache)
-        populate_postgres_unit_dispatch(con_string, start, end, raw_data_cache)
-    populate_postgres_price_bin_edges_table(con_string)
+        duid_info(con_string, raw_data_cache)
+        bid_data(con_string, start, end, raw_data_cache)
+        region_data(con_string, start, end, raw_data_cache)
+        unit_dispatch(con_string, start, end, raw_data_cache)
+    price_bin_edges_table(con_string)
