@@ -14,9 +14,10 @@ from query_supabase import *
 
 
 def get_duid_station_options(
-    start_time: str, regions: List[str], duration: str
+    start_time: str, regions: List[str], duration: str, tech_types: List[str]=[], dispatch_type: str='Generator'
 ) -> pd.DataFrame:
     """
+    TODO
     Gets the duids and corresponding station names of all units that are 
     based within the given regions and have made bids during the specified 
     timeframe, as well as station names of all stations that include such units. 
@@ -32,10 +33,10 @@ def get_duid_station_options(
     start_time_obj = datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
     if duration == 'Daily':
         end_time = (start_time_obj + timedelta(days=1)).strftime('%Y/%m/%d %H:%M:%S')
-        return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time)
+        return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time, tech_types, dispatch_type)
     if duration == 'Weekly':
         end_time = (start_time_obj + timedelta(days=7)).strftime('%Y/%m/%d %H:%M:%S')
-        return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time)
+        return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time, tech_types, dispatch_type)
 
 
 def adjust_fig_layout(fig: Figure) -> Figure:
@@ -64,9 +65,10 @@ def get_graph_name(duids: List[str]):
 
 
 def plot_duid_bids(
-    start_time: str, end_time: str, resolution: str, duids: List[str]
+    start_time: str, end_time: str, resolution: str, duids: List[str], raw_adjusted: str 
 ) -> Figure:
     """
+    TODO
     Plots a stacked bar chart showing the bid volumes for each unit specified in 
     the 'duids' list. 
 
@@ -122,9 +124,13 @@ def plot_aggregate_bids(
     end_time: str, 
     resolution: str, 
     regions: List[str], 
-    show_demand: bool
+    show_demand: bool, 
+    raw_adjusted: str, 
+    tech_types: List[str], 
+    dispatch_type: str
 ) -> Figure:
     """
+    TODO
     Plots a stacked bar chart showing the aggregate bids for the specified 
     regions grouped into a set of predefined bins. If show_demand is True, total 
     electricity demand for all specified regions is plotted on top of the 
@@ -145,7 +151,7 @@ def plot_aggregate_bids(
     Returns: 
         Plotly express figure (stacked bar chart)
     """
-    stacked_bids = aggregate_bids(regions, start_time, end_time, resolution)
+    stacked_bids = aggregate_bids(regions, start_time, end_time, resolution, raw_adjusted, tech_types, dispatch_type)
     stacked_bids = stacked_bids.groupby(['INTERVAL_DATETIME', 'BIN_NAME'], as_index=False).agg({'BIDVOLUME': 'sum'})
     bid_order = [ 
         '[-1000, -100)', '[-100, 0)', '[0, 50)', '[50, 100)', '[100, 200)', 
@@ -226,9 +232,13 @@ def plot_bids(
     regions: List[str], 
     duids: List[str], 
     show_demand: bool, 
-    show_price: bool
+    show_price: bool, 
+    raw_adjusted: str, 
+    tech_types: List[str], 
+    dispatch_type: str
 ) -> Figure:
     """
+    TODO
     Plots volume bids over time based on the given parameters. See 
     plot_duid_bids, plot_aggregate_bids and add_price_subplot for more info. 
 
@@ -250,9 +260,9 @@ def plot_bids(
             show_price is True. 
     """
     if (duids):
-        fig = plot_duid_bids(start_time, end_time, resolution, duids)
+        fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted)
     else: 
-        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand)
+        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, raw_adjusted, tech_types, dispatch_type)
     
     if show_price:
         fig = add_price_subplot(fig, start_time, end_time, regions, resolution)

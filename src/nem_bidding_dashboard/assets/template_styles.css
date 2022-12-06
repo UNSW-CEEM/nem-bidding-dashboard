@@ -361,7 +361,7 @@ body::after {
   border-color: darkgray !important;
   color: white !important;
 }
-
+/*
 .react-numeric-input b:nth-child(2) i {
   border-color: transparent transparent white !important;
 }
@@ -369,51 +369,53 @@ body::after {
 .react-numeric-input b:nth-child(3) i {
   border-color: white transparent transparent !important;
 }
-
+*/
 
 /* Dropdown
 ----------------------------------------------*/
 
-/*
-/^^Dropdown items^^/
+
+/*Dropdown items*/
 .Select-control, .Select-multi-value-wrapper, .Select-menu-outer div {
   background-color: #ffffff;
 }
 
-/^^Dropdown items^^/
+/*Dropdown items*/
 .Select-control, .Select, .Select-value-label, .Select-clear-zone {
-  color: #000000;
+  color: #000000 !important;
+  /* font-size: 10px; */
 }
 
 
-/^^Dropdown items^^/
+/*Dropdown items*/
 .Select-menu-outer {
-  background-color: #242633;
-  border: 1px solid darkgray !important;
+  background-color: #ffffff;
+  border: 1px solid rgb(255, 255, 255) !important;
 }
 
-/^^Dropdown items^^/
+/*Dropdown items*/
 .Select-menu-outer div:hover {
-  background-color: rgba(36, 38, 51, 0.5) !important;
+  background-color: rgba(255, 255, 255, 1) !important;
   cursor: pointer;
 }
 
-/^^Dropdown arrow + delete button^^/
+/*Dropdown arrow + delete button*/
 .Select-control, .Select-control > span {
-  color: white;
-  background: #242633 !important;
+  color: rgb(0, 0, 0);
+  background: #ffffff !important;
 }
 
-/^^Placeholder^^/
+/*Placeholder*/
 .Select.has-value.Select--single > .Select-control .Select-value .Select-value-label, .Select.has-value.is-pseudo-focused.Select--single > .Select-control .Select-value .Select-value-label {
-  color: white !important;
+  color: rgb(0, 0, 0) !important;
+  /* font-size: 14px; */
 }
 
-/^^Placeholder^^/
+/*Placeholder*/
 .Select--single > .Select-control .Select-value, .Select-placeholder {
-  /^^border: 1px solid darkgray;^^/
+  /*border: 1px solid darkgray;*/
   border-radius: 4px;
-  /^^background-color: #242633;^^/
+  /*background-color: #242633;*/
   background-color: #ffffff;
   cursor: pointer;
 }
@@ -422,7 +424,7 @@ body::after {
 .Select.is-focused:not(.is-open) > .Select-control {
   border-color: #91dfd2 !important;
 }
-*/
+
 /* Container
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
@@ -809,7 +811,7 @@ body::after {
   max-width: 95%;
   width: 95%;
   height: 90%;
-  margin: 1rem 2rem;
+  margin: 2rem 5rem 2rem 5rem;
 }
 
 #app-content {
@@ -827,6 +829,7 @@ body::after {
 
 #graph-name {
   font-size: 2rem;
+  margin: 30px 20px 30px 20px;
 }
 
 #graph-selectors {
@@ -857,6 +860,14 @@ body::after {
   gap: 10px;
 }
 
+#datetime-region-selector {
+  margin: 15px 50px 0px 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
 #datetime-picker {
   display: flex;
   flex-direction: row;
@@ -877,6 +888,16 @@ body::after {
   border-radius: 0px;
   padding: 22px;
 }
+
+/* I don't know what's happening here but this sets time picker dropdown's
+  paddings to 4px and all other dropdowns to 10px */
+#start-time-picker.Select--single>.Select-control .Select-value, .Select-placeholder {
+  padding-left: 10px !important;
+}
+.Select--single>.Select-control .Select-value, .Select-placeholder {
+  padding-left: 4px !important;
+}
+
 #start-date-picker {
   max-height: 50px;
   height: 50px;
@@ -886,6 +907,7 @@ body::after {
 
 #start-hour-picker {
   border-radius: 0px;
+  padding-left: 1px !important;
 }
 
 #start-minute-picker {
@@ -894,15 +916,27 @@ body::after {
 }
 
 #region-checklist {
-  margin-bottom: 10px;
+  margin-left: 100px; 
 }
 
 
 #duid-dropdown {
   min-width: 150px;
+  font-size: 12px;
+}
+
+#station-dropdown {
+  min-width: 150px;
+  font-size: 12px
+}
+
+#tech-type-dropdown {
+  min-width: 150px;
+  font-size: 12px
 }
 
 #duration-selector {
+  /* padding-top: 5px; */
   display:inline;
 }
 
@@ -924,4 +958,16 @@ body::after {
 
 .selector-title {
   font-size: 15px;
+}
+
+
+.CalendarDay {
+  padding: 10px 11px !important;
+}
+
+
+.VirtualizedSelectOption {
+  white-space: nowrap; 
+  overflow: clip; 
+  text-overflow: ellipsis; 
 }

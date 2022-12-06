@@ -39,8 +39,9 @@ def region_data(start_date, end_date):
     return data
 
 
-def aggregate_bids(regions, start_date, end_date, resolution):
+def aggregate_bids(regions, start_date, end_date, resolution, raw_adjusted='adjusted', tech_types=[], dispatch_type='Generator'):
     """
+    TODO
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided, it
     is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute resolution. If a hourly
     resolution is chosen only bid for 5 minute interval ending on the hour are returned. For this function to run the
@@ -128,9 +129,9 @@ def aggregate_bids(regions, start_date, end_date, resolution):
             "start_datetime": start_date,
             "end_datetime": end_date,
             "resolution": resolution,
-            "dispatch_type": "Generator",
-            "adjusted": "raw",
-            "tech_types": [],
+            "dispatch_type": dispatch_type,
+            "adjusted": raw_adjusted,
+            "tech_types": tech_types,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -196,8 +197,9 @@ def duid_bids(duids, start_date, end_date, resolution):
     return data
 
 
-def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date):
+def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date, tech_types=[], dispatch_type='Generator'):
     """
+    TODO
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
     corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
     variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
@@ -241,8 +243,8 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
             "regions": regions,
             "start_datetime": start_date,
             "end_datetime": end_date,
-            "dispatch_type": "Generator",
-            "tech_types": [],
+            "dispatch_type": dispatch_type,
+            "tech_types": tech_types,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -458,6 +460,9 @@ def unit_types():
 
 if __name__ == "__main__":
     from time import time
+
+    duids = stations_and_duids_in_regions_and_time_window(["NSW"], "2020/01/21 00:00:00", "2020/01/30 00:00:00")
+    print(duids)
 
     t0 = time()
     data = aggregate_bids(
