@@ -1,7 +1,17 @@
-# nem-bidding-dashboard
+# Introduction
 
-nem-bidding-dashboard is a python package for collating, processing and visualising data relevant to understanding 
-participant behaviour in the Australian National Electricity Market wholesale spot market.
+nem-bidding-dashboard is a web app and python package for collating, processing and visualising data relevant to 
+understanding participant behaviour in the Australian National Electricity Market wholesale spot market.
+
+The web app is intended to make reviewing the bidding behaviour of market participants as easy as possible. Aggregate 
+behaviour can be visualised as at a whole of market, regional, or technology level. Alternatively, the non-aggregated 
+bids of dispatch units, and stations can be visualised.
+
+We have additionally published the code required to run the web app as a python package, so that it can used to help 
+analysis and visualise bidding behaviour in alternative or more sophisticated ways than allowed by the web app.
+
+The development of nem-bidding-dashboard up to December 2022 was funded by the 
+[Digital Grid Futures Institute](https://www.dgfi.unsw.edu.au/)
 
 ## Status
 
@@ -34,7 +44,7 @@ To get the raw data used by nem-bidding-dashboard before preprocessing use funct
 `get_volume_bids`.
 
 ```python
-from src.nem_bidding_dashboard import fetch_data
+from nem_bidding_dashboard import fetch_data
 
 volume_bids = fetch_data.get_volume_bids(
     start_time='2020/01/01 00:00:00',
@@ -55,9 +65,9 @@ To get data in the format stored by nem-bidding-dashboard in the PostgresSQL dat
 `fetch_and_preprocess`, e.g. `bid_data`.
 
 ```python
-from src.nem_bidding_dashboard import fetch_data
+from nem_bidding_dashboard import fetch_and_preprocess
 
-bids = fetch_data.bid_data(
+bids = fetch_and_preprocess.bid_data(
     start_time='2020/01/01 00:00:00',
     end_time='2020/01/01 00:05:00',
     raw_data_cache='D:/nemosis_data_cache')
@@ -76,16 +86,16 @@ print(bids.head(5))
 Create tables for storing processed data and functions, then populate the database with historical data.
 
 ```python
-from src.nem_bidding_dashboard import postgress_helpers, build_postgres, populate_postgres_db
+from nem_bidding_dashboard import postgres_helpers, build_postgres_db, populate_postgres_db
 
-con_string = postgress_helpers.build_connection_string(
+con_string = postgres_helpers.build_connection_string(
     hostname='localhost',
     dbname='bidding_dashboard_db',
     username='bidding_dashboard_maintainer',
     password='1234abcd',
     port=5433)
 
-build_postgres.create_db_tables_and_functions(con_string)
+build_postgres_db.create_db_tables_and_functions(con_string)
 
 raw_data_cache = "D:/nemosis_cache"
 start = "2020/01/01 00:00:00"
@@ -104,9 +114,9 @@ provide querying an aggregation and functionality for each table in the db.
 
 ```python
 
-from src.nem_bidding_dashboard import postgress_helpers, query_postgres_db
+from nem_bidding_dashboard import postgres_helpers, query_postgres_db
 
-con_string = postgress_helpers.build_connection_string(
+con_string = postgres_helpers.build_connection_string(
     hostname='localhost',
     dbname='bidding_dashboard_db',
     username='bidding_dashboard_maintainer',

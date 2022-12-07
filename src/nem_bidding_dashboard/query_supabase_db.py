@@ -10,7 +10,7 @@ import pandas as pd
 from supabase import create_client
 
 
-def region_data(start_date, end_date):
+def region_data(start_time, end_time):
     """
     Query demand and price data from supabase. For this function to run the supabase url and key need to be configured
     as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
@@ -20,12 +20,12 @@ def region_data(start_date, end_date):
     >>> region_data("2022/01/01 00:00:00", "2022/01/02 00:00:00")
 
     Args:
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
-    Returns: pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
-    semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
+    Returns:
+        pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
+        semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -33,8 +33,8 @@ def region_data(start_date, end_date):
     data = (
         supabase.table("demand_data")
         .select("*")
-        .gte("settlementdate", start_date)
-        .lte("settlementdate", end_date)
+        .gte("settlementdate", start_time)
+        .lte("settlementdate", end_time)
         .execute()
     )
     data = pd.DataFrame(data.data)
@@ -42,7 +42,7 @@ def region_data(start_date, end_date):
     return data
 
 
-def aggregate_bids(regions, start_date, end_date, resolution):
+def aggregate_bids(regions, start_time, end_time, resolution):
     """
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided, it
     is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute resolution. If a hourly
@@ -114,13 +114,13 @@ def aggregate_bids(regions, start_date, end_date, resolution):
 
     Args:
         regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
-    BIDVOLUME (total volume bid by units within price bin).
+    Returns:
+        pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
+        BIDVOLUME (total volume bid by units within price bin).
     """
 
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
@@ -130,8 +130,8 @@ def aggregate_bids(regions, start_date, end_date, resolution):
         "aggregate_bids_v2",
         {
             "regions": regions,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
             "resolution": resolution,
             "dispatch_type": "Generator",
             "adjusted": "raw",
@@ -143,7 +143,7 @@ def aggregate_bids(regions, start_date, end_date, resolution):
     return data
 
 
-def duid_bids(duids, start_date, end_date, resolution):
+def duid_bids(duids, start_time, end_time, resolution):
     """
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
@@ -178,12 +178,12 @@ def duid_bids(duids, start_date, end_date, resolution):
 
     Args:
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
+    Returns:
+        pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -192,8 +192,8 @@ def duid_bids(duids, start_date, end_date, resolution):
         "get_bids_by_unit",
         {
             "duids": duids,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
             "resolution": resolution,
         },
     ).execute()
@@ -202,7 +202,7 @@ def duid_bids(duids, start_date, end_date, resolution):
     return data
 
 
-def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date):
+def stations_and_duids_in_regions_and_time_window(regions, start_time, end_time):
     """
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
     corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
@@ -231,9 +231,8 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
 
     Args:
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
@@ -245,8 +244,8 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
         "get_duids_and_staions_in_regions_and_time_window_v2",
         {
             "regions": regions,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
             "dispatch_type": "Generator",
             "tech_types": [],
         },
@@ -256,7 +255,7 @@ def stations_and_duids_in_regions_and_time_window(regions, start_date, end_date)
     return data
 
 
-def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
+def get_aggregated_dispatch_data(regions, start_time, end_time, resolution):
     """
     Function to query dispatch data from supabase. Data is filter according to the regions and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
@@ -291,17 +290,17 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
 
     Arguments:
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-    interval).
+    Returns:
+        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+        interval).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -310,8 +309,8 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
         "aggregate_dispatch_data",
         {
             "regions": regions,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
             "resolution": resolution,
             "dispatch_type": "Generator",
             "tech_types": [],
@@ -322,7 +321,7 @@ def get_aggregated_dispatch_data(regions, start_date, end_date, resolution):
     return data
 
 
-def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolution):
+def get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution):
     """
     Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution is chosen
@@ -357,17 +356,17 @@ def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolutio
 
     Args:
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-    interval).
+    Returns:
+        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+        interval).
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -376,8 +375,8 @@ def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolutio
         "aggregate_dispatch_data_duids",
         {
             "duids": duids,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
             "resolution": resolution,
         },
     ).execute()
@@ -386,7 +385,7 @@ def get_aggregated_dispatch_data_by_duids(duids, start_date, end_date, resolutio
     return data
 
 
-def get_aggregated_vwap(regions, start_date, end_date):
+def get_aggregated_vwap(regions, start_time, end_time):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -416,11 +415,11 @@ def get_aggregated_vwap(regions, start_date, end_date):
 
     Args:
         regions: list[str] of region to aggregate.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
-    Returns: pd.DataFrame with column SETTLEMENTDATE and PRICE
+    Returns:
+        pd.DataFrame with column SETTLEMENTDATE and PRICE
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -429,8 +428,8 @@ def get_aggregated_vwap(regions, start_date, end_date):
         "aggregate_prices",
         {
             "regions": regions,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_timetime": start_time,
+            "end_timetime": end_time,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -464,8 +463,9 @@ def unit_types():
     13              Brown Coal
     14      Run of River Hydro
 
-    Returns: pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
-    :py:preprocessing.tech_namer_by_row)
+    Returns:
+        pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
+        :py:func:`nem_bidding_dashboard.preprocessing.tech_namer_by_row`)
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")

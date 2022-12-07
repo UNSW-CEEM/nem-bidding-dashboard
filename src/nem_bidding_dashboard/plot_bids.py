@@ -18,12 +18,12 @@ app.title = 'NEM Dashboard'
 region_options = ['NSW', 'VIC', 'TAS', 'SA', 'QLD']
 initial_regions = region_options
 # Sets initial start date to be yesterday, will require database updating daily
-# initial_start_date_obj = date.today() - timedelta(days=1)
-initial_start_date_obj = date(2020, 1, 21)
+# initial_start_time_obj = date.today() - timedelta(days=1)
+initial_start_time_obj = date(2020, 1, 21)
 
-initial_start_date_str = initial_start_date_obj.strftime('%Y/%m/%d %H:%M:%S')
+initial_start_time_str = initial_start_time_obj.strftime('%Y/%m/%d %H:%M:%S')
 initial_duration = 'Daily'
-duid_station_options = get_duid_station_options(initial_start_date_str, initial_regions, initial_duration)
+duid_station_options = get_duid_station_options(initial_start_time_str, initial_regions, initial_duration)
 duid_options = sorted(duid_station_options['DUID'])[1:]
 station_options = sorted(list(set(duid_station_options['STATION NAME'])))
 
@@ -37,7 +37,7 @@ settings_content = [
                 children=[
                     dcc.DatePickerSingle(
                         id='start-date-picker',
-                        date=initial_start_date_obj, 
+                        date=initial_start_time_obj, 
                         display_format='DD/MM/YY',
                     ), 
                     dcc.Dropdown(
@@ -131,7 +131,7 @@ app.layout = layout_template.build(title, settings_content, graph_content)
 def update_duids_from_date_region(
     duids: List[str], 
     station: str, 
-    start_date: str, 
+    start_time: str, 
     hour: str, 
     minute: str, 
     duration: str, 
@@ -146,7 +146,7 @@ def update_duids_from_date_region(
     Arguments:
         duids: List of DUIDs currently selected in the DUID dropdown
         station: The currently selected station name in the station dropdown
-        start_date: Date of initial datetime 
+        start_time: Date of initial datetime 
         hour: Hour of initial datetime (in 24 hour format)
         minute: Minute of initial datetime
         duration: Either 'Daily' or 'Weekly'
@@ -167,8 +167,8 @@ def update_duids_from_date_region(
         if not station:
             return dash.no_update, dash.no_update
 
-        start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-        duid_options = get_duid_station_options(start_date, regions, duration)
+        start_time = f'{start_time.replace("-", "/")} {hour}:{minute}:00'
+        duid_options = get_duid_station_options(start_time, regions, duration)
         duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
         duid_options = sorted(duid_options['DUID'])
         print(f"duids for station: {duid_options}")
@@ -183,8 +183,8 @@ def update_duids_from_date_region(
         if not station:
             return dash.no_update, dash.no_update
     
-        start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-        duid_options = get_duid_station_options(start_date, regions, duration)
+        start_time = f'{start_time.replace("-", "/")} {hour}:{minute}:00'
+        duid_options = get_duid_station_options(start_time, regions, duration)
         if station:
             duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
             duid_options = sorted(duid_options['DUID'])
@@ -205,7 +205,7 @@ def update_duids_from_date_region(
 # def update_duids_from_date_region(
     # station: str, 
     # duids: List[str], 
-    # start_date: str, 
+    # start_time: str, 
     # hour: str, 
     # minute: str, 
     # duration: str, 
@@ -217,8 +217,8 @@ def update_duids_from_date_region(
     # if not station:
         # return dash.no_update
     # 
-    # start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-    # duid_options = get_duid_station_options(start_date, regions, duration)
+    # start_time = f'{start_time.replace("-", "/")} {hour}:{minute}:00'
+    # duid_options = get_duid_station_options(start_time, regions, duration)
     # if station:
         # duid_options = duid_options.loc[duid_options['STATION NAME'] == station]
         # duid_options = sorted(duid_options['DUID'])
@@ -237,7 +237,7 @@ def update_duids_from_date_region(
     Input('duid-dropdown', 'value'),
     Input('price-demand-checkbox', 'value'))
 def update(
-    start_date: str, 
+    start_time: str, 
     hour: str, 
     minute: str, 
     duration: str, 
@@ -250,7 +250,7 @@ def update(
     selectors. 
 
     Arguments:
-        start_date: Date of initial datetime for graph in form 'DD-MM-YYYY', 
+        start_time: Date of initial datetime for graph in form 'DD-MM-YYYY', 
             taken from the starting date picker. 
         hour: Hour of initial datetime (in 24 hour format)
         minute: Minute of initial datetime
@@ -264,17 +264,17 @@ def update(
         px figure showing the data specified using the graph selectors. See 
         create_plots.plot_bids for more info.
     """
-    start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-    start_date_obj = datetime.strptime(start_date, '%Y/%m/%d %H:%M:%S')
+    start_time = f'{start_time.replace("-", "/")} {hour}:{minute}:00'
+    start_time_obj = datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
     if (duration == 'Daily'):
-        end_date = (start_date_obj + timedelta(days=1)).strftime('%Y/%m/%d %H:%M:%S')
+        end_time = (start_time_obj + timedelta(days=1)).strftime('%Y/%m/%d %H:%M:%S')
         resolution = '5-min'
     elif (duration == 'Weekly'):
-        end_date = (start_date_obj + timedelta(days=7)).strftime('%Y/%m/%d %H:%M:%S')
+        end_time = (start_time_obj + timedelta(days=7)).strftime('%Y/%m/%d %H:%M:%S')
         resolution = 'hourly'
     show_demand = 'Demand' in price_demand_checkbox
     show_price = 'Price' in price_demand_checkbox
-    fig = plot_bids(start_date, end_date, resolution, regions, duids, show_demand, show_price)
+    fig = plot_bids(start_time, end_time, resolution, regions, duids, show_demand, show_price)
     fig = adjust_fig_layout(fig)
     graph_name = get_graph_name(duids)
     return fig, graph_name

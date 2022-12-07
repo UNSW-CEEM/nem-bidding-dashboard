@@ -1,66 +1,15 @@
-import pandas as pd
-import psycopg
-from psycopg.rows import dict_row
+from nem_bidding_dashboard.postgres_helpers import run_query_return_dataframe
 
 
-def run_query_return_dataframe(connection_string, query):
-    """
-    Sends an arbitary query to the specified postgres database and return the result as a pd.DataFrame. Should only be
-    used for queries that return a result as a table. Handles opening and closing connection to database.
-
-    Examples:
-
-    >>> from src.nem_bidding_dashboard import postgress_helpers
-
-    >>> con_string = postgress_helpers.build_connection_string(
-    ... hostname='localhost',
-    ... dbname='bidding_dashboard_db',
-    ... username='bidding_dashboard_maintainer',
-    ... password='1234abcd',
-    ... port=5433)
-
-    >>> create_db_tables_and_functions(con_string, "select * from duid_info limit 10;")
-           DUID REGION  ...           UNIT TYPE                 STATION NAME
-    0   ADPBA1G     SA  ...   Battery Discharge  Adelaide Desalination Plant
-    1   ADPBA1L     SA  ...      Battery Charge  Adelaide Desalination Plant
-    2    ADPMH1     SA  ...  Run of River Hydro  Adelaide Desalination Plant
-    3    ADPPV3     SA  ...               Solar  Adelaide Desalination Plant
-    4    ADPPV2     SA  ...               Solar  Adelaide Desalination Plant
-    5    ADPPV1     SA  ...               Solar  Adelaide Desalination Plant
-    6  AGLSITA1    NSW  ...              Engine              Agl Kemps Creek
-    7   ANGAST1     SA  ...              Engine       Angaston Power Station
-    8     APPIN    NSW  ...              Engine            Appin Power Plant
-    9     ARWF1    VIC  ...                Wind             Ararat Wind Farm
-    <BLANKLINE>
-    [10 rows x 7 columns]
-
-    Args:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
-        query: str which is postgres select query
-
-    Returns: pd.DataFrame column as per the query provided
-    """
-    with psycopg.connect(connection_string) as conn:
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(query)
-            data = cur.fetchall()
-    data = pd.DataFrame(data)
-    data.columns = data.columns.str.upper()
-    return data
-
-
-def region_data(connection_string, start_date, end_date):
+def region_data(connection_string, start_time, end_time):
     """
     Function to query demand and price data from a postgres database.
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -69,8 +18,8 @@ def region_data(connection_string, start_date, end_date):
 
     >>> region_data(
     ... con_string,
-    ... start_date="2020/01/01 00:00:00",
-    ... end_date="2020/01/01 00:10:00")
+    ... start_time="2020/01/01 00:00:00",
+    ... end_time="2020/01/01 00:10:00")
            SETTLEMENTDATE REGIONID  TOTALDEMAND       RRP
     0 2020-01-01 00:05:00      NSW      7245.31  49.00916
     1 2020-01-01 00:05:00      QLD      6095.75  50.81148
@@ -84,24 +33,24 @@ def region_data(connection_string, start_date, end_date):
     9 2020-01-01 00:10:00      VIC      4224.61  64.83524
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
-    Returns: pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
-    semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
+    Returns:
+        pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
+        semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
     """
-    query = "select * from demand_data where settlementdate >= '{start_date}' and settlementdate <= '{end_date}'"
-    query = query.format(start_date=start_date, end_date=end_date)
+    query = "select * from demand_data where settlementdate >= '{start_time}' and settlementdate <= '{end_time}'"
+    query = query.format(start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
-def aggregate_bids(connection_string, regions, start_date, end_date, resolution):
+def aggregate_bids(connection_string, regions, start_time, end_time, resolution):
     """
     Function to query and aggregate bidding data from postgres database. Data is filter according to the regions and
     time window provided, it is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute
@@ -109,9 +58,9 @@ def aggregate_bids(connection_string, regions, start_date, end_date, resolution)
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -159,38 +108,38 @@ def aggregate_bids(connection_string, regions, start_date, end_date, resolution)
 
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
-    BIDVOLUME (total volume bid by units within price bin).
+    Returns:
+        pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
+        BIDVOLUME (total volume bid by units within price bin).
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM aggregate_bids_v2(
                 '{{{regions}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}'),
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}'),
                 '{resolution}',
                 'Generator',
                 'adjusted',
                 '{{}}'
                 )"""
     query = query.format(
-        regions=regions, start_date=start_date, end_date=end_date, resolution=resolution
+        regions=regions, start_time=start_time, end_time=end_time, resolution=resolution
     )
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
-def duid_bids(connection_string, duids, start_date, end_date, resolution):
+def duid_bids(connection_string, duids, start_time, end_time, resolution):
     """
     Function to query bidding data from a postgres database. Data is filter according to the regions and time window
     provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution
@@ -198,9 +147,9 @@ def duid_bids(connection_string, duids, start_date, end_date, resolution):
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -229,35 +178,35 @@ def duid_bids(connection_string, duids, start_date, end_date, resolution):
     1 2020-01-01 00:05:00  AGLHAL       10      195.0  13646.22
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
+    Returns:
+        pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
     query = """SELECT * FROM get_bids_by_unit_v2(
                 '{{{duids}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}'),
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}'),
                 '{resolution}'
                 'adjusted')"""
     query = query.format(
-        duids=duids, start_date=start_date, end_date=end_date, resolution=resolution
+        duids=duids, start_time=start_time, end_time=end_time, resolution=resolution
     )
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
 def stations_and_duids_in_regions_and_time_window(
-    connection_string, regions, start_date, end_date
+    connection_string, regions, start_time, end_time
 ):
     """
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
@@ -265,9 +214,9 @@ def stations_and_duids_in_regions_and_time_window(
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -295,14 +244,13 @@ def stations_and_duids_in_regions_and_time_window(
     [467 rows x 2 columns]
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
@@ -311,18 +259,18 @@ def stations_and_duids_in_regions_and_time_window(
     regions = ", ".join(regions)
     query = """SELECT * FROM get_duids_and_stations(
                 '{{{regions}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}'),
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}'),
                 'Generator',
                 '{{}}'
                 )"""
-    query = query.format(regions=regions, start_date=start_date, end_date=end_date)
+    query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
 def get_aggregated_dispatch_data(
-    connection_string, regions, start_date, end_date, resolution
+    connection_string, regions, start_time, end_time, resolution
 ):
     """
     Function to query dispatch data from a postgres database. Data is filter according to the regions and time window
@@ -331,9 +279,9 @@ def get_aggregated_dispatch_data(
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -364,42 +312,42 @@ def get_aggregated_dispatch_data(
     [1 rows x 10 columns]
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-    interval).
+    Returns:
+        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+        interval).
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM aggregate_dispatch_data(
                 '{{{regions}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}'),
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}'),
                 '{resolution}',
                 'Generator',
                 '{{}}'
                 )"""
     query = query.format(
-        regions=regions, start_date=start_date, end_date=end_date, resolution=resolution
+        regions=regions, start_time=start_time, end_time=end_time, resolution=resolution
     )
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
 def get_aggregated_dispatch_data_by_duids(
-    connection_string, duids, start_date, end_date, resolution
+    connection_string, duids, start_time, end_time, resolution
 ):
     """
     Function to query dispatch data from a postgres database. Data is filter according to the duids and time window
@@ -408,9 +356,9 @@ def get_aggregated_dispatch_data_by_duids(
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -441,39 +389,39 @@ def get_aggregated_dispatch_data_by_duids(
     [1 rows x 10 columns]
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         duids: list[str] of duids to return in result.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
-    Returns: pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-    on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-    upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-    lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-    PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-    interval).
+    Returns:
+        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
+        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
+        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
+        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
+        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
+        interval).
     """
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
     query = """SELECT * FROM aggregate_dispatch_data_duids(
                 '{{{duids}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}'),
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}'),
                 '{resolution}'
                 )"""
     query = query.format(
-        duids=duids, start_date=start_date, end_date=end_date, resolution=resolution
+        duids=duids, start_time=start_time, end_time=end_time, resolution=resolution
     )
     data = run_query_return_dataframe(connection_string, query)
     return data
 
 
-def get_aggregated_vwap(connection_string, regions, start_date, end_date):
+def get_aggregated_vwap(connection_string, regions, start_time, end_time):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -482,9 +430,9 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -511,25 +459,25 @@ def get_aggregated_vwap(connection_string, regions, start_date, end_date):
     11 2020-01-01 00:15:00  49.01042
 
     Arguments:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         regions: list[str] of region to aggregate.
-        start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
-            set to "00:00:00:)
-        end_date: Ending datetime, formatted identical to start_date
+        start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
 
-    Returns: pd.DataFrame with column SETTLEMENTDATE and PRICE
+    Returns:
+        pd.DataFrame with column SETTLEMENTDATE and PRICE
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM aggregate_prices(
                 '{{{regions}}}',
-                (timestamp '{start_date}'),
-                (timestamp '{end_date}')
+                (timestamp '{start_time}'),
+                (timestamp '{end_time}')
                 )"""
-    query = query.format(regions=regions, start_date=start_date, end_date=end_date)
+    query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
     return data
 
@@ -540,9 +488,9 @@ def unit_types(connection_string):
 
     Examples:
 
-    >>> from src.nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -568,13 +516,14 @@ def unit_types(connection_string):
     14      Run of River Hydro
 
     Args:
-        connection_string: str for connecting to PostgresSQL database, the function
-        :py:func:postgress_helpers.build_connection_string can be used to build a properly formated connection string,
-        or alternative any string that matches the format allowed by PostgresSQL can be used
-        (https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
 
-    Returns: pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
-    :py:preprocessing.tech_namer_by_row)
+    Returns:
+        pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
+        :py:func:`nem_bidding_dashboard.preprocessing.tech_namer_by_row`)
     """
     query = """SELECT * FROM distinct_unit_types()"""
     data = run_query_return_dataframe(connection_string, query)

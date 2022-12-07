@@ -72,7 +72,7 @@ _create_distinct_unit_types_function = """
 
 
 _create_aggregate_bids_function = """
-    CREATE OR REPLACE FUNCTION aggregate_bids_v2(regions text[], start_datetime timestamp, end_datetime timestamp,
+    CREATE OR REPLACE FUNCTION aggregate_bids_v2(regions text[], start_timetime timestamp, end_timetime timestamp,
                                                  resolution text, dispatch_type text, adjusted text, tech_types text[])
       RETURNS TABLE (interval_datetime timestamp, bin_name text, bidvolume float4)
       LANGUAGE plpgsql AS
@@ -100,10 +100,10 @@ _create_aggregate_bids_function = """
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_bids as
         SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0
-                                       AND b.interval_datetime between start_datetime and end_datetime;
+                                       AND b.interval_datetime between start_timetime and end_timetime;
       ELSE
        CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
       END IF;
 
       IF adjusted = 'adjusted' THEN
@@ -130,7 +130,7 @@ _create_aggregate_bids_function = """
     """
 
 _create_aggregate_dispatch_data_function = """
-CREATE OR REPLACE FUNCTION aggregate_dispatch_data(regions text[], start_datetime timestamp, end_datetime timestamp,
+CREATE OR REPLACE FUNCTION aggregate_dispatch_data(regions text[], start_timetime timestamp, end_timetime timestamp,
                                                    resolution text, dispatch_type text, tech_types text[])
   RETURNS TABLE (interval_datetime timestamp, availability float4, totalcleared float4, finalmw float4,
                  asbidrampupmaxavail float4, asbidrampdownminavail float4, rampupmaxavail float4,
@@ -158,10 +158,10 @@ BEGIN
   IF resolution = 'hourly' THEN
     CREATE TEMP TABLE time_filtered_dispatch as
     SELECT * FROM unit_dispatch d WHERE EXTRACT(MINUTE FROM d.interval_datetime) = 0
-                                    AND d.interval_datetime between start_datetime and end_datetime;
+                                    AND d.interval_datetime between start_timetime and end_timetime;
   ELSE
    CREATE TEMP TABLE time_filtered_dispatch as
-    SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_datetime and end_datetime;
+    SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_timetime and end_timetime;
   END IF;
 
   CREATE TEMP TABLE region_filtered_dispatch as
@@ -190,7 +190,7 @@ $func$;
 """
 
 _create_get_bids_by_unit_function = """
-    CREATE OR REPLACE FUNCTION get_bids_by_unit_v2(duids text[], start_datetime timestamp, end_datetime timestamp, resolution text, adjusted text)
+    CREATE OR REPLACE FUNCTION get_bids_by_unit_v2(duids text[], start_timetime timestamp, end_timetime timestamp, resolution text, adjusted text)
       RETURNS TABLE (interval_datetime timestamp, duid text, bidband int, bidvolume float4, bidprice float4)
       LANGUAGE plpgsql AS
     $func$
@@ -202,10 +202,10 @@ _create_get_bids_by_unit_function = """
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_bids as
         SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0 AND b.interval_datetime between
-        start_datetime and end_datetime;
+        start_timetime and end_timetime;
       ELSE
        CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
       END IF;
     
       IF adjusted = 'adjusted' THEN
@@ -224,8 +224,8 @@ _create_get_bids_by_unit_function = """
 """
 
 _create_aggregate_dispatch_data_duids_function = """
-    CREATE OR REPLACE FUNCTION aggregate_dispatch_data_duids(duids text[], start_datetime timestamp,
-                                                             end_datetime timestamp, resolution text)
+    CREATE OR REPLACE FUNCTION aggregate_dispatch_data_duids(duids text[], start_timetime timestamp,
+                                                             end_timetime timestamp, resolution text)
       RETURNS TABLE (interval_datetime timestamp, availability float4, totalcleared float4, finalmw float4,
                      asbidrampupmaxavail float4, asbidrampdownminavail float4, rampupmaxavail float4,
                      rampdownminavail float4, pasaavailability float4, maxavail float4)
@@ -239,10 +239,10 @@ _create_aggregate_dispatch_data_duids_function = """
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_dispatch as
         SELECT * FROM unit_dispatch d WHERE EXTRACT(MINUTE FROM d.interval_datetime) = 0
-                                        AND d.interval_datetime between start_datetime and end_datetime;
+                                        AND d.interval_datetime between start_timetime and end_timetime;
       ELSE
        CREATE TEMP TABLE time_filtered_dispatch as
-        SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_timetime and end_timetime;
       END IF;
 
       CREATE TEMP TABLE duids_filtered_dispatch as
@@ -285,7 +285,7 @@ _create_get_duids_for_stations = """
     """
 
 _create_get_duids_and_stations_function = """
-    CREATE OR REPLACE FUNCTION get_duids_and_stations(regions text[], start_datetime timestamp, end_datetime timestamp,
+    CREATE OR REPLACE FUNCTION get_duids_and_stations(regions text[], start_timetime timestamp, end_timetime timestamp,
                                                      dispatch_type text, tech_types text[])
       RETURNS TABLE (duid text, "station name" text)
       LANGUAGE plpgsql AS
@@ -299,7 +299,7 @@ _create_get_duids_and_stations_function = """
       DROP TABLE IF EXISTS filtered_duid_info;
 
       CREATE TEMP TABLE time_filtered_bids as
-      SELECT * FROM bidding_data b WHERE b.interval_datetime between start_datetime and end_datetime;
+      SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
 
       IF array_length(tech_types, 1) > 0 THEN
         CREATE TEMP TABLE filtered_duid_info as
@@ -317,7 +317,7 @@ _create_get_duids_and_stations_function = """
     """
 
 _create_aggregate_prices_function = """
-    CREATE OR REPLACE FUNCTION aggregate_prices(regions text[], start_datetime timestamp, end_datetime timestamp)
+    CREATE OR REPLACE FUNCTION aggregate_prices(regions text[], start_timetime timestamp, end_timetime timestamp)
       RETURNS TABLE (settlementdate timestamp, price float)
       LANGUAGE plpgsql AS
     $func$
@@ -327,7 +327,7 @@ _create_aggregate_prices_function = """
 
       CREATE TEMP TABLE time_filtered_price as
       SELECT b.settlementdate, b.regionid, b.totaldemand, b.rrp FROM demand_data b
-       WHERE b.settlementdate between start_datetime and end_datetime and regionid = ANY(regions);
+       WHERE b.settlementdate between start_timetime and end_timetime and regionid = ANY(regions);
 
       RETURN QUERY SELECT b.settlementdate, sum(b.rrp*b.totaldemand)/sum(b.totaldemand) as vwap
                      FROM time_filtered_price b GROUP BY b.settlementdate;
@@ -354,15 +354,16 @@ _create_statements = [
 
 
 def create_db_tables_and_functions(connection_string):
-    """Creates the tables and functions needed to store and retreive data in a PostgresSQL database. This function
-    should be run after creating an empty database, then functions in the :py:mod:populate_postgres_db can be used to
-    add data to the database.
+    """
+    Creates the tables and functions needed to store and retreive data in a PostgresSQL database. This function
+    should be run after creating an empty database, then functions in the
+    :py:mod:`nem_bidding_dashboard.populate_postgres_db` can be used to add data to the database.
 
     Examples:
 
-    >>> from nem_bidding_dashboard import postgress_helpers
+    >>> from nem_bidding_dashboard import postgres_helpers
 
-    >>> con_string = postgress_helpers.build_connection_string(
+    >>> con_string = postgres_helpers.build_connection_string(
     ... hostname='localhost',
     ... dbname='bidding_dashboard_db',
     ... username='bidding_dashboard_maintainer',
@@ -372,7 +373,7 @@ def create_db_tables_and_functions(connection_string):
     >>> create_db_tables_and_functions(con_string)
 
     Args:
-        connection_string: str for connecting to PostgresSQL database, the function :py:func:postgress_helpers.build_connection_string
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
             can be used to build a properly formated connection string, or alternative any string that matches the
             format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
             can be used

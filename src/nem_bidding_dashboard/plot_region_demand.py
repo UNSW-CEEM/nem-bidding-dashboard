@@ -23,12 +23,12 @@ app.layout = html.Div(
             value=["NSW"],
         ),
         dcc.DatePickerSingle(
-            id="start_date_picker",
+            id="start_time_picker",
             date=date(2019, 1, 23),
             display_format="DD/MM/YY",
         ),
         dcc.DatePickerSingle(
-            id="end_date_picker",
+            id="end_time_picker",
             date=date(2019, 1, 24),
             display_format="DD/MM/YY",
         ),
@@ -44,9 +44,9 @@ end date or region selection.
 Arguments:
     regions: List of regions to display electricity demand data for, taken from
         the region checklist on the webpage.
-    start_date: Initial date for graph in form "DD-MM-YYYY", taken from the
+    start_time: Initial date for graph in form "DD-MM-YYYY", taken from the
         starting date picker.
-    end_date: Ending date for graph in form "DD-MM-YYYY", taken from the
+    end_time: Ending date for graph in form "DD-MM-YYYY", taken from the
         ending date picker.
 Returns:
     px line graph figure displaying electricity demand data for the selected
@@ -57,18 +57,18 @@ Returns:
 @app.callback(
     Output("graph", "figure"),
     Input("region_checklist", "value"),
-    Input("start_date_picker", "date"),
-    Input("end_date_picker", "date"),
+    Input("start_time_picker", "date"),
+    Input("end_time_picker", "date"),
     Input("update_graph_button", "n_clicks"),
 )
-def update(regions: list, start_date: str, end_date: str, num_clicks: int):
+def update(regions: list, start_time: str, end_time: str, num_clicks: int):
     trigger_id = dash.ctx.triggered_id
     if trigger_id and trigger_id != "update_graph_button":
         return dash.no_update
     # TODO: only update dataframe when required
-    start_date = f"{start_date.replace('-', '/')} 00:00:00"
-    end_date = f"{end_date.replace('-', '/')} 00:00:00"
-    return plot_region_demand(regions, start_date, end_date)
+    start_time = f"{start_time.replace('-', '/')} 00:00:00"
+    end_time = f"{end_time.replace('-', '/')} 00:00:00"
+    return plot_region_demand(regions, start_time, end_time)
 
 
 """
@@ -76,16 +76,16 @@ Plots the electricity demand of Australian states/territories over time. Regions
 to plot are listed in the regions argument
 Arguments:
     regions: List of regions to show on graph figure
-    start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+    start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
         set to "00:00:00:)
-    end_date: Ending datetime, formatted identical to start_date
+    end_time: Ending datetime, formatted identical to start_time
 Returns:
     fig: A px line graph showing the electricity demand of each region over time
 """
 
 
-def plot_region_demand(regions: list, start_date: str, end_date: str):
-    region_demand_data = get_region_demand(start_date, end_date)
+def plot_region_demand(regions: list, start_time: str, end_time: str):
+    region_demand_data = get_region_demand(start_time, end_time)
     fig = px.line(
         region_demand_data[region_demand_data["regionid"].isin(regions)],
         x="SETTLEMENTDATE",
@@ -115,22 +115,22 @@ def plot_region_demand(regions: list, start_date: str, end_date: str):
 Get the electricity demand for all regions and format it correctly for use in
 the electricity demand graph.
 Arguments:
-    start_date: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
+    start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS" (time always
         set to "00:00:00:)
-    end_date: Ending datetime, formatted identical to start_date
+    end_time: Ending datetime, formatted identical to start_time
 Returns:
     df: Dataframe containing electricity demand data over the period specified
-        by start_date and end_date, adjusted to correct region names, format
+        by start_time and end_time, adjusted to correct region names, format
         dates and sort by datetime
 """
 
 
-def get_region_demand(start_date: str, end_date: str) -> pd.DataFrame:
+def get_region_demand(start_time: str, end_time: str) -> pd.DataFrame:
     # TODO: Find proper location for data cache
     if run_local:
-        df = fetch_data.get_region_demand_data(start_date, end_date, raw_data_cache)
+        df = fetch_data.get_region_demand_data(start_time, end_time, raw_data_cache)
     else:
-        df = query_supabase_db.region_data(start_date, end_date)
+        df = query_supabase_db.region_data(start_time, end_time)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
     df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
         lambda txt: str(txt).replace("/", "-")

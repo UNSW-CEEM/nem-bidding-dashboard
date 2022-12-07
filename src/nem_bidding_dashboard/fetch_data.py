@@ -8,10 +8,13 @@ defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCU
 
 
 def get_region_data(start_time, end_time, raw_data_cache):
-    """Fetch electricity price and demand data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Attempts to
+    """
+    Fetch electricity price and demand data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Attempts to
     pull data from AEMO monthly archive tables DISPATCHPRICE and DISPATCHREGIONSUM, if all the required data cannot
     be fetched from these tables then AEMO current table PUBLIC_DAILY is also queried. This should allow all historical
     AEMO data to fetched including data from the previous day.
+
+    Examples:
 
     >>> get_region_data(
     ... '2020/01/01 00:00:00',
@@ -25,8 +28,8 @@ def get_region_data(start_time, end_time, raw_data_cache):
     4     VIC1 2020-01-01 00:05:00      4267.32  65.67826
 
     Args:
-       start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
-       end_time: str formatted identical to start_date, data with date times less than or equal to end_date are returned
+       start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
+       end_time: str formatted identical to start_time, data with date times less than or equal to end_time are returned
        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
 
     Returns: pandas dataframe with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (the operational demand AEMO dispatches
@@ -116,14 +119,16 @@ def get_region_data(start_time, end_time, raw_data_cache):
 
 
 def get_duid_availability_data(start_time, end_time, raw_data_cache):
-    """Fetch unit availability and other dispatch values using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_.
+    """
+    Fetch unit availability and other dispatch values using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_.
     Attempts to pull data from AEMO monthly archive table DISPATCHLOAD, if all the required data cannot be fetched from
-    this table then AEMO current table PUBLIC_NEXT_DAY_DISPATCH is also queried. This should allow all historical AEMO
-    data to fetched including data from the previous day. Data is filtered for INTERVENTION values equal to 1 where an
-    intervention dispatch run is present, such that the values returned are those assocaited with the dispatch run used
-    to set unit dispatch targets.
+    this table then the AEMO current table PUBLIC_NEXT_DAY_DISPATCH is also queried. This should allow all historical
+    AEMO data to fetched including data from the previous day. Data is filtered for INTERVENTION values equal to 1 where
+    an intervention dispatch run is present, such that the values returned are those assocaited with the dispatch run
+    used to set unit dispatch targets.
 
     Examples:
+
     >>> get_duid_availability_data(
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 00:05:00',
@@ -144,12 +149,13 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
     [310 rows x 7 columns]
 
     Args:
-       start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
-       end_date: str formatted identical to start_date, data with date times less than or equal to end_date are returned
+       start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
+       end_time: str formatted identical to start_time, data with date times less than or equal to end_time are returned
        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
 
-    Returns: pandas dataframe with columns INTERVAL_DATETIME, DUID, AVAILABILITY, TOTALCLEARED, INITIALMW,
-             RAMPDOWNRATE, RAMPUPRATE
+    Returns:
+        pandas dataframe with columns INTERVAL_DATETIME, DUID, AVAILABILITY, TOTALCLEARED, INITIALMW,
+        RAMPDOWNRATE, RAMPUPRATE
     """
     try:
         availability_data = dynamic_data_compiler(
@@ -231,12 +237,14 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
 
 
 def get_duid_data(raw_data_cache):
-    """Fetch unit data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data is sourced from AEMO's
+    """
+    Fetch unit data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data is sourced from AEMO's
     NEM Registration and Exemption List workbook (Generators and Scheduled Loads tab). This only includes currently
     registered generator, so if historical analysis is being conducted care needs to taken that data for some generators
     is not missing.
 
     Examples:
+
     >>> get_duid_data('D:/nemosis_data_cache')
                            STATION NAME  ...      DUID
     0       Adelaide Desalination Plant  ...   ADPBA1G
@@ -256,8 +264,9 @@ def get_duid_data(raw_data_cache):
     Args:
         raw_data_cache: Filepath to directory for caching files downloaded from AEMO
 
-    Returns: pandas dataframe with columns DUID, REGIONID, "FUEL SOURCE - DESCRIPTOR", "DISPATCH TYPE",
-             "TECHNOLOGY TYPE - DESCRIPTOR", "STATION NAME"
+    Returns:
+        pandas dataframe with columns DUID, REGIONID, "FUEL SOURCE - DESCRIPTOR", "DISPATCH TYPE",
+        "TECHNOLOGY TYPE - DESCRIPTOR", "STATION NAME"
 
     """
     duid_data = static_table(
@@ -277,12 +286,14 @@ def get_duid_data(raw_data_cache):
     return duid_data
 
 
-def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
-    """Fetch unit volume bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
+def get_volume_bids(start_time, end_time, raw_data_cache):
+    """
+    Fetch unit volume bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
     archive tables BIDPEROFFER_D and current tables BIDMOVE_COMPETE. This should allow all historical AEMO
     data to fetched including data from the previous day.
 
     Examples:
+
     >>> get_volume_bids(
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 01:00:00',
@@ -303,13 +314,14 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
     [12912 rows x 18 columns]
 
     Args:
-       start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
-       end_date: str formatted identical to start_date, data with date times less than or equal to end_date are returned
+       start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
+       end_time: str formatted identical to start_time, data with date times less than or equal to end_time are returned
        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
 
-    Returns: pandas dataframe with columns INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BIDTYPE, BANDAVAIL1,
-             BANDAVAIL2, BANDAVAIL3, BANDAVAIL4, BANDAVAIL5, BANDAVAIL6, BANDAVAIL7, BANDAVAIL8,
-             BANDAVAIL9, BANDAVAIL10, MAXAVAIL, ROCUP, ROCDOWN, PASAAVAILABILITY
+    Returns:
+        pandas dataframe with columns INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BIDTYPE, BANDAVAIL1,
+        BANDAVAIL2, BANDAVAIL3, BANDAVAIL4, BANDAVAIL5, BANDAVAIL6, BANDAVAIL7, BANDAVAIL8,
+        BANDAVAIL9, BANDAVAIL10, MAXAVAIL, ROCUP, ROCDOWN, PASAAVAILABILITY
     """
     volume_bids = dynamic_data_compiler(
         start_time=start_time,
@@ -343,11 +355,13 @@ def get_volume_bids(start_time: str, end_time: str, raw_data_cache: str):
 
 
 def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
-    """Fetch unit price bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
+    """
+    Fetch unit price bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
     archive tables BIDPDAYOFFER_D and current tables BIDMOVE_COMPETE. This should allow all historical AEMO
     data to fetched including data from the previous day.
 
     Examples:
+
     >>> get_price_bids(
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 00:05:00',
@@ -368,13 +382,14 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
     [1076 rows x 13 columns]
 
     Args:
-       start_date: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_date are returned
-       end_date: str formatted identical to start_date, data with date times less than or equal to end_date are returned
+       start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
+       end_time: str formatted identical to start_time, data with date times less than or equal to end_time are returned
        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
 
-    Returns: pandas dataframe with columns INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BIDTYPE, PRICEBAND1,
-             PRICEBAND2, PRICEBAND3, PRICEBAND4, PRICEBAND5, PRICEBAND6, PRICEBAND7, PRICEBAND8,
-             PRICEBAND9, PRICEBAND10
+    Returns:
+        pandas dataframe with columns INTERVAL_DATETIME, SETTLEMENTDATE, DUID, BIDTYPE, PRICEBAND1,
+        PRICEBAND2, PRICEBAND3, PRICEBAND4, PRICEBAND5, PRICEBAND6, PRICEBAND7, PRICEBAND8,
+        PRICEBAND9, PRICEBAND10
     """
     volume_bids = dynamic_data_compiler(
         start_time=start_time,
