@@ -303,10 +303,11 @@ _create_get_duids_and_stations_function = """
 
       IF array_length(tech_types, 1) > 0 THEN
         CREATE TEMP TABLE filtered_duid_info as
-        SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types) and "dispatch type" = dispatch_type;
+        SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types) and "dispatch type" = dispatch_type 
+                                        and region = ANY(regions);
       ELSE
         CREATE TEMP TABLE filtered_duid_info as
-        SELECT * FROM duid_info d WHERE "dispatch type" = dispatch_type;
+        SELECT * FROM duid_info d WHERE "dispatch type" = dispatch_type and region = ANY(regions);
       END IF;
 
       RETURN QUERY SELECT d.duid, d."station name" FROM duid_info d
