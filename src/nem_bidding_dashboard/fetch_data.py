@@ -85,7 +85,7 @@ def get_region_data(start_time, end_time, raw_data_cache):
     if (
         price_and_demand_data.empty
         or price_and_demand_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X")
-        != end_time
+        < end_time
     ):
         if not price_and_demand_data.empty:
             start_time = (
@@ -223,7 +223,7 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
         except nemosis.custom_errors.NoDataToReturn:
             pass
     availability_data = availability_data.sort_values(["SETTLEMENTDATE", "INTERVENTION"])
-    availability_data = availability_data.drop_duplicates(keep='last')
+    availability_data = availability_data.drop_duplicates(keep='last', subset=['SETTLEMENTDATE', 'DUID'])
     return availability_data.loc[
         :,
         [
