@@ -329,7 +329,8 @@ _create_aggregate_prices_function = """
       SELECT b.settlementdate, b.regionid, b.totaldemand, b.rrp FROM demand_data b
        WHERE b.settlementdate between start_timetime and end_timetime and regionid = ANY(regions);
 
-      RETURN QUERY SELECT b.settlementdate, sum(b.rrp*b.totaldemand)/sum(b.totaldemand) as vwap
+      RETURN QUERY SELECT b.settlementdate, sum(b.totaldemand) as totaldemand, 
+                          sum(b.rrp*b.totaldemand)/sum(b.totaldemand) as rrp
                      FROM time_filtered_price b GROUP BY b.settlementdate;
 
     END

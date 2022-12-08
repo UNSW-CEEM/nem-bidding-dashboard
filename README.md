@@ -128,7 +128,10 @@ agg_bids = query_postgres_db.aggregate_bids(
     ['QLD', 'NSW', 'SA'],
     "2020/01/01 00:00:00",
     "2020/01/01 01:00:00",
-    'hourly')
+    'hourly',
+    'Generator',
+    'adjusted',
+    [])
 
 print(agg_bids)
 #      INTERVAL_DATETIME        BIN_NAME  BIDVOLUME

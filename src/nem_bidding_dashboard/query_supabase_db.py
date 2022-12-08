@@ -9,6 +9,8 @@ postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
 import pandas as pd
 from supabase import create_client
 
+pd.set_option('display.width', None)
+
 
 def region_data(start_time, end_time):
     """

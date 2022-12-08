@@ -60,7 +60,7 @@ Price bins used when aggregating bidding data.
 Columns:
 - bin_name text eg. [50, 100)
 - lower_edge float8 lower limit of bin inclusive
-- upper_edge float8 upper limit of bin no inclusive
+- upper_edge float8 upper limit of bin not inclusive
 
 ### unit_dispatch
 A collection of various dispatch associated values on a duid and dispatch interval basis. 

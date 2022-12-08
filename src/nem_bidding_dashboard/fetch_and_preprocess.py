@@ -3,6 +3,8 @@ import pandas as pd
 from nem_bidding_dashboard import preprocessing
 from nem_bidding_dashboard import fetch_data
 
+pd.set_option('display.width', None)
+
 
 def region_data(start_time, end_time, raw_data_cache):
     """
@@ -17,8 +19,14 @@ def region_data(start_time, end_time, raw_data_cache):
 
     >>> region_data(
     ... '2020/01/01 00:00:00',
-    ... '2020/01/01 01:00:00',
+    ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
+      REGIONID       SETTLEMENTDATE  TOTALDEMAND       RRP
+    0      NSW  2020-01-01 00:05:00      7245.31  49.00916
+    1      QLD  2020-01-01 00:05:00      6095.75  50.81148
+    2       SA  2020-01-01 00:05:00      1466.53  68.00000
+    3      TAS  2020-01-01 00:05:00      1010.06  81.79115
+    4      VIC  2020-01-01 00:05:00      4267.32  65.67826
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -63,18 +71,18 @@ def bid_data(start_time, end_time, raw_data_cache):
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
-           INTERVAL_DATETIME      DUID  ...  BIDVOLUMEADJUSTED  BIDPRICE
-    0    2020-01-01 00:05:00    BALBL1  ...                0.0    -48.06
-    1    2020-01-01 00:05:00    RT_SA4  ...                0.0  -1000.00
-    2    2020-01-01 00:05:00    RT_SA5  ...                0.0  -1000.00
-    3    2020-01-01 00:05:00    RT_SA6  ...                0.0  -1000.00
-    4    2020-01-01 00:05:00   RT_TAS1  ...                0.0  -1000.00
-    ..                   ...       ...  ...                ...       ...
-    523  2020-01-01 00:05:00   GSTONE6  ...                0.0  13557.81
-    524  2020-01-01 00:05:00   GUTHEGA  ...               67.0  13253.52
-    525  2020-01-01 00:05:00  JBUTTERS  ...                0.0  12309.16
-    526  2020-01-01 00:05:00   GSTONE1  ...                0.0  13557.81
-    527  2020-01-01 00:05:00     LBBG1  ...               25.0  14585.34
+           INTERVAL_DATETIME      DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE
+    0    2020-01-01 00:05:00    BALBL1        1         20                0.0    -48.06
+    1    2020-01-01 00:05:00    RT_SA4        1       3000                0.0  -1000.00
+    2    2020-01-01 00:05:00    RT_SA5        1       3000                0.0  -1000.00
+    3    2020-01-01 00:05:00    RT_SA6        1       3000                0.0  -1000.00
+    4    2020-01-01 00:05:00   RT_TAS1        1       3000                0.0  -1000.00
+    ..                   ...       ...      ...        ...                ...       ...
+    523  2020-01-01 00:05:00   GSTONE6       10          5                0.0  13557.81
+    524  2020-01-01 00:05:00   GUTHEGA       10         80               67.0  13253.52
+    525  2020-01-01 00:05:00  JBUTTERS       10          4                0.0  12309.16
+    526  2020-01-01 00:05:00   GSTONE1       10          5                0.0  13557.81
+    527  2020-01-01 00:05:00     LBBG1       10         25               25.0  14585.34
     <BLANKLINE>
     [528 rows x 6 columns]
 
@@ -124,18 +132,18 @@ def duid_info(raw_data_cache):
     Examples:
 
     >>> duid_info('D:/nemosis_data_cache')
-                               STATION NAME REGION  ...      DUID           UNIT TYPE
-    0       Adelaide Desalination Plant     SA  ...   ADPBA1G   Battery Discharge
-    1       Adelaide Desalination Plant     SA  ...   ADPBA1L      Battery Charge
-    4       Adelaide Desalination Plant     SA  ...    ADPMH1  Run of River Hydro
-    5       Adelaide Desalination Plant     SA  ...    ADPPV3               Solar
-    6       Adelaide Desalination Plant     SA  ...    ADPPV2               Solar
-    ..                              ...    ...  ...       ...                 ...
-    578  Yarrawonga Hydro Power Station    VIC  ...  YWNGAHYD               Hydro
-    579            Yarwun Power Station    QLD  ...  YARWUN_1                CCGT
-    580              Yatpool Solar Farm    VIC  ...    YATSF1               Solar
-    581                Yawong Wind Farm    VIC  ...    YAWWF1                Wind
-    582                Yendon Wind Farm    VIC  ...   YENDWF1                Wind
+                           STATION NAME REGION DISPATCH TYPE FUEL SOURCE - DESCRIPTOR       TECHNOLOGY TYPE - DESCRIPTOR      DUID           UNIT TYPE
+    0       Adelaide Desalination Plant     SA     Generator                     Grid               Battery and Inverter   ADPBA1G   Battery Discharge
+    1       Adelaide Desalination Plant     SA          Load                     Grid               Battery and Inverter   ADPBA1L      Battery Charge
+    4       Adelaide Desalination Plant     SA     Generator                    Water                       Run of River    ADPMH1  Run of River Hydro
+    5       Adelaide Desalination Plant     SA     Generator                    Solar            Photovoltaic Flat panel    ADPPV3               Solar
+    6       Adelaide Desalination Plant     SA     Generator                    Solar            Photovoltaic Flat panel    ADPPV2               Solar
+    ..                              ...    ...           ...                      ...                                ...       ...                 ...
+    578  Yarrawonga Hydro Power Station    VIC     Generator                    Water                    Hydro - Gravity  YWNGAHYD               Hydro
+    579            Yarwun Power Station    QLD     Generator              Natural Gas  Combined Cycle Gas Turbine (CCGT)  YARWUN_1                CCGT
+    580              Yatpool Solar Farm    VIC     Generator                    Solar   Photovoltaic Tracking Flat panel    YATSF1               Solar
+    581                Yawong Wind Farm    VIC     Generator                     Wind                     Wind - Onshore    YAWWF1                Wind
+    582                Yendon Wind Farm    VIC     Generator                     Wind                     Wind - Onshore   YENDWF1                Wind
     <BLANKLINE>
     [490 rows x 7 columns]
 
@@ -174,18 +182,18 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 01:00:00',
     ... 'D:/nemosis_data_cache')
-            INTERVAL_DATETIME     DUID  ...  PASAAVAILABILITY  MAXAVAIL
-    0     2020-01-01 00:05:00   AGLHAL  ...             181.0       181
-    1     2020-01-01 00:05:00   AGLSOM  ...             140.0       140
-    2     2020-01-01 00:05:00  ANGAST1  ...              44.0        44
-    3     2020-01-01 00:05:00    ARWF1  ...             241.0       241
-    4     2020-01-01 00:05:00   BALBG1  ...              30.0         0
-    ...                   ...      ...  ...               ...       ...
-    3306  2020-01-01 00:50:00    LBBL1  ...              25.0        25
-    3307  2020-01-01 00:55:00    HPRG1  ...             100.0       100
-    3308  2020-01-01 00:55:00    HPRL1  ...              80.0        80
-    3309  2020-01-01 00:55:00    LBBG1  ...              25.0        25
-    3310  2020-01-01 00:55:00    LBBL1  ...              25.0        25
+            INTERVAL_DATETIME     DUID  AVAILABILITY  TOTALCLEARED   FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL
+    0     2020-01-01 00:05:00   AGLHAL       181.000         0.000   0.00000             60.00000              -60.00000        60.00000         -60.00000             181.0       181
+    1     2020-01-01 00:05:00   AGLSOM       140.000         0.000   0.00000             40.00000              -40.00000        40.00000         -40.00000             140.0       140
+    2     2020-01-01 00:05:00  ANGAST1        44.000         0.000   0.00000             70.00000              -70.00000        70.00000         -70.00000              44.0        44
+    3     2020-01-01 00:05:00    ARWF1        29.745        29.745  35.50000            130.40000              -19.60000       130.40000         -19.60000             241.0       241
+    4     2020-01-01 00:05:00   BALBG1         0.000         0.000   0.00000            500.00000             -500.00000       500.00000        -500.00000              30.0         0
+    ...                   ...      ...           ...           ...       ...                  ...                    ...             ...               ...               ...       ...
+    3306  2020-01-01 00:50:00    LBBL1        25.000         0.000   0.00000             25.00000              -25.00000        25.00000         -25.00000              25.0        25
+    3307  2020-01-01 00:55:00    HPRG1       100.000         0.000  12.00000             30.50000              -29.50000        30.50000         -29.50000             100.0       100
+    3308  2020-01-01 00:55:00    HPRL1        80.000         0.000   0.00000             40.00000              -40.00000        40.00000         -40.00000              80.0        80
+    3309  2020-01-01 00:55:00    LBBG1        25.000         0.000  10.26231             25.64302              -24.35698        25.64302         -24.35698              25.0        25
+    3310  2020-01-01 00:55:00    LBBL1        25.000         0.000   0.00000             25.00000              -25.00000        25.00000         -25.00000              25.0        25
     <BLANKLINE>
     [3311 rows x 11 columns]
 
@@ -251,7 +259,7 @@ def define_and_return_price_bins():
     """
     price_bins = pd.DataFrame(
         {
-            "bin_name": [
+            "BIN_NAME": [
                 "[-1000, -100)",
                 "[-100, 0)",
                 "[0, 50)",
@@ -264,8 +272,8 @@ def define_and_return_price_bins():
                 "[5000, 10000)",
                 "[10000, 15500)",
             ],
-            "lower_edge": [-2000, -100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000],
-            "upper_edge": [-100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000, 16000],
+            "LOWER_EDGE": [-2000, -100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000],
+            "UPPER_EDGE": [-100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000, 16000],
         }
     )
     return price_bins

@@ -3,6 +3,8 @@ import datetime
 import numpy as np
 import pandas as pd
 
+pd.set_option('display.width', None)
+
 
 def stack_unit_bids(volume_bids, price_bids):
     """
@@ -350,19 +352,15 @@ def calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics):
     >>> after_dispatch_metrics['SETTLEMENTDATE'] = pd.to_datetime(after_dispatch_metrics['SETTLEMENTDATE'])
 
     >>> after_dispatch_metrics
-           SETTLEMENTDATE    DUID  ...  INITIALMW  TOTALCLEARED
-    0 2022-01-01 00:00:00  AGLHAL  ...       80.1            80
-    1 2022-01-01 00:05:00  AGLHAL  ...       88.9            90
-    2 2022-01-01 00:10:00  AGLHAL  ...       84.5            85
-    <BLANKLINE>
-    [3 rows x 7 columns]
+           SETTLEMENTDATE    DUID  RAMPUPRATE  RAMPDOWNRATE  AVAILABILITY  INITIALMW  TOTALCLEARED
+    0 2022-01-01 00:00:00  AGLHAL         540          1080           100       80.1            80
+    1 2022-01-01 00:05:00  AGLHAL         840          1440            90       88.9            90
+    2 2022-01-01 00:10:00  AGLHAL        3000          1680           105       84.5            85
 
     >>> calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics)
-        INTERVAL_DATETIME    DUID  ...  PASAAVAILABILITY  MAXAVAIL
-    0 2022-01-01 00:00:00  AGLHAL  ...               120       100
-    1 2022-01-01 00:05:00  AGLHAL  ...                90        90
-    <BLANKLINE>
-    [2 rows x 11 columns]
+        INTERVAL_DATETIME    DUID  AVAILABILITY  TOTALCLEARED  FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL
+    0 2022-01-01 00:00:00  AGLHAL           100            80     88.9                130.1                  -19.9           125.1              -9.9               120       100
+    1 2022-01-01 00:05:00  AGLHAL            90            90     84.5                163.9                  -36.1           158.9             -31.1                90        90
 
     Args:
         as_bid_metrics: pd.DataFrame containing values submitted by unit's as part of the bidding process. Should

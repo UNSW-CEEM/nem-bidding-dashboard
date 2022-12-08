@@ -97,12 +97,12 @@ populate_postgres_db.region_data(con_string, start, end, raw_data_cache)
 populate_postgres_db.unit_dispatch(con_string, start, end, raw_data_cache)
 ```
 
-### Retrieve aggregate data from database
+### Retrieve or aggregate data from database
 
 Now that you've installed PostgresSQL, create a database, built the required tables and functions, and populated the 
 database with data, you can begin using to retrieve and aggregate data.
 
-To retrieve data or perform your own custom queries of the data you can use the run_query_return_dataframe function.
+To retrieve data or perform your own custom queries of the database you can use the run_query_return_dataframe function.
 
 ```python
 from nem_bidding_dashboard import postgres_helpers
@@ -134,7 +134,7 @@ print(data)
 ```
 
 Alternatively you can use the functions defined in the module query_postgres_db to perform predefined filtering and 
-aggregation procedures. For example:
+aggregation procedures. For example, aggregating bidding data from a number of regions, as shown below:
 
 ```python
 
@@ -152,7 +152,10 @@ agg_bids = query_postgres_db.aggregate_bids(
     ['QLD', 'NSW', 'SA'],
     "2020/01/01 00:00:00",
     "2020/01/01 01:00:00",
-    'hourly')
+    'hourly',
+    'Generator',
+    'adjusted',
+    [])
 
 print(agg_bids)
 #      INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
@@ -174,4 +177,102 @@ print(agg_bids)
 When the functionality to run the web app locally with a local postgres database is complete an example will be added
 here.
 
-## Retrieving and processing raw data
+## Using the file cache backend
+
+Data can also be retrieved, and aggregated directly from the raw file cache kept by 
+[NEMOSIS](https://github.com/UNSW-CEEM/NEMOSIS) the package is used to download and compile raw data from AEMO. While,
+this means no PostgresSQL database is needed, if processed or aggregated data is going to be queried on an ongoing 
+using the file cache will be significantly slower than using the postgres database.
+
+### Retrieving raw AEMO data
+
+While, nem-bidding-dashboard uses [NEMOSIS](https://github.com/UNSW-CEEM/NEMOSIS) to download raw AEMO data, it wraps 
+the calls to NEMOSIS in its own functions that check both AEMO current and archive tables, perform filtering of 
+market intervention periods, and in some cases combine data from multiple tables. The functions for compiling raw AEMO 
+data are in the module fetch_data.
+
+This example demonstrates retrieving regional price and demand data:
+
+```python
+
+from nem_bidding_dashboard import fetch_data
+
+regional_data =  fetch_data.get_region_data(
+    start_time='2020/01/01 00:00:00',
+    end_time='2020/01/01 00:05:00',
+    raw_data_cache='D:/nemosis_data_cache')
+
+print(regional_data)
+#   REGIONID      SETTLEMENTDATE  TOTALDEMAND       RRP
+# 0     NSW1 2020-01-01 00:05:00      7245.31  49.00916
+# 1     QLD1 2020-01-01 00:05:00      6095.75  50.81148
+# 2      SA1 2020-01-01 00:05:00      1466.53  68.00000
+# 3     TAS1 2020-01-01 00:05:00      1010.06  81.79115
+# 4     VIC1 2020-01-01 00:05:00      4267.32  65.67826
+```
+
+### Retrieving processed data
+
+Before data is stored in the postgres database for use by the dashboard a number of preprocessing steps are carried out
+to reduce the data volume and speed up the final aggregation and processing when the dashboard sends a request to the 
+database. The user can retrieve the data in the form stored in the database, but without creating a database, using the 
+functions in the module fetch_and_preprocess, these are the same functions used to prepare data before loading into the 
+database.
+
+For example, the function fetch_and_preprocess.bid_data can be used to retrieve processed bidding data in the format 
+stored in the database:
+
+```python
+from nem_bidding_dashboard import fetch_and_preprocess
+
+bids = fetch_and_preprocess.bid_data(
+    start_time='2020/01/01 00:00:00',
+    end_time='2020/01/01 00:05:00',
+    raw_data_cache='D:/nemosis_data_cache')
+
+print(bids.head(5))
+#        INTERVAL_DATETIME      DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE
+# 0    2020-01-01 00:05:00    BALBL1        1         20                0.0    -48.06
+# 1    2020-01-01 00:05:00    RT_SA4        1       3000                0.0  -1000.00
+# 2    2020-01-01 00:05:00    RT_SA5        1       3000                0.0  -1000.00
+# 3    2020-01-01 00:05:00    RT_SA6        1       3000                0.0  -1000.00
+# 4    2020-01-01 00:05:00   RT_TAS1        1       3000                0.0  -1000.00
+```
+
+### Aggregating data
+
+The data aggregation and querying options available for the database are also replicated for the raw data cache. This
+allows the user to get the aggregate data shown in the bidding dashboard without setting up a local postgres database.
+
+For example, bidding data can be aggregated as shown below:
+
+```python
+
+from nem_bidding_dashboard import query_cached_data
+
+
+agg_bids = query_cached_data.aggregate_bids(
+    ['QLD', 'NSW', 'SA'],
+    "2020/01/01 00:00:00",
+    "2020/01/01 01:00:00",
+    'hourly',
+    'Generator',
+    'adjusted',
+    [],
+    'D:/nemosis_data_cache')
+
+print(agg_bids)
+#      INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
+# 0  2020-01-01 01:00:00    [1000, 5000)   1004.000
+# 1  2020-01-01 01:00:00      [100, 200)    300.000
+# 2  2020-01-01 01:00:00       [50, 100)   1788.000
+# 3  2020-01-01 01:00:00   [-1000, -100)   9672.090
+# 4  2020-01-01 01:00:00      [200, 300)   1960.000
+# 5  2020-01-01 01:00:00         [0, 50)   4810.708
+# 6  2020-01-01 01:00:00       [-100, 0)      7.442
+# 7  2020-01-01 01:00:00      [300, 500)    157.000
+# 8  2020-01-01 01:00:00     [500, 1000)    728.000
+# 9  2020-01-01 01:00:00  [10000, 15500)   4359.000
+# 10 2020-01-01 01:00:00   [5000, 10000)     20.000
+
+```
