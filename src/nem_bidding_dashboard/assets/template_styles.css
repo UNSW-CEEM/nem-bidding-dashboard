@@ -832,6 +832,13 @@ body::after {
   margin: 30px 20px 30px 20px;
 }
 
+#datetime-duration-title {
+  margin: 10px 50px 0px 50px;
+  font-weight: 400;
+  font-family: Arial, Helvetica, sans-serif;
+  color:#505050;
+}
+
 #graph-selectors {
   display: flex;
   flex-direction: row;
@@ -853,19 +860,16 @@ body::after {
 
 }
 
-#date-selector {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  gap: 10px;
-}
 
-#datetime-region-selector {
+#datetime-duration-selector {
   margin: 15px 50px 0px 50px;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  /* align-items: center; */
   gap: 10px;
+  font-weight: 400;
+  font-family: Arial, Helvetica, sans-serif;
+  text-transform: uppercase;
 }
 
 #datetime-picker {
@@ -883,6 +887,13 @@ body::after {
   border-radius: 0px !important;
 }
 
+#start-date-picker {
+  max-height: 50px;
+  height: 50px;
+  max-width: 80px;
+  width: 80px;
+}
+
 #start-time-picker {
   max-width: 80px;
   border-radius: 0px;
@@ -898,13 +909,6 @@ body::after {
   padding-left: 4px !important;
 }
 
-#start-date-picker {
-  max-height: 50px;
-  height: 50px;
-  max-width: 80px;
-  width: 80px;
-}
-
 #start-hour-picker {
   border-radius: 0px;
   padding-left: 1px !important;
@@ -915,8 +919,13 @@ body::after {
   border-radius: 0px;
 }
 
+#duration-selector {
+  padding-top: 8px; 
+  display:inline;
+}
+
 #region-checklist {
-  margin-left: 100px; 
+  margin-left: 0px; 
 }
 
 
@@ -933,11 +942,6 @@ body::after {
 #tech-type-dropdown {
   min-width: 150px;
   font-size: 12px
-}
-
-#duration-selector {
-  /* padding-top: 5px; */
-  display:inline;
 }
 
 #footer {
@@ -962,7 +966,7 @@ body::after {
 
 
 .CalendarDay {
-  padding: 10px 11px !important;
+  padding: 9px 11px !important;
 }
 
 

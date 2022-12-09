@@ -43,27 +43,8 @@ This data can be filtered by datetime, and will either be shown in daily periods
 
 
 
-def get_settings_content(duid_options, station_options, tech_type_options):
+def get_settings_content(duid_options, station_options, tech_type_options, region_options, initial_regions):
     settings_content = [
-        html.Div(
-            id='duid-div', 
-            children=[
-                html.H6('Select Units by DUID', className='selector-title'),
-                dcc.Dropdown(
-                    id='duid-dropdown', 
-                    value=None,
-                    options=duid_options,
-                    multi=True,
-                ),
-                html.H6('Select Units by Station', className='selector-title'),
-                dcc.Dropdown(
-                    id='station-dropdown', 
-                    value=None,
-                    options=station_options,
-                    multi=False,
-                ),
-            ]
-        ),
         html.Div(
             id='tech-type-div', 
             children=[
@@ -73,20 +54,35 @@ def get_settings_content(duid_options, station_options, tech_type_options):
                     options=tech_type_options, 
                     value=None,
                     multi=True 
+                ),
+                html.H6('Regions', className='selector-title'),
+                dcc.Checklist(
+                    id='region-checklist',
+                    options=region_options,
+                    value=initial_regions,
+                    inline=True,
                 )
             ]
         ),
         html.Div(
-            id='show-demand-div',
+            id='duid-div', 
             children=[
-                html.H6('Other Metrics', className='selector-title'),
-                dcc.Checklist(
-                    id='price-demand-checkbox', 
-                    options=['Demand', 'Price'], 
-                    value=['Demand', 'Price'],
+                html.H6('Select Units by Station', className='selector-title'),
+                dcc.Dropdown(
+                    id='station-dropdown', 
+                    value=None,
+                    options=station_options,
+                    multi=False,
+                ),
+                html.H6('Select Units by DUID', className='selector-title'),
+                dcc.Dropdown(
+                    id='duid-dropdown', 
+                    value=None,
+                    options=duid_options,
+                    multi=True,
                 ),
             ]
-        ), 
+        ),
         html.Div(
             id='dispatch-type-div',
             children=[
@@ -95,6 +91,23 @@ def get_settings_content(duid_options, station_options, tech_type_options):
                     id='dispatch-type-selector', 
                     options=['Generator', 'Load'], 
                     value='Generator',
+                ),
+                html.H6('Bidding Data Options', className='selector-title'),
+                dcc.RadioItems(
+                    id='raw-adjusted-selector', 
+                    options=['Raw Bids', 'Adjusted Bids'], 
+                    value='Adjusted Bids', 
+                ), 
+            ]
+        ), 
+        html.Div(
+            id='show-demand-div',
+            children=[
+                html.H6('Show other Metrics', className='selector-title'),
+                dcc.Checklist(
+                    id='price-demand-checkbox', 
+                    options=['Demand', 'Price'], 
+                    value=['Demand', 'Price'],
                 ),
             ]
         ), 
@@ -125,7 +138,10 @@ def get_content(
             html.H6(id="graph-name", children=title), 
         ),
         html.Div(
-            id="datetime-region-selector", 
+            html.H6(id='datetime-duration-title', className='selector-title', children='Pick starting datetime and duration:')
+        ),
+        html.Div(
+            id="datetime-duration-selector", 
             children=[
                 html.Div(
                     id='datetime-picker', 
@@ -158,17 +174,7 @@ def get_content(
                     value=initial_duration,
                     inline=True,
                 ),
-                html.Div(
-                    id='region-div',
-                    children=[
-                        dcc.Checklist(
-                            id='region-checklist',
-                            options=region_options,
-                            value=initial_regions,
-                            inline=True,
-                        ),
-                    ]
-                ),
+                
             ]
         ),
         html.Div(
@@ -176,18 +182,8 @@ def get_content(
             children=graph_content,
         ),
         html.Div(
-            id='raw-adjusted-div', 
-            children=[
-                dcc.RadioItems(
-                    id='raw-adjusted-selector', 
-                    options=['Raw Bids', 'Adjusted Bids'], 
-                    value='Adjusted Bids', 
-                ), 
-            ]
-        ),
-        html.Div(
             id="graph-selectors", 
-            children=get_settings_content(duid_options, station_options, tech_type_options),
+            children=get_settings_content(duid_options, station_options, tech_type_options, region_options, initial_regions),
         ), 
         html.Div(
             id="how-to-use", 
