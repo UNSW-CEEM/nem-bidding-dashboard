@@ -18,7 +18,7 @@ app.title = 'NEM Dashboard'
 
 # Initial state of the dashboard
 region_options = ['NSW', 'VIC', 'TAS', 'SA', 'QLD']
-initial_regions = region_options
+initial_regions = ['NSW']
 max_date = date.today() - timedelta(days=1)
 # Sets initial start date to be yesterday, will require database updating daily
 # initial_start_date_obj = max_date
@@ -43,6 +43,30 @@ app.layout = layout_template.build(
 
 
 @app.callback(
+    Output('duid-dropdown', 'options'),
+    Output('station-dropdown', 'options'),
+    Input('tech-type-dropdown', 'value'), 
+    Input('dispatch-type-selector', 'value'), 
+    Input('start-date-picker', 'date'),
+    Input('start-hour-picker', 'value'),
+    Input('start-minute-picker', 'value'),
+    Input('duration-selector', 'value'),
+    Input('region-checklist', 'value'))
+def update_duids_from_station(
+    tech_types: List[str],
+    dispatch_type: str,
+    start_date: str, 
+    hour: str, 
+    minute: str, 
+    duration: str, 
+    regions: List[str]
+) -> Tuple[List[str], str]:
+    start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+    duid_options = get_duid_station_options(start_date, regions, duration, tech_types, dispatch_type)
+    return sorted(duid_options['DUID']), sorted(list(set(duid_options['STATION NAME'])))
+
+
+@app.callback(
     Output('duid-dropdown', 'value'),
     Output('station-dropdown', 'value'),
     Input('duid-dropdown', 'value'),
@@ -54,7 +78,7 @@ app.layout = layout_template.build(
     State('start-minute-picker', 'value'),
     State('duration-selector', 'value'),
     State('region-checklist', 'value'))
-def update_duids_from_date_region(
+def update_duids_from_station(
     duids: List[str], 
     tech_types: List[str],
     dispatch_type: str,

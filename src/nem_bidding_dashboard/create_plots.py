@@ -33,6 +33,11 @@ def get_duid_station_options(
     start_time_obj = datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
     if duration == 'Daily':
         end_time = (start_time_obj + timedelta(days=1)).strftime('%Y/%m/%d %H:%M:%S')
+        # print('Calling function with: ')
+        # print(f'start = {start_time}')
+        # print(f'end = {end_time}')
+        # print(f'regions = {regions}')
+
         return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time, tech_types, dispatch_type)
     if duration == 'Weekly':
         end_time = (start_time_obj + timedelta(days=7)).strftime('%Y/%m/%d %H:%M:%S')
@@ -125,9 +130,10 @@ def plot_aggregate_bids(
     resolution: str, 
     regions: List[str], 
     show_demand: bool, 
+    show_price: bool,
     raw_adjusted: str, 
     tech_types: List[str], 
-    dispatch_type: str
+    dispatch_type: str, 
 ) -> Figure:
     """
     TODO
@@ -153,6 +159,22 @@ def plot_aggregate_bids(
     """
     stacked_bids = aggregate_bids(regions, start_time, end_time, resolution, raw_adjusted, tech_types, dispatch_type)
     stacked_bids = stacked_bids.groupby(['INTERVAL_DATETIME', 'BIN_NAME'], as_index=False).agg({'BIDVOLUME': 'sum'})
+
+    ### Unsure why this doesn't work, would be far more efficient than looping
+    # prices['INTERVAL_DATETIME'] = prices['INTERVAL_DATETIME'].astype(str)
+    # stacked_bids['INTERVAL_DATETIME'] = stacked_bids['INTERVAL_DATETIME'].astype(str)
+    # stacked_bids.join(prices, on='INTERVAL_DATETIME')
+    ### This can work to get price onto hover text but is super inefficient
+    # if show_price:
+    #     prices = get_aggregated_vwap(regions, start_time, end_time)
+    #     prices = prices.sort_values(by='SETTLEMENTDATE')
+    #     prices = prices.rename(columns={'SETTLEMENTDATE': 'INTERVAL_DATETIME'})
+    #     stacked_bids['PRICE'] = [0 for i in range(len(stacked_bids['INTERVAL_DATETIME']))]
+    #     for date in range(0, len(stacked_bids['INTERVAL_DATETIME'])):
+    #         for date2 in range(0, len(prices['INTERVAL_DATETIME'])):
+    #             if stacked_bids['INTERVAL_DATETIME'].iloc[date] == prices['INTERVAL_DATETIME'].iloc[date2]:
+    #                 stacked_bids['PRICE'].iloc[date] = prices['PRICE'].iloc[date2]
+
     bid_order = [ 
         '[-1000, -100)', '[-100, 0)', '[0, 50)', '[50, 100)', '[100, 200)', 
         '[200, 300)', '[300, 500)', '[500, 1000)', '[1000, 5000)', 
@@ -173,12 +195,18 @@ def plot_aggregate_bids(
         category_orders={'BIN_NAME': bid_order},
         color='BIN_NAME',
         color_discrete_map=color_map,
-        labels={'BIN_NAME': 'Price Bin'},
+        labels={'BIN_NAME': 'Price Bin', 'PRICE': 'Average Electricity Price'},
+        # custom_data=['PRICE'] if show_price else []
     )
 
     # Update graph axes and hover text
     fig.update_yaxes(title='Volume (MW)')
-    fig.update_traces(hovertemplate='%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>')
+    if show_price: 
+        fig.update_traces(hovertemplate='%{x}<br>Bid Volume: %{y:.0f} MW<br>Average Electricity Price: $%{customdata[0]:.2f}/MWh<extra></extra>')
+    else:
+        fig.update_traces(hovertemplate='%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>')
+    fig.update_traces(hovertemplate='Bid Volume: %{y:.0f} MW<extra></extra>')
+
     fig.update_layout(height=400)
     if resolution == 'hourly':
         fig.update_xaxes(title=f'Time (Bid stack sampled on the hour)')
@@ -187,7 +215,7 @@ def plot_aggregate_bids(
 
     if show_demand:
         fig = add_demand_trace(fig, start_time, end_time, regions)
-
+    
     return fig
 
 
@@ -216,10 +244,14 @@ def add_demand_trace(
     demand.loc[:,'REGIONID'] = demand['REGIONID'].str[:-1]
     demand = demand[demand['REGIONID'].isin(regions)]
     demand = demand.groupby(['SETTLEMENTDATE'], as_index=False).agg({'TOTALDEMAND': 'sum'})
-    fig.add_trace(go.Scatter(x=demand['SETTLEMENTDATE'], y=demand['TOTALDEMAND'],
-                                marker=dict(color='blue', size=4), name='Demand'))
+    fig.add_trace(go.Scatter(
+        x=demand['SETTLEMENTDATE'], 
+        y=demand['TOTALDEMAND'],
+        marker=dict(color='blue', size=4), 
+        name='Demand', 
+    ))
     fig.update_traces(
-        hovertemplate='%{x}<br>Demand: %{y:.0f} MW<extra></extra>',
+        hovertemplate='Demand: %{y:.0f} MW<extra></extra>',
         selector={'name': 'Demand'}
     )
     return fig
@@ -259,11 +291,11 @@ def plot_bids(
             Plotly express figure if show_price is False. Plotly go subplot if 
             show_price is True. 
     """
-    if (duids):
+    if duids:
         fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted)
     else: 
-        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, raw_adjusted, tech_types, dispatch_type)
-    
+        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, show_price, raw_adjusted, tech_types, dispatch_type)
+
     if show_price:
         fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
     
@@ -277,6 +309,10 @@ def plot_bids(
             (1.00, 'green'), 
         ],
     )
+    if not duids:
+        fig.update_layout(hovermode='x unified')
+        fig.update_traces(xaxis='x1')
+
     return fig
 
 
@@ -390,7 +426,7 @@ def plot_price(
         }, 
         color_discrete_sequence=['red'], 
     )
-    price_graph.update_traces(hovertemplate='%{x}<br>Price: $%{y:.2f}/MWh<extra></extra>')
+    price_graph.update_traces(hovertemplate='%{x}<br>Average electricity price: $%{y:.2f}/MWh<extra></extra>')
     return price_graph
 
     

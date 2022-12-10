@@ -48,6 +48,13 @@ def get_settings_content(duid_options, station_options, tech_type_options, regio
         html.Div(
             id='tech-type-div', 
             children=[
+                html.H6('Regions', className='selector-title'),
+                dcc.Checklist(
+                    id='region-checklist',
+                    options=region_options,
+                    value=initial_regions,
+                    inline=True,
+                ),
                 html.H6('Unit Type', className='selector-title'),
                 dcc.Dropdown(
                     id='tech-type-dropdown', 
@@ -55,13 +62,6 @@ def get_settings_content(duid_options, station_options, tech_type_options, regio
                     value=None,
                     multi=True 
                 ),
-                html.H6('Regions', className='selector-title'),
-                dcc.Checklist(
-                    id='region-checklist',
-                    options=region_options,
-                    value=initial_regions,
-                    inline=True,
-                )
             ]
         ),
         html.Div(
@@ -114,7 +114,7 @@ def get_settings_content(duid_options, station_options, tech_type_options, regio
     ]
     return settings_content
 
-title = ''
+title = 'Aggregated Bids by Region'
 graph_content = dcc.Graph(
     id='graph',
     figure={
@@ -185,6 +185,12 @@ def get_content(
             id="graph-selectors", 
             children=get_settings_content(duid_options, station_options, tech_type_options, region_options, initial_regions),
         ), 
+        # html.Div(
+        #     id='dispatch-metric-selectors',
+        #     children=[
+                
+        #     ]
+        # ),
         html.Div(
             id="how-to-use", 
             children=[
