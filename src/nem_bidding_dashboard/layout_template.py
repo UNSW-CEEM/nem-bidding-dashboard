@@ -5,13 +5,9 @@ TODO:
     Documentation
 """
 
-from dash import Dash, dcc, html, Input, Output, State
-import dash_bootstrap_components as dbc
-from datetime import datetime, date, timedelta 
-from typing import List, Tuple
+from dash import dcc, html
 
 from create_plots import *
-from query_supabase import unit_types
 
 
 
@@ -178,6 +174,12 @@ def get_content(
             ]
         ),
         html.Div(
+            id='error-message-div', 
+            children=[
+                html.P(id='error-message', children=[])
+            ]
+        ),
+        html.Div(
             id="graph-box", 
             children=graph_content,
         ),
@@ -192,8 +194,7 @@ def get_content(
                 dcc.Checklist(
                     id='dispatch-checklist', 
                     options=list(DISPATCH_COLUMNS.keys()),
-                    # options=['Avalailability', 'Dispatch Volume', 'Final MW', 'As Bid Ramp Up Max Avail', 'As Bid Ramp Down Min Avail', 'Ramp Up Max Avail', 'Ramp Down Min Avail', 'PASA Availability', 'Max Availability'], 
-                    value=[]
+                    value=['Availability']
                 )
             ]
         ),
@@ -209,7 +210,6 @@ def get_content(
     return content
 
 
-# def build (title:str, settings_content:list, graph_content:list):
 def build (
     region_options, 
     initial_regions, 

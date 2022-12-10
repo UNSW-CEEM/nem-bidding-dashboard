@@ -52,7 +52,7 @@ app.layout = layout_template.build(
     Input('start-minute-picker', 'value'),
     Input('duration-selector', 'value'),
     Input('region-checklist', 'value'))
-def update_duids_from_station(
+def update_duid_station_options(
     tech_types: List[str],
     dispatch_type: str,
     start_date: str, 
@@ -61,6 +61,24 @@ def update_duids_from_station(
     duration: str, 
     regions: List[str]
 ) -> Tuple[List[str], str]:
+    """
+    Update the possible duid and station options based on the time period, 
+    duration and unit type. 
+
+    Arguments:
+        tech_types: List of unit types
+        dispatch_type: Either 'Generator' or 'Load'
+        start_date: Date of initial datetime for graph in form 'DD-MM-YYYY', 
+            taken from the starting date picker. 
+        hour: Hour of initial datetime (in 24 hour format)
+        minute: Minute of initial datetime
+        duration: Defines the length of time to show data from. Either 'Daily' 
+            or 'Weekly'
+        regions: List of regions to show data for
+    Returns:
+        duid options: List of possible duids for the given filters    
+        station options: List of possible stations for the given filters    
+    """
     start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
     duid_options = get_duid_station_options(start_date, regions, duration, tech_types, dispatch_type)
     return sorted(duid_options['DUID']), sorted(list(set(duid_options['STATION NAME'])))
@@ -90,12 +108,13 @@ def update_duids_from_station(
     regions: List[str]
 ) -> Tuple[List[str], str]:
     """
-    TODO
     Callback to update the duid dropdown when a station name is selected and 
     remove the value from the station dropdown when the duid options are 
     changed. 
     
     Arguments:
+        tech_types: List of unit types
+        dispatch_type: Either 'Generator' or 'Load'
         duids: List of DUIDs currently selected in the DUID dropdown
         station: The currently selected station name in the station dropdown
         start_date: Date of initial datetime 
@@ -137,6 +156,7 @@ def update_duids_from_station(
 @app.callback(
     Output('graph', 'figure'),
     Output('graph-name', 'children'),
+    Output('error-message', 'children'),
     Input('start-date-picker', 'date'),
     Input('start-hour-picker', 'value'),
     Input('start-minute-picker', 'value'),
@@ -147,7 +167,8 @@ def update_duids_from_station(
     Input('raw-adjusted-selector', 'value'),
     Input('tech-type-dropdown', 'value'), 
     Input('dispatch-type-selector', 'value'),
-    Input('dispatch-checklist', 'value'))
+    Input('dispatch-checklist', 'value'),
+    State('graph', 'figure'))
 def update_main_plot(
     start_date: str, 
     hour: str, 
@@ -159,10 +180,10 @@ def update_main_plot(
     raw_adjusted: str,
     tech_types: List[str],
     dispatch_type: str, 
-    dispatch_metrics: List[str]
-) -> Figure:
+    dispatch_metrics: List[str], 
+    fig: Figure
+) -> Tuple[Figure, str, str]:
     """
-    TODO
     Callback to update the graph when the user interacts with any of the graph 
     selectors. 
 
@@ -177,9 +198,19 @@ def update_main_plot(
         duids: List of DUIDs of units to show data for
         price_demand_checkbox: Contains values 'Demand' and/or 'Price', 
             controlling which of these measures is display
+        raw_adjusted: Determines whether to show raw or availability adjusted 
+            bids. Either 'raw' or 'adjusted'
+        tech_types: List of unit types to show bidding data for
+        dispatch_type: Either 'Generator' or 'Load'
+        dispatch_metrics: List of dispatch metrics to plot on main graph
+        fig: The current graph figure. If main filters remain the same, this 
+            figure is updated by adding or hiding traces, reducing loading time
     Returns:
         px figure showing the data specified using the graph selectors. See 
-        create_plots.plot_bids for more info. 
+            create_plots.plot_bids for more info. 
+        graph_name: The name of the graph being displayed
+        error message: message shown if graph does not have the required 
+            data to be displayed
     """
     start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
     start_date_obj = datetime.strptime(start_date, '%Y/%m/%d %H:%M:%S')
@@ -189,6 +220,44 @@ def update_main_plot(
     elif (duration == 'Weekly'):
         end_date = (start_date_obj + timedelta(days=7)).strftime('%Y/%m/%d %H:%M:%S')
         resolution = 'hourly'
+
+    # All of this is checking whether the graph can be updated quickly (i.e. by 
+    # adding or hiding traces) rather than redoing the entire thing. Should be 
+    # possible to do with the price plot too but alas I didn't have time to 
+    # figure it out
+    fig = go.Figure(fig) 
+    trigger = dash.callback_context.triggered_id
+    if trigger == 'price-demand-checkbox':
+        trace_names = [trace['name'] for trace in fig['data']]
+
+        if 'Demand' in trace_names and 'Demand' not in price_demand_checkbox:
+            fig.update_traces(visible=False, selector={'name': 'Demand'})
+            return fig, dash.no_update, ''
+        if 'Demand' in price_demand_checkbox:
+            if 'Demand' not in trace_names:
+                fig = add_demand_trace(fig, start_date, end_date, regions) 
+            else:
+                fig.update_traces(visible=True, selector={'name': 'Demand'})
+        if ('Price' in trace_names and 'Price' in price_demand_checkbox)\
+            or ('Price' not in trace_names and 'Price' not in price_demand_checkbox):
+            return fig, dash.no_update, ''
+    if trigger == 'dispatch-checklist':
+        trace_names = [trace['name'] for trace in fig['data']]
+        dispatch_options = DISPATCH_COLUMNS.keys()
+        for name in trace_names:
+            if name in dispatch_options and name not in dispatch_metrics:
+                fig.update_traces(visible=False, selector={'name': name})
+        for name in dispatch_metrics:
+            if name not in trace_names:
+                if duids:
+                    fig = add_duid_dispatch_data(fig, duids, start_date, end_date, resolution, [name])
+                else:
+                    fig = add_region_dispatch_data(fig, regions, start_date, end_date, resolution, [name])
+            else:
+                fig.update_traces(visible=True, selector={'name': name})
+        return fig, dash.no_update, ''
+
+
     show_demand = 'Demand' in price_demand_checkbox
     show_price = 'Price' in price_demand_checkbox
     raw_adjusted = 'raw' if raw_adjusted == 'Raw Bids' else 'adjusted'
@@ -196,10 +265,12 @@ def update_main_plot(
         start_date, end_date, resolution, regions, duids, show_demand, 
         show_price, raw_adjusted, tech_types, dispatch_type, dispatch_metrics
     )
+    if not fig:
+        return dash.no_update, dash.no_update, 'No data found using current filters'
     fig = adjust_fig_layout(fig)
     graph_name = get_graph_name(duids)
 
-    return fig, graph_name
+    return fig, graph_name, ''
 
 
 if __name__ == '__main__':

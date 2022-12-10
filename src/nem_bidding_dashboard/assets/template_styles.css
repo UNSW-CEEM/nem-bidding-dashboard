@@ -924,6 +924,12 @@ body::after {
   display:inline;
 }
 
+#error-message-div {
+  margin: 0px 50px 0px 50px;
+  font-size: 13px;
+  color: #ff0000;
+}
+
 #region-checklist {
   margin-left: 0px; 
 }

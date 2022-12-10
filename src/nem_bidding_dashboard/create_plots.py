@@ -15,7 +15,7 @@ from query_supabase import *
 
 
 DISPATCH_COLUMNS = {
-    'Avalailability': {'name': 'AVAILABILITY', 'color': 'yellow'}, 
+    'Availability': {'name': 'AVAILABILITY', 'color': 'yellow'}, 
     'Dispatch Volume': {'name': 'TOTALCLEARED', 'color': 'green'}, 
     'Final MW': {'name': 'FINALMW', 'color': 'cyan'}, 
     'As Bid Ramp Up Max Avail': {'name': 'ASBIDRAMPUPMAXAVAIL', 'color': 'magenta'}, 
@@ -79,11 +79,77 @@ def get_graph_name(duids: List[str]):
         return "Aggregated Bids by Region"
 
 
+def plot_bids(
+    start_time: str, 
+    end_time: str, 
+    resolution: str, 
+    regions: List[str], 
+    duids: List[str], 
+    show_demand: bool, 
+    show_price: bool, 
+    raw_adjusted: str, 
+    tech_types: List[str], 
+    dispatch_type: bool,
+    dispatch_metrics: List[str]
+) -> Figure:
+    """
+    Plots volume bids over time based on the given parameters. See 
+    plot_duid_bids, plot_aggregate_bids and add_price_subplot for more info. 
+
+    Arguments: 
+        start_time: Initial datetime in the format 'YYYY/MM/DD HH:MM:SS'
+        end_time: Ending datetime, formatted identical to start_time
+        resolution: Either 'hourly' or '5-min'
+        regions: list of specified regions
+        duids: list of specified unit duids. If this empty, only the specified 
+            duid bids will be plotted, otherwise aggregate bids for the given 
+            timeframe and regions will be plotted
+        show_demand: True if electricity demand is to be plotted over figure, 
+            otherwise False
+        show_price: Bool. If True, the figure returned will consist of 2 
+            subplots, 1 showing bids and 1 showing average electricity prices
+            over the same timeframe. If False, only bids will be plotted. 
+        raw_adjusted: Determines whether to show raw or availability adjusted 
+            bids. Either 'raw' or 'adjusted'
+        tech_types: List of unit types to show bidding data for
+        dispatch_type: Either 'Generator' or 'Load'
+        dispatch_metrics: List of dispatch metrics to plot on main graph
+    Returns:
+            Plotly express figure if show_price is False. Plotly go subplot if 
+            show_price is True. 
+    """
+    if duids:
+        fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted, dispatch_metrics)
+    else: 
+        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, raw_adjusted, tech_types, dispatch_type, dispatch_metrics)
+
+    if not fig:
+        return None
+
+    if show_price:
+        fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
+    
+    fig.update_layout(
+        coloraxis_colorscale=[
+            (0.00, 'blue'), 
+            (0.05, 'purple'), 
+            (0.15, 'red'), 
+            (0.25, 'orange'), 
+            (0.50, 'yellow'), 
+            (1.00, 'green'), 
+        ],
+    )
+    if not duids:
+        fig.update_layout(hovermode='x unified')
+        fig.update_traces(xaxis='x1')
+
+    return fig
+
+
 def plot_duid_bids(
     start_time: str, end_time: str, resolution: str, duids: List[str], raw_adjusted: str, dispatch_metrics: List[str]
 ) -> Figure:
     """
-    TODO
     Plots a stacked bar chart showing the bid volumes for each unit specified in 
     the 'duids' list. 
 
@@ -97,10 +163,18 @@ def plot_duid_bids(
         end_time: Ending datetime, formatted identical to start_time
         resolution: Either 'hourly' or '5-min
         duids: list of unit duids
+        raw_adjusted: Determines whether to plot raw or availability adjusted 
+            bids. Either 'raw' or 'adjusted'. Not implemented yet. 
+        dispatch_metrics: List of dispatch metrics to plot over graph
     Returns: 
         Plotly express figure (stacked bar chart)
+    BUG: overlap in legend entry when plotting with duid bids
+    TODO: raw_adjusted not implemented in query_supabase.duid_bids yet, bids  
+        can be plotted as raw or adjusted using 'raw_adjusted' argument
     """
     stacked_bids = duid_bids(duids, start_time, end_time, resolution)
+    if stacked_bids.empty:
+        return None
     stacked_bids = stacked_bids.groupby(['INTERVAL_DATETIME', 'BIDPRICE'], as_index=False).agg({'BIDVOLUME': 'sum'})
 
     stacked_bids.sort_values(by=['BIDPRICE'], inplace=True)
@@ -137,29 +211,26 @@ def plot_duid_bids(
     return fig
 
 
-def add_duid_dispatch(
-    fig: Figure, duids: List[str], start_time: str, end_time: str, resolution: str
-) -> Figure:
-    dispatch_data = get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution)
-    dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
-    fig.add_trace(go.Scatter(
-        x=dispatch_data['INTERVAL_DATETIME'],
-        y=dispatch_data['TOTALCLEARED'],
-        marker=dict(color='green', size=4),
-        name='Dispatch Volume',
-    ))
-    fig.update_traces(
-        hovertemplate='Dispatch Volume: %{y:.0f} MW<extra></extra>',
-        selector={'name': 'Dispatch Volume'}
-    )
-
-    return fig
-
-
 def add_duid_dispatch_data(
     fig: Figure, duids: List[str], start_time: str, end_time: str, resolution: str, dispatch_metrics: List[str]
 ) -> Figure:
+    """
+    Plots the selected dispatch metrics on the figure given. Dispatch metrics 
+    are plotted for the specific duids selected. Relies on 
+    query_supabase.get_aggregated_dispatch_data_by_duids. 
 
+    Arguments:
+        fig: plotly figure to add traces to. Currently plots duid bids. 
+        duids: List of duids to get dispatch data for
+        start_time: Initial datetime in the format "YYYY/MM/DD HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
+        resolution: Either 'hourly' or '5-min'
+        dispatch_metrics: List of dispatch metrics to plot over the main graph
+    Returns:
+        Plotly figure consisting of 'fig' with the given dispatch metrics 
+            plotted over it
+    """
+    print(duids, start_time, end_time, resolution)
     dispatch_data = get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution)
     dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
     for metric in dispatch_metrics:
@@ -183,14 +254,12 @@ def plot_aggregate_bids(
     resolution: str, 
     regions: List[str], 
     show_demand: bool, 
-    show_price: bool,
     raw_adjusted: str, 
     tech_types: List[str], 
     dispatch_type: str, 
     dispatch_metrics: List[str]
 ) -> Figure:
     """
-    TODO
     Plots a stacked bar chart showing the aggregate bids for the specified 
     regions grouped into a set of predefined bins. If show_demand is True, total 
     electricity demand for all specified regions is plotted on top of the 
@@ -208,26 +277,18 @@ def plot_aggregate_bids(
         regions: list of specified regions
         show_demand: True if electricity demand is to be plotted over figure, 
             otherwise False
+        raw_adjusted: Determines whether to plot raw or availability adjusted 
+            bids. Either 'raw' or 'adjusted'. Not implemented yet. 
+        tech_types: List of unit types to show bidding data for
+        dispatch_type: Either 'Generator' or 'Load'
+        dispatch_metrics: List of dispatch metrics to plot over graph
     Returns: 
         Plotly express figure (stacked bar chart)
     """
     stacked_bids = aggregate_bids(regions, start_time, end_time, resolution, raw_adjusted, tech_types, dispatch_type)
+    if stacked_bids.empty:
+        return None
     stacked_bids = stacked_bids.groupby(['INTERVAL_DATETIME', 'BIN_NAME'], as_index=False).agg({'BIDVOLUME': 'sum'})
-
-    ### Unsure why this doesn't work, would be far more efficient than looping
-    # prices['INTERVAL_DATETIME'] = prices['INTERVAL_DATETIME'].astype(str)
-    # stacked_bids['INTERVAL_DATETIME'] = stacked_bids['INTERVAL_DATETIME'].astype(str)
-    # stacked_bids.join(prices, on='INTERVAL_DATETIME')
-    ### This can work to get price onto hover text but is super inefficient
-    # if show_price:
-    #     prices = get_aggregated_vwap(regions, start_time, end_time)
-    #     prices = prices.sort_values(by='SETTLEMENTDATE')
-    #     prices = prices.rename(columns={'SETTLEMENTDATE': 'INTERVAL_DATETIME'})
-    #     stacked_bids['PRICE'] = [0 for i in range(len(stacked_bids['INTERVAL_DATETIME']))]
-    #     for date in range(0, len(stacked_bids['INTERVAL_DATETIME'])):
-    #         for date2 in range(0, len(prices['INTERVAL_DATETIME'])):
-    #             if stacked_bids['INTERVAL_DATETIME'].iloc[date] == prices['INTERVAL_DATETIME'].iloc[date2]:
-    #                 stacked_bids['PRICE'].iloc[date] = prices['PRICE'].iloc[date2]
 
     bid_order = [ 
         '[-1000, -100)', '[-100, 0)', '[0, 50)', '[50, 100)', '[100, 200)', 
@@ -267,7 +328,7 @@ def plot_aggregate_bids(
     if show_demand:
         fig = add_demand_trace(fig, start_time, end_time, regions)
     if dispatch_metrics:
-        fig = add_region_dispatch_data(fig, start_time, end_time, regions, resolution, dispatch_metrics)
+        fig = add_region_dispatch_data(fig, regions, start_time, end_time, resolution, dispatch_metrics)
     
     return fig
 
@@ -311,9 +372,25 @@ def add_demand_trace(
 
 
 def add_region_dispatch_data(
-    fig: Figure, start_time: str, end_time: str, regions: List[str], resolution: str, dispatch_metrics: List[str]
+    fig: Figure, regions: List[str], start_time: str, end_time: str, resolution: str, dispatch_metrics: List[str]
 ) -> Figure:
+    """
+    Plots the selected dispatch metrics on the figure given. Dispatch metrics 
+    are plotted by region. Relies on query_supabase.get_aggregated_dispatch_data. 
 
+
+    Arguments:
+        fig: plotly figure to add traces to. Currently plots aggregate bids by 
+            region
+        regions: list of regions to get dispatch data for
+        start_time: Initial datetime in the format "YYYY/MM/DD HH:MM:SS"
+        end_time: Ending datetime, formatted identical to start_time
+        resolution: Either 'hourly' or '5-min'
+        dispatch_metrics: List of dispatch metrics to plot over the main graph
+    Returns:
+        Plotly figure consisting of 'fig' with the given dispatch metrics 
+            plotted over it
+    """
     dispatch_data = get_aggregated_dispatch_data(regions, start_time, end_time, resolution)
     dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
     for metric in dispatch_metrics:
@@ -327,66 +404,6 @@ def add_region_dispatch_data(
             hovertemplate = metric + ': %{y:.0f} MW<extra></extra>',
             selector={'name': metric}
         )
-    return fig
-
-
-def plot_bids(
-    start_time: str, 
-    end_time: str, 
-    resolution: str, 
-    regions: List[str], 
-    duids: List[str], 
-    show_demand: bool, 
-    show_price: bool, 
-    raw_adjusted: str, 
-    tech_types: List[str], 
-    dispatch_type: bool,
-    dispatch_metrics: List[str]
-) -> Figure:
-    """
-    TODO
-    Plots volume bids over time based on the given parameters. See 
-    plot_duid_bids, plot_aggregate_bids and add_price_subplot for more info. 
-
-    Arguments: 
-        start_time: Initial datetime in the format 'YYYY/MM/DD HH:MM:SS'
-        end_time: Ending datetime, formatted identical to start_time
-        resolution: Either 'hourly' or '5-min'
-        regions: list of specified regions
-        duids: list of specified unit duids. If this empty, only the specified 
-            duid bids will be plotted, otherwise aggregate bids for the given 
-            timeframe and regions will be plotted
-        show_demand: True if electricity demand is to be plotted over figure, 
-            otherwise False
-        show_price: Bool. If True, the figure returned will consist of 2 
-            subplots, 1 showing bids and 1 showing average electricity prices
-            over the same timeframe. If False, only bids will be plotted. 
-    Returns:
-            Plotly express figure if show_price is False. Plotly go subplot if 
-            show_price is True. 
-    """
-    if duids:
-        fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted, dispatch_metrics)
-    else: 
-        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, show_price, raw_adjusted, tech_types, dispatch_type, dispatch_metrics)
-
-    if show_price:
-        fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
-    
-    fig.update_layout(
-        coloraxis_colorscale=[
-            (0.00, 'blue'), 
-            (0.05, 'purple'), 
-            (0.15, 'red'), 
-            (0.25, 'orange'), 
-            (0.50, 'yellow'), 
-            (1.00, 'green'), 
-        ],
-    )
-    if not duids:
-        fig.update_layout(hovermode='x unified')
-        fig.update_traces(xaxis='x1')
-
     return fig
 
 
@@ -417,8 +434,9 @@ def add_price_subplot(
     Returns:
         plotly go subplot containing original bid plot on top and electricity 
         price below
+    BUG: x-axis time ticks seem to disappear, I think in an earlier version they 
+        worked fine
     """
-    #TODO fix overlap in legend entry when plotting with duid bids
     price_graph = plot_price(start_time, end_time, regions, resolution)
 
     plot = make_subplots(
@@ -436,7 +454,7 @@ def add_price_subplot(
     for trace in bid_traces:
         plot.append_trace(trace, row=1, col=1)
     price_trace['showlegend'] = True
-    price_trace['name'] = 'Electricity Price'
+    price_trace['name'] = 'Price'
     plot.add_trace(price_trace, row=2, col=1)
 
     plot.update_layout(
@@ -449,7 +467,6 @@ def add_price_subplot(
     )
     plot.update_yaxes(
         title_text='Average electricity<br>price ($/MWh)',
-        # range=[0, 199],
         row=2, 
         col=1
     )
