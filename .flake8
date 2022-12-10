@@ -1,6 +1,8 @@
 [flake8]
 max-line-length = 120
-extend-ignore = E203, E402
+extend-ignore = E203, E402, E501
+per-file-ignores =
+     tests/mock_nemosis.py: F401
 exclude =
     # No need to traverse our git directory
     .git,

@@ -1,60 +1,262 @@
 import pandas as pd
-from nemosis import custom_errors, defaults, static_table
+from nemosis import custom_errors, defaults
 
 mock_tables = {
-    'DISPATCHPRICE': pd.DataFrame(
+    "DISPATCHPRICE": pd.DataFrame(
         columns=["REGIONID", "SETTLEMENTDATE", "RRP", "INTERVENTION"],
-        data=[('SA', '2020/01/01 01:00:00', 55.4, 0),
-              ('SA', '2020/01/01 01:00:00', 65.4, 1),
-              ('TAS', '2020/01/01 01:00:00', 75.4, 0),
-              ('TAS', '2020/01/01 01:00:00', 85.4, 1)]
+        data=[
+            ("SA1", "2020/01/01 01:00:00", 55.4, 0),
+            ("SA1", "2020/01/01 01:00:00", 65.4, 1),
+            ("TAS1", "2020/01/01 01:00:00", 75.4, 0),
+            ("TAS1", "2020/01/01 01:00:00", 85.4, 1),
+        ],
     ),
-    'DISPATCHREGIONSUM': pd.DataFrame(
+    "DISPATCHREGIONSUM": pd.DataFrame(
         columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "INTERVENTION"],
-        data=[('SA', '2020/01/01 01:00:00', 1000.0, 0),
-              ('SA', '2020/01/01 01:00:00', 1001.0, 1),
-              ('TAS', '2020/01/01 01:00:00', 2000.0, 0),
-              ('TAS', '2020/01/01 01:00:00', 2001.0, 1)]
+        data=[
+            ("SA1", "2020/01/01 01:00:00", 1000.0, 0),
+            ("SA1", "2020/01/01 01:00:00", 1001.0, 1),
+            ("TAS1", "2020/01/01 01:00:00", 2000.0, 0),
+            ("TAS1", "2020/01/01 01:00:00", 2001.0, 1),
+        ],
     ),
-    'DAILY_REGION_SUMMARY': pd.DataFrame(
+    "DAILY_REGION_SUMMARY": pd.DataFrame(
         columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "RRP", "INTERVENTION"],
-        data=[('SA', '2020/01/01 05:00:00', 1010.0, 80.1, 0),
-              ('SA', '2020/01/01 05:00:00', 1011.0, 80.0, 1),
-              ('TAS', '2020/01/01 05:00:00', 2010.0, 90.0, 0),
-              ('TAS', '2020/01/01 05:00:00', 2011.0, 90.1, 1)]
+        data=[
+            ("SA1", "2020/01/01 05:00:00", 1010.0, 80.1, 0),
+            ("SA1", "2020/01/01 05:00:00", 1011.0, 80.0, 1),
+            ("TAS1", "2020/01/01 05:00:00", 2010.0, 90.0, 0),
+            ("TAS1", "2020/01/01 05:00:00", 2011.0, 90.1, 1),
+        ],
     ),
-    'DISPATCHLOAD': pd.DataFrame(
-        columns=['SETTLEMENTDATE', 'INTERVENTION', 'DUID', 'AVAILABILITY', 'TOTALCLEARED', 'INITIALMW', 'RAMPDOWNRATE',
-                 'RAMPUPRATE'],
-        data=[('2020/01/01 01:00:00', 0, 'A', 100.0, 80.0, 70.0, 121.0, 125.0),
-              ('2020/01/01 01:00:00', 1, 'A', 101.0, 81.0, 71.0, 122.0, 126.0),
-              ('2020/01/01 01:00:00', 0, 'B', 200.0, 90.0, 60.0, 123.0, 127.0),
-              ('2020/01/01 01:00:00', 1, 'B', 201.0, 91.0, 61.0, 124.0, 128.0)]
+    "DISPATCHLOAD": pd.DataFrame(
+        columns=[
+            "SETTLEMENTDATE",
+            "INTERVENTION",
+            "DUID",
+            "AVAILABILITY",
+            "TOTALCLEARED",
+            "INITIALMW",
+            "RAMPDOWNRATE",
+            "RAMPUPRATE",
+        ],
+        data=[
+            ("2020/01/01 01:00:00", 0, "A", 100.0, 80.0, 70.0, 121.0, 125.0),
+            ("2020/01/01 01:00:00", 1, "A", 101.0, 81.0, 71.0, 122.0, 126.0),
+            ("2020/01/01 01:00:00", 0, "B", 200.0, 90.0, 60.0, 123.0, 127.0),
+            ("2020/01/01 01:00:00", 1, "B", 201.0, 91.0, 61.0, 124.0, 128.0),
+        ],
     ),
-    'NEXT_DAY_DISPATCHLOAD': pd.DataFrame(
-        columns=['SETTLEMENTDATE', 'INTERVENTION', 'DUID', 'AVAILABILITY', 'TOTALCLEARED', 'INITIALMW', 'RAMPDOWNRATE',
-                 'RAMPUPRATE'],
-        data=[('2020/01/01 05:00:00', 0, 'A', 102.0, 81.0, 71.0, 241.0, 245.0),
-              ('2020/01/01 05:00:00', 1, 'A', 103.0, 82.0, 72.0, 242.0, 246.0),
-              ('2020/01/01 05:00:00', 0, 'B', 202.0, 91.0, 61.0, 243.0, 247.0),
-              ('2020/01/01 05:00:00', 1, 'B', 203.0, 92.0, 62.0, 244.0, 248.0)]
-    )
+    "NEXT_DAY_DISPATCHLOAD": pd.DataFrame(
+        columns=[
+            "SETTLEMENTDATE",
+            "INTERVENTION",
+            "DUID",
+            "AVAILABILITY",
+            "TOTALCLEARED",
+            "INITIALMW",
+            "RAMPDOWNRATE",
+            "RAMPUPRATE",
+        ],
+        data=[
+            ("2020/01/01 05:00:00", 0, "A", 102.0, 81.0, 71.0, 241.0, 245.0),
+            ("2020/01/01 05:00:00", 1, "A", 103.0, 82.0, 72.0, 242.0, 246.0),
+            ("2020/01/01 05:00:00", 0, "B", 202.0, 91.0, 61.0, 243.0, 247.0),
+            ("2020/01/01 05:00:00", 1, "B", 203.0, 92.0, 62.0, 244.0, 248.0),
+        ],
+    ),
+    "Generators and Scheduled Loads": pd.DataFrame(
+        columns=[
+            "DUID",
+            "Region",
+            "Fuel Source - Descriptor",
+            "Dispatch Type",
+            "Technology Type - Descriptor",
+            "Station Name",
+        ],
+        data=[
+            (
+                "A",
+                "SA1",
+                "Solar",
+                "Generator",
+                "Photovoltaic Tracking Flat panel",
+                "Solar A",
+            ),
+            ("B", "TAS1", "-", "Load", "-", "Hydro B"),
+        ],
+    ),
+    "BIDPEROFFER_D": pd.DataFrame(
+        columns=[
+            "SETTLEMENTDATE",
+            "DUID",
+            "BIDTYPE",
+            "MAXAVAIL",
+            "ROCUP",
+            "ROCDOWN",
+            "BANDAVAIL1",
+            "BANDAVAIL2",
+            "BANDAVAIL3",
+            "BANDAVAIL4",
+            "BANDAVAIL5",
+            "BANDAVAIL6",
+            "BANDAVAIL7",
+            "BANDAVAIL8",
+            "BANDAVAIL9",
+            "BANDAVAIL10",
+            "PASAAVAILABILITY",
+            "INTERVAL_DATETIME",
+        ],
+        data=[
+            (
+                "2019/12/31",
+                "A",
+                "ENERGY",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 01:00:00",
+            ),
+            (
+                "2020/01/01",
+                "A",
+                "ENERGY",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 05:00:00",
+            ),
+            (
+                "2019/12/31",
+                "A",
+                "RAISE6SEC",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 01:00:00",
+            ),
+            (
+                "2020/01/01",
+                "A",
+                "RAISE6SEC",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 05:00:00",
+            ),
+            (
+                "2019/12/31",
+                "B",
+                "ENERGY",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 01:00:00",
+            ),
+            (
+                "2020/01/01",
+                "B",
+                "ENERGY",
+                "99",
+                "1",
+                "2",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "100",
+                "2020/01/01 05:00:00",
+            ),
+        ],
+    ),
 }
 
 
-def dynamic_data_compiler(start_time, end_time, table_name, raw_data_location,
-                          select_columns=None, filter_cols=None,
-                          filter_values=None, fformat='feather',
-                          keep_csv=True, parse_data_types=True,
-                          **kwargs):
+def dynamic_data_compiler(
+    start_time,
+    end_time,
+    table_name,
+    raw_data_location,
+    select_columns=None,
+    filter_cols=None,
+    filter_values=None,
+    fformat="feather",
+    keep_csv=True,
+    parse_data_types=True,
+    **kwargs
+):
 
     data = mock_tables[table_name]
 
-    if 'SETTLEMENTDATE' in data.columns:
-        data['SETTLEMENTDATE'] = pd.to_datetime(data['SETTLEMENTDATE'])
+    if "SETTLEMENTDATE" in data.columns:
+        data["SETTLEMENTDATE"] = pd.to_datetime(data["SETTLEMENTDATE"])
 
-    if 'INTERVAL_DATETIME' in data.columns:
-        data['INTERVAL_DATETIME'] = pd.to_datetime(data['INTERVAL_DATETIME'])
+    if "INTERVAL_DATETIME" in data.columns:
+        data["INTERVAL_DATETIME"] = pd.to_datetime(data["INTERVAL_DATETIME"])
 
     return data
 
+
+def static_table(table_name, raw_data_cache, select_columns, update_static_file):
+    return mock_tables[table_name]

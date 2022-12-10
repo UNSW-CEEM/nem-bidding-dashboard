@@ -6,7 +6,7 @@ from nemosis import defaults, dynamic_data_compiler, static_table
 
 defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCUP"]
 
-pd.set_option('display.width', None)
+pd.set_option("display.width", None)
 
 
 def get_region_data(start_time, end_time, raw_data_cache):
@@ -222,8 +222,12 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
             availability_data = pd.concat([availability_data, recent_availability_data])
         except nemosis.custom_errors.NoDataToReturn:
             pass
-    availability_data = availability_data.sort_values(["SETTLEMENTDATE", "INTERVENTION"])
-    availability_data = availability_data.drop_duplicates(keep='last', subset=['SETTLEMENTDATE', 'DUID'])
+    availability_data = availability_data.sort_values(
+        ["SETTLEMENTDATE", "INTERVENTION"]
+    )
+    availability_data = availability_data.drop_duplicates(
+        keep="last", subset=["SETTLEMENTDATE", "DUID"]
+    )
     return availability_data.loc[
         :,
         [
@@ -282,6 +286,7 @@ def get_duid_data(raw_data_cache):
             "Technology Type - Descriptor",
             "Station Name",
         ],
+        update_static_file=True,
     )
     duid_data = duid_data[~duid_data["DUID"].isin(["BLNKVIC", "BLNKTAS"])]
     duid_data.columns = duid_data.columns.str.upper()
