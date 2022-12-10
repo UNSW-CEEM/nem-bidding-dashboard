@@ -13,6 +13,20 @@ from typing import List, Tuple
 from query_supabase import *
 
 
+
+DISPATCH_COLUMNS = {
+    'Avalailability': {'name': 'AVAILABILITY', 'color': 'yellow'}, 
+    'Dispatch Volume': {'name': 'TOTALCLEARED', 'color': 'green'}, 
+    'Final MW': {'name': 'FINALMW', 'color': 'cyan'}, 
+    'As Bid Ramp Up Max Avail': {'name': 'ASBIDRAMPUPMAXAVAIL', 'color': 'magenta'}, 
+    'As Bid Ramp Down Min Avail': {'name': 'ASBIDRAMPDOWNMINAVAIL', 'color': 'violet'}, 
+    'Ramp Up Max Avail': {'name': 'RAMPUPMAXAVAIL', 'color': 'lightgrey'}, 
+    'Ramp Down Min Avail': {'name': 'RAMPDOWNMINAVAIL', 'color': 'crimson'}, 
+    'PASA Availability': {'name': 'PASAAVAILABILITY', 'color': 'hotpink'}, 
+    'Max Availability': {'name': 'MAXAVAIL', 'color': 'brown'}, 
+}
+
+
 def get_duid_station_options(
     start_time: str, regions: List[str], duration: str, tech_types: List[str]=[], dispatch_type: str='Generator'
 ) -> pd.DataFrame:
@@ -33,10 +47,6 @@ def get_duid_station_options(
     start_time_obj = datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
     if duration == 'Daily':
         end_time = (start_time_obj + timedelta(days=1)).strftime('%Y/%m/%d %H:%M:%S')
-        # print('Calling function with: ')
-        # print(f'start = {start_time}')
-        # print(f'end = {end_time}')
-        # print(f'regions = {regions}')
 
         return stations_and_duids_in_regions_and_time_window(regions, start_time, end_time, tech_types, dispatch_type)
     if duration == 'Weekly':
@@ -70,7 +80,7 @@ def get_graph_name(duids: List[str]):
 
 
 def plot_duid_bids(
-    start_time: str, end_time: str, resolution: str, duids: List[str], raw_adjusted: str 
+    start_time: str, end_time: str, resolution: str, duids: List[str], raw_adjusted: str, dispatch_metrics: List[str]
 ) -> Figure:
     """
     TODO
@@ -120,7 +130,50 @@ def plot_duid_bids(
         fig.update_xaxes(title=f'Time (Bid stack sampled on the hour)')
     else:
         fig.update_xaxes(title=f'Time (Bid stack sampled at 5 min intervals)')
+    
+    if dispatch_metrics:
+        fig = add_duid_dispatch_data(fig, duids, start_time, end_time, resolution, dispatch_metrics)
 
+    return fig
+
+
+def add_duid_dispatch(
+    fig: Figure, duids: List[str], start_time: str, end_time: str, resolution: str
+) -> Figure:
+    dispatch_data = get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution)
+    dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
+    fig.add_trace(go.Scatter(
+        x=dispatch_data['INTERVAL_DATETIME'],
+        y=dispatch_data['TOTALCLEARED'],
+        marker=dict(color='green', size=4),
+        name='Dispatch Volume',
+    ))
+    fig.update_traces(
+        hovertemplate='Dispatch Volume: %{y:.0f} MW<extra></extra>',
+        selector={'name': 'Dispatch Volume'}
+    )
+
+    return fig
+
+
+def add_duid_dispatch_data(
+    fig: Figure, duids: List[str], start_time: str, end_time: str, resolution: str, dispatch_metrics: List[str]
+) -> Figure:
+
+    dispatch_data = get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution)
+    dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
+    for metric in dispatch_metrics:
+        dispatch_agg = dispatch_data.groupby('INTERVAL_DATETIME', as_index=False).agg({DISPATCH_COLUMNS[metric]['name']: 'sum'})
+        fig.add_trace(go.Scatter(
+            x=dispatch_agg['INTERVAL_DATETIME'],
+            y=dispatch_agg[DISPATCH_COLUMNS[metric]['name']],
+            marker=dict(color=DISPATCH_COLUMNS[metric]['color'], size=4),
+            name=metric,
+        ))
+        fig.update_traces(
+            hovertemplate = metric + ': %{y:.0f} MW<extra></extra>',
+            selector={'name': metric}
+        )
     return fig
 
 
@@ -134,6 +187,7 @@ def plot_aggregate_bids(
     raw_adjusted: str, 
     tech_types: List[str], 
     dispatch_type: str, 
+    dispatch_metrics: List[str]
 ) -> Figure:
     """
     TODO
@@ -197,15 +251,12 @@ def plot_aggregate_bids(
         color_discrete_map=color_map,
         labels={'BIN_NAME': 'Price Bin', 'PRICE': 'Average Electricity Price'},
         # custom_data=['PRICE'] if show_price else []
+        custom_data=['BIN_NAME']
     )
 
     # Update graph axes and hover text
     fig.update_yaxes(title='Volume (MW)')
-    if show_price: 
-        fig.update_traces(hovertemplate='%{x}<br>Bid Volume: %{y:.0f} MW<br>Average Electricity Price: $%{customdata[0]:.2f}/MWh<extra></extra>')
-    else:
-        fig.update_traces(hovertemplate='%{x}<br>Bid Volume: %{y:.0f} MW<extra></extra>')
-    fig.update_traces(hovertemplate='Bid Volume: %{y:.0f} MW<extra></extra>')
+    fig.update_traces(hovertemplate='Price range %{customdata[0]}: %{y:.0f} MW<extra></extra>')
 
     fig.update_layout(height=400)
     if resolution == 'hourly':
@@ -215,6 +266,8 @@ def plot_aggregate_bids(
 
     if show_demand:
         fig = add_demand_trace(fig, start_time, end_time, regions)
+    if dispatch_metrics:
+        fig = add_region_dispatch_data(fig, start_time, end_time, regions, resolution, dispatch_metrics)
     
     return fig
 
@@ -257,6 +310,26 @@ def add_demand_trace(
     return fig
 
 
+def add_region_dispatch_data(
+    fig: Figure, start_time: str, end_time: str, regions: List[str], resolution: str, dispatch_metrics: List[str]
+) -> Figure:
+
+    dispatch_data = get_aggregated_dispatch_data(regions, start_time, end_time, resolution)
+    dispatch_data = dispatch_data.sort_values(by=['INTERVAL_DATETIME'])
+    for metric in dispatch_metrics:
+        fig.add_trace(go.Scatter(
+            x=dispatch_data['INTERVAL_DATETIME'],
+            y=dispatch_data[DISPATCH_COLUMNS[metric]['name']],
+            marker=dict(color=DISPATCH_COLUMNS[metric]['color'], size=4),
+            name=metric,
+        ))
+        fig.update_traces(
+            hovertemplate = metric + ': %{y:.0f} MW<extra></extra>',
+            selector={'name': metric}
+        )
+    return fig
+
+
 def plot_bids(
     start_time: str, 
     end_time: str, 
@@ -267,7 +340,8 @@ def plot_bids(
     show_price: bool, 
     raw_adjusted: str, 
     tech_types: List[str], 
-    dispatch_type: str
+    dispatch_type: bool,
+    dispatch_metrics: List[str]
 ) -> Figure:
     """
     TODO
@@ -292,9 +366,9 @@ def plot_bids(
             show_price is True. 
     """
     if duids:
-        fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted)
+        fig = plot_duid_bids(start_time, end_time, resolution, duids, raw_adjusted, dispatch_metrics)
     else: 
-        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, show_price, raw_adjusted, tech_types, dispatch_type)
+        fig = plot_aggregate_bids(start_time, end_time, resolution, regions, show_demand, show_price, raw_adjusted, tech_types, dispatch_type, dispatch_metrics)
 
     if show_price:
         fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
@@ -380,11 +454,10 @@ def add_price_subplot(
         col=1
     )
     if resolution == 'hourly':
-        plot.update_xaxes(title_text='Time (Bid stack sampled on the hour)', row=2, col=1)
+        plot.update_xaxes(title_text='Time (Bid stack sampled on the hour)', visible=True, row=2, col=1)
     else:
-        plot.update_xaxes(title_text='Time (Bid stack sampled at 5 min intervals)', row=2, col=1)
+        plot.update_xaxes(title_text='Time (Bid stack sampled at 5 min intervals)', visible=True, row=2, col=1)
     
-    fig.update_coloraxes()  
     
     return plot
 

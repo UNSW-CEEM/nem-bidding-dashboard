@@ -185,12 +185,18 @@ def get_content(
             id="graph-selectors", 
             children=get_settings_content(duid_options, station_options, tech_type_options, region_options, initial_regions),
         ), 
-        # html.Div(
-        #     id='dispatch-metric-selectors',
-        #     children=[
-                
-        #     ]
-        # ),
+        html.Div(
+            id='dispatch-metric-selectors',
+            children=[
+                html.H6(className='selector-title', children='Additional Dispatch Data'), 
+                dcc.Checklist(
+                    id='dispatch-checklist', 
+                    options=list(DISPATCH_COLUMNS.keys()),
+                    # options=['Avalailability', 'Dispatch Volume', 'Final MW', 'As Bid Ramp Up Max Avail', 'As Bid Ramp Down Min Avail', 'Ramp Up Max Avail', 'Ramp Down Min Avail', 'PASA Availability', 'Max Availability'], 
+                    value=[]
+                )
+            ]
+        ),
         html.Div(
             id="how-to-use", 
             children=[

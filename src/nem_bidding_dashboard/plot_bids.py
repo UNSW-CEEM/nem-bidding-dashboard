@@ -18,7 +18,7 @@ app.title = 'NEM Dashboard'
 
 # Initial state of the dashboard
 region_options = ['NSW', 'VIC', 'TAS', 'SA', 'QLD']
-initial_regions = ['NSW']
+initial_regions = region_options
 max_date = date.today() - timedelta(days=1)
 # Sets initial start date to be yesterday, will require database updating daily
 # initial_start_date_obj = max_date
@@ -146,8 +146,9 @@ def update_duids_from_station(
     Input('price-demand-checkbox', 'value'),
     Input('raw-adjusted-selector', 'value'),
     Input('tech-type-dropdown', 'value'), 
-    Input('dispatch-type-selector', 'value'))
-def update(
+    Input('dispatch-type-selector', 'value'),
+    Input('dispatch-checklist', 'value'))
+def update_main_plot(
     start_date: str, 
     hour: str, 
     minute: str, 
@@ -157,7 +158,8 @@ def update(
     price_demand_checkbox: str, 
     raw_adjusted: str,
     tech_types: List[str],
-    dispatch_type: str
+    dispatch_type: str, 
+    dispatch_metrics: List[str]
 ) -> Figure:
     """
     TODO
@@ -192,7 +194,7 @@ def update(
     raw_adjusted = 'raw' if raw_adjusted == 'Raw Bids' else 'adjusted'
     fig = plot_bids(
         start_date, end_date, resolution, regions, duids, show_demand, 
-        show_price, raw_adjusted, tech_types, dispatch_type
+        show_price, raw_adjusted, tech_types, dispatch_type, dispatch_metrics
     )
     fig = adjust_fig_layout(fig)
     graph_name = get_graph_name(duids)

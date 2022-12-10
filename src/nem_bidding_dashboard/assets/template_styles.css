@@ -944,6 +944,10 @@ body::after {
   font-size: 12px
 }
 
+#dispatch-checklist {
+  font-size: 13px;
+}
+
 #footer {
   height: 5rem;
   position: relative;
