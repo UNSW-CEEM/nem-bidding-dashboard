@@ -9,7 +9,7 @@ postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
 import pandas as pd
 from supabase import create_client
 
-pd.set_option('display.width', None)
+pd.set_option("display.width", None)
 
 
 def region_data(start_time, end_time):
@@ -44,8 +44,17 @@ def region_data(start_time, end_time):
     return data
 
 
-def aggregate_bids(regions, start_time, end_time, resolution):
+def aggregate_bids(
+    regions,
+    start_time,
+    end_time,
+    resolution,
+    raw_adjusted="adjusted",
+    tech_types=[],
+    dispatch_type="Generator",
+):
     """
+    TODO
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided, it
     is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute resolution. If a hourly
     resolution is chosen only bid for 5 minute interval ending on the hour are returned. For this function to run the
@@ -135,9 +144,9 @@ def aggregate_bids(regions, start_time, end_time, resolution):
             "start_timetime": start_time,
             "end_timetime": end_time,
             "resolution": resolution,
-            "dispatch_type": "Generator",
-            "adjusted": "raw",
-            "tech_types": [],
+            "dispatch_type": dispatch_type,
+            "adjusted": raw_adjusted,
+            "tech_types": tech_types,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -204,8 +213,11 @@ def duid_bids(duids, start_time, end_time, resolution):
     return data
 
 
-def stations_and_duids_in_regions_and_time_window(regions, start_time, end_time):
+def stations_and_duids_in_regions_and_time_window(
+    regions, start_date, end_date, tech_types=[], dispatch_type="Generator"
+):
     """
+    TODO
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
     corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
     variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
@@ -246,10 +258,10 @@ def stations_and_duids_in_regions_and_time_window(regions, start_time, end_time)
         "get_duids_and_staions_in_regions_and_time_window_v2",
         {
             "regions": regions,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
-            "dispatch_type": "Generator",
-            "tech_types": [],
+            "start_datetime": start_date,
+            "end_datetime": end_date,
+            "dispatch_type": dispatch_type,
+            "tech_types": tech_types,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -480,6 +492,11 @@ def unit_types():
 
 if __name__ == "__main__":
     from time import time
+
+    duids = stations_and_duids_in_regions_and_time_window(
+        ["NSW"], "2020/01/21 00:00:00", "2020/01/30 00:00:00"
+    )
+    print(duids)
 
     t0 = time()
     data = aggregate_bids(
