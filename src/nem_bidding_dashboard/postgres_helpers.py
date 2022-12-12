@@ -1,11 +1,10 @@
 import math
+import os
 
 import numpy as np
 import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
-
-import nem_bidding_dashboard
 
 
 def build_connection_string(hostname, dbname, username, password, port):
@@ -186,3 +185,27 @@ def run_query_return_dataframe(connection_string, query):
     data = pd.DataFrame(data)
     data.columns = data.columns.str.upper()
     return data
+
+
+def run_query(query):
+    """
+    Drop all the tables and functions created by build_postgres.create_db_tables_and_functions. Intended for  to  help
+    developement when testing the creation of tables and functions.
+
+    Examples:
+
+    >>> run_query("CREATE INDEX unit_dispatch_hour_index ON unit_dispatch (interval_datetime, duid, onhour);")
+
+    Args:
+        query: str query to run in supabase database
+
+    """
+    connection_string = "host={address} dbname=postgres user=postgres password={password} port=5432 options='-c statement_timeout=600000'"
+    connection_string = connection_string.format(
+        address=os.environ.get("SUPABASEADDRESS"),
+        password=os.environ.get("SUPABASEPASSWORD"),
+    )
+    with psycopg.connect(connection_string) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+        conn.commit()

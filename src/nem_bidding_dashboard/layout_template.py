@@ -66,7 +66,7 @@ def get_settings_content(
                     id="station-dropdown",
                     value=None,
                     options=station_options,
-                    multi=False,
+                    multi=True,
                 ),
                 html.H6("Select Units by DUID", className="selector-title"),
                 dcc.Dropdown(

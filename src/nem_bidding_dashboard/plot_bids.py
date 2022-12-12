@@ -118,7 +118,7 @@ def update_duids_from_station(
     duids: List[str],
     tech_types: List[str],
     dispatch_type: str,
-    station: str,
+    stations: List[str],
     start_date: str,
     hour: str,
     minute: str,
@@ -153,24 +153,28 @@ def update_duids_from_station(
     if not trigger_id:
         return dash.no_update, dash.no_update
 
-    start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
-    duid_options = get_duid_station_options(
-        start_date, regions, duration, tech_types, dispatch_type
-    )
-    duid_options = duid_options.loc[duid_options["STATION NAME"] == station]
-    duid_options = sorted(duid_options["DUID"])
+    if trigger_id in ["duid-dropdown", "station-dropdown"] and stations:
+        start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+        duid_options = get_duid_station_options(
+            start_date, regions, duration, tech_types, dispatch_type
+        )
+        duid_options = duid_options.loc[duid_options["STATION NAME"].isin(stations)]
+        duid_options = sorted(duid_options["DUID"])
 
     if trigger_id == "duid-dropdown":
-        if not station:
+        if not stations:
             return dash.no_update, dash.no_update
         if duids and sorted(duids) != duid_options:
             return dash.no_update, None
         return dash.no_update, dash.no_update
 
-    if trigger_id == "station-dropdown":
-        if not station:
+    elif trigger_id == "station-dropdown":
+        if not stations:
             return dash.no_update, dash.no_update
         return duid_options, dash.no_update
+
+    else:
+        return None, None
 
 
 @app.callback(
@@ -284,7 +288,14 @@ def update_main_plot(
                     )
                 else:
                     fig = add_region_dispatch_data(
-                        fig, regions, start_date, end_date, resolution, [name]
+                        fig,
+                        regions,
+                        start_date,
+                        end_date,
+                        resolution,
+                        dispatch_type,
+                        tech_types,
+                        [name],
                     )
             else:
                 fig.update_traces(visible=True, selector={"name": name})

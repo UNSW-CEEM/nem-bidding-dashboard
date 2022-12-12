@@ -12,14 +12,24 @@ from supabase import create_client
 pd.set_option("display.width", None)
 
 
-def region_data(start_time, end_time):
+def region_data(regions, start_time, end_time):
     """
-    Query demand and price data from supabase. For this function to run the supabase url and key need to be configured
-    as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
-    respectively.
+    Query demand data from supabase. To aggregate demand data is summed. For this function to run the supabase url and
+    key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
+    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
     Examples:
-    >>> region_data("2022/01/01 00:00:00", "2022/01/02 00:00:00")
+    >>> region_data(
+    ... ['NSW'],
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/01 00:30:00")
+            SETTLEMENTDATE  TOTALDEMAND
+    0  2020-01-01T00:30:00      7007.70
+    1  2020-01-01T00:20:00      7107.16
+    2  2020-01-01T00:25:00      7051.24
+    3  2020-01-01T00:10:00      7233.57
+    4  2020-01-01T00:05:00      7245.31
+    5  2020-01-01T00:15:00      7159.89
 
     Args:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
@@ -32,13 +42,10 @@ def region_data(start_time, end_time):
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
-    data = (
-        supabase.table("demand_data")
-        .select("*")
-        .gte("settlementdate", start_time)
-        .lte("settlementdate", end_time)
-        .execute()
-    )
+    data = supabase.rpc(
+        "aggregate_demand",
+        {"regions": regions, "start_datetime": start_time, "end_datetime": end_time},
+    ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
     return data
@@ -66,7 +73,7 @@ def aggregate_bids(
     >>> aggregate_bids(
     ... ['QLD', 'NSW', 'SA'],
     ... "2020/01/21 00:00:00",
-    ... "2020/01/21 01:00:00",
+    ... "2020/01/28 00:00:00",
     ... 'hourly')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
     0   2020-01-21T00:00:00   [5000, 10000)     20.000
@@ -93,11 +100,11 @@ def aggregate_bids(
     21  2020-01-21T01:00:00      [300, 500)    783.000
 
 
-    >>> aggregate_bids(
-    ... ['QLD', 'NSW', 'SA'],
-    ... "2020/01/21 00:00:00",
-    ... "2020/01/21 00:05:00",
-    ... '5-min')
+    # >>> aggregate_bids(
+    # ... ['QLD', 'NSW', 'SA'],
+    # ... "2020/01/21 00:00:00",
+    # ... "2020/01/21 00:05:00",
+    # ... '5-min')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
     0   2020-01-21T00:00:00   [5000, 10000)     20.000
     1   2020-01-21T00:00:00         [0, 50)   3716.120
@@ -141,8 +148,8 @@ def aggregate_bids(
         "aggregate_bids_v2",
         {
             "regions": regions,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
             "resolution": resolution,
             "dispatch_type": dispatch_type,
             "adjusted": raw_adjusted,
@@ -203,8 +210,8 @@ def duid_bids(duids, start_time, end_time, resolution):
         "get_bids_by_unit",
         {
             "duids": duids,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
             "resolution": resolution,
         },
     ).execute()
@@ -214,7 +221,7 @@ def duid_bids(duids, start_time, end_time, resolution):
 
 
 def stations_and_duids_in_regions_and_time_window(
-    regions, start_date, end_date, tech_types=[], dispatch_type="Generator"
+    regions, start_date, end_date, dispatch_type="Generator", tech_types=[]
 ):
     """
     TODO
@@ -269,7 +276,9 @@ def stations_and_duids_in_regions_and_time_window(
     return data
 
 
-def get_aggregated_dispatch_data(regions, start_time, end_time, resolution):
+def get_aggregated_dispatch_data(
+    column_name, regions, start_time, end_time, resolution, dispatch_type, tech_types
+):
     """
     Function to query dispatch data from supabase. Data is filter according to the regions and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
@@ -280,27 +289,29 @@ def get_aggregated_dispatch_data(regions, start_time, end_time, resolution):
     Examples:
 
     >>> get_aggregated_dispatch_data(
+    ... 'AVAILABILITY',
     ... ['NSW'],
     ... "2020/01/21 00:00:00",
     ... "2020/01/21 01:00:00",
-    ... 'hourly')
-         INTERVAL_DATETIME  AVAILABILITY  ...  PASAAVAILABILITY  MAXAVAIL
-    0  2020-01-21T01:00:00       11259.1  ...             14168     12986
-    1  2020-01-21T00:00:00       10973.5  ...             14096     12794
-    <BLANKLINE>
-    [2 rows x 10 columns]
+    ... 'hourly',
+    ... 'Generator',
+    ... [])
+         INTERVAL_DATETIME  COLUMNVALUES
+    0  2020-01-21T01:00:00       11259.1
+    1  2020-01-21T00:00:00       10973.5
 
 
     >>> get_aggregated_dispatch_data(
+    ... 'AVAILABILITY',
     ... ['NSW'],
     ... "2020/01/21 00:00:00",
     ... "2020/01/21 00:05:00",
-    ... '5-min')
-         INTERVAL_DATETIME  AVAILABILITY  ...  PASAAVAILABILITY  MAXAVAIL
-    0  2020-01-21T00:00:00       10973.5  ...             14096     12794
-    1  2020-01-21T00:05:00       11021.5  ...             14134     12832
-    <BLANKLINE>
-    [2 rows x 10 columns]
+    ... '5-min',
+    ... 'Generator',
+    ... [])
+         INTERVAL_DATETIME  COLUMNVALUES
+    0  2020-01-21T00:00:00       10973.5
+    1  2020-01-21T00:05:00       11021.5
 
     Arguments:
         duids: list[str] of duids to return in result.
@@ -320,14 +331,15 @@ def get_aggregated_dispatch_data(regions, start_time, end_time, resolution):
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
     data = supabase.rpc(
-        "aggregate_dispatch_data",
+        "aggregate_dispatch_data_v2",
         {
+            "column_name": column_name.lower(),
             "regions": regions,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
             "resolution": resolution,
-            "dispatch_type": "Generator",
-            "tech_types": [],
+            "dispatch_type": dispatch_type,
+            "tech_types": tech_types,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -335,7 +347,9 @@ def get_aggregated_dispatch_data(regions, start_time, end_time, resolution):
     return data
 
 
-def get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolution):
+def get_aggregated_dispatch_data_by_duids(
+    column_name, duids, start_time, end_time, resolution
+):
     """
     Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution is chosen
@@ -346,27 +360,23 @@ def get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolutio
     Examples:
 
     >>> get_aggregated_dispatch_data_by_duids(
+    ... 'AVAILABILITY',
     ... ['AGLHAL'],
-    ... "2019/01/21 00:00:00",
-    ... "2019/01/21 01:00:00",
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/01 01:00:00",
     ... 'hourly')
-         interval_datetime    duid  bidband  bidvolume  bidprice
-    0  2019-01-21T01:00:00  AGLHAL       10        110  13600.02
-    1  2019-01-21T00:00:00  AGLHAL        7         60    562.31
-    2  2019-01-21T01:00:00  AGLHAL        7         60    562.31
-    3  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+         INTERVAL_DATETIME  COLUMNVALUES
+    0  2020-01-01T01:00:00           181
 
 
     >>> get_aggregated_dispatch_data_by_duids(
+    ... 'AVAILABILITY',
     ... ['AGLHAL'],
-    ... "2019/01/21 00:00:00",
-    ... "2019/01/21 00:05:00",
+    ... "2020/01/01 00:00:00",
+    ... "2020/01/01 00:05:00",
     ... '5-min')
-         interval_datetime    duid  bidband  bidvolume  bidprice
-    0  2019-01-21T00:00:00  AGLHAL        7         60    562.31
-    1  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
-    2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
-    3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
+         INTERVAL_DATETIME  COLUMNVALUES
+    0  2020-01-01T00:05:00           181
 
     Args:
         duids: list[str] of duids to return in result.
@@ -386,11 +396,12 @@ def get_aggregated_dispatch_data_by_duids(duids, start_time, end_time, resolutio
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
     data = supabase.rpc(
-        "aggregate_dispatch_data_duids",
+        "aggregate_dispatch_data_duids_v2",
         {
+            "column_name": column_name.lower(),
             "duids": duids,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
             "resolution": resolution,
         },
     ).execute()
@@ -442,8 +453,8 @@ def get_aggregated_vwap(regions, start_time, end_time):
         "aggregate_prices",
         {
             "regions": regions,
-            "start_timetime": start_time,
-            "end_timetime": end_time,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
         },
     ).execute()
     data = pd.DataFrame(data.data)

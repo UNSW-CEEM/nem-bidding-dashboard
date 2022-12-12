@@ -60,12 +60,16 @@ def get_duid_station_options(
         end_time = (start_time_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")
 
         return stations_and_duids_in_regions_and_time_window(
-            regions, start_time, end_time, tech_types, dispatch_type
+            regions,
+            start_time,
+            end_time,
+            dispatch_type,
+            tech_types,
         )
     if duration == "Weekly":
         end_time = (start_time_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
         return stations_and_duids_in_regions_and_time_window(
-            regions, start_time, end_time, tech_types, dispatch_type
+            regions, start_time, end_time, dispatch_type, tech_types
         )
 
 
@@ -271,19 +275,15 @@ def add_duid_dispatch_data(
         Plotly figure consisting of 'fig' with the given dispatch metrics
             plotted over it
     """
-    print(duids, start_time, end_time, resolution)
-    dispatch_data = get_aggregated_dispatch_data_by_duids(
-        duids, start_time, end_time, resolution
-    )
-    dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
     for metric in dispatch_metrics:
-        dispatch_agg = dispatch_data.groupby("INTERVAL_DATETIME", as_index=False).agg(
-            {DISPATCH_COLUMNS[metric]["name"]: "sum"}
+        dispatch_data = get_aggregated_dispatch_data_by_duids(
+            DISPATCH_COLUMNS[metric]["name"], duids, start_time, end_time, resolution
         )
+        dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
         fig.add_trace(
             go.Scatter(
-                x=dispatch_agg["INTERVAL_DATETIME"],
-                y=dispatch_agg[DISPATCH_COLUMNS[metric]["name"]],
+                x=dispatch_data["INTERVAL_DATETIME"],
+                y=dispatch_data["COLUMNVALUES"],
                 marker=dict(color=DISPATCH_COLUMNS[metric]["color"], size=4),
                 name=metric,
             )
@@ -405,7 +405,14 @@ def plot_aggregate_bids(
         fig = add_demand_trace(fig, start_time, end_time, regions)
     if dispatch_metrics:
         fig = add_region_dispatch_data(
-            fig, regions, start_time, end_time, resolution, dispatch_metrics
+            fig,
+            regions,
+            start_time,
+            end_time,
+            resolution,
+            dispatch_type,
+            tech_types,
+            dispatch_metrics,
         )
 
     return fig
@@ -432,12 +439,8 @@ def add_demand_trace(
         Updated plotly express figure consisting of the electricity demand curve
         plotted on top of the original figure
     """
-    demand = region_data(start_time, end_time)
-    demand.loc[:, "REGIONID"] = demand["REGIONID"].str[:-1]
-    demand = demand[demand["REGIONID"].isin(regions)]
-    demand = demand.groupby(["SETTLEMENTDATE"], as_index=False).agg(
-        {"TOTALDEMAND": "sum"}
-    )
+    demand = region_data(regions, start_time, end_time)
+    demand = demand.sort_values("SETTLEMENTDATE")
     fig.add_trace(
         go.Scatter(
             x=demand["SETTLEMENTDATE"],
@@ -458,6 +461,8 @@ def add_region_dispatch_data(
     start_time: str,
     end_time: str,
     resolution: str,
+    dispatch_type: str,
+    tech_types: List[str],
     dispatch_metrics: List[str],
 ) -> Figure:
     """
@@ -477,15 +482,21 @@ def add_region_dispatch_data(
         Plotly figure consisting of 'fig' with the given dispatch metrics
             plotted over it
     """
-    dispatch_data = get_aggregated_dispatch_data(
-        regions, start_time, end_time, resolution
-    )
-    dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
     for metric in dispatch_metrics:
+        dispatch_data = get_aggregated_dispatch_data(
+            DISPATCH_COLUMNS[metric]["name"],
+            regions,
+            start_time,
+            end_time,
+            resolution,
+            dispatch_type,
+            tech_types,
+        )
+        dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
         fig.add_trace(
             go.Scatter(
                 x=dispatch_data["INTERVAL_DATETIME"],
-                y=dispatch_data[DISPATCH_COLUMNS[metric]["name"]],
+                y=dispatch_data["COLUMNVALUES"],
                 marker=dict(color=DISPATCH_COLUMNS[metric]["color"], size=4),
                 name=metric,
             )
