@@ -21,8 +21,10 @@ from query_supabase_db import (
     stations_and_duids_in_regions_and_time_window,
 )
 
+from nem_bidding_dashboard import defaults
+
 DISPATCH_COLUMNS = {
-    "Availability": {"name": "AVAILABILITY", "color": "yellow"},
+    "Availability": {"name": "AVAILABILITY", "color": "red"},
     "Dispatch Volume": {"name": "TOTALCLEARED", "color": "green"},
     "Final MW": {"name": "FINALMW", "color": "cyan"},
     "As Bid Ramp Up Max Avail": {"name": "ASBIDRAMPUPMAXAVAIL", "color": "magenta"},
@@ -91,9 +93,9 @@ def get_graph_name(duids: List[str]):
     Returns graph name based on the data being presented.
     """
     if duids:
-        return "Aggregated Bids by Unit"
+        return "Selected Units' Bidstack"
     else:
-        return "Aggregated Bids by Region"
+        return "Aggregated Bids"
 
 
 def plot_bids(
@@ -158,19 +160,29 @@ def plot_bids(
     if show_price:
         fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
 
-    fig.update_layout(
-        coloraxis_colorscale=[
-            (0.00, "blue"),
-            (0.05, "purple"),
-            (0.15, "red"),
-            (0.25, "orange"),
-            (0.50, "yellow"),
-            (1.00, "green"),
-        ],
-    )
     if not duids:
         fig.update_layout(hovermode="x unified")
         fig.update_traces(xaxis="x1")
+    else:
+
+        def price_to_frac(p):
+            return (p - defaults.market_price_floor) / (
+                defaults.market_price_cap - defaults.market_price_floor
+            )
+
+        fig.update_layout(
+            coloraxis_colorscale=[
+                (price_to_frac(defaults.market_price_floor), "blue"),
+                (price_to_frac(0), "purple"),
+                (price_to_frac(100), "red"),
+                (price_to_frac(500), "orange"),
+                (price_to_frac(1000), "yellow"),
+                (price_to_frac(defaults.market_price_cap), "green"),
+            ],
+            coloraxis_cmin=defaults.market_price_floor,
+            coloraxis_cmax=defaults.market_price_cap,
+        )
+        update_colorbar_length(fig)
 
     return fig
 
@@ -206,7 +218,7 @@ def plot_duid_bids(
     TODO: raw_adjusted not implemented in query_supabase.duid_bids yet, bids
         can be plotted as raw or adjusted using 'raw_adjusted' argument
     """
-    stacked_bids = duid_bids(duids, start_time, end_time, resolution)
+    stacked_bids = duid_bids(duids, start_time, end_time, resolution, raw_adjusted)
     if stacked_bids.empty:
         return None
     stacked_bids = stacked_bids.groupby(
@@ -230,7 +242,6 @@ def plot_duid_bids(
             "BIDVOLUME": ":.0f",
         },
         custom_data=["BIDPRICE"],
-        range_color=[-1000, 20000],
     )
 
     fig.update_yaxes(title="Volume (MW)")
@@ -286,6 +297,8 @@ def add_duid_dispatch_data(
                 y=dispatch_data["COLUMNVALUES"],
                 marker=dict(color=DISPATCH_COLUMNS[metric]["color"], size=4),
                 name=metric,
+                legendgroup="dispatch_traces",
+                legendgrouptitle_text="Dispatch Data",
             )
         )
         fig.update_traces(
@@ -343,9 +356,6 @@ def plot_aggregate_bids(
     )
     if stacked_bids.empty:
         return None
-    stacked_bids = stacked_bids.groupby(
-        ["INTERVAL_DATETIME", "BIN_NAME"], as_index=False
-    ).agg({"BIDVOLUME": "sum"})
 
     bid_order = [
         "[-1000, -100)",
@@ -384,8 +394,7 @@ def plot_aggregate_bids(
         category_orders={"BIN_NAME": bid_order},
         color="BIN_NAME",
         color_discrete_map=color_map,
-        labels={"BIN_NAME": "Price Bin", "PRICE": "Average Electricity Price"},
-        # custom_data=['PRICE'] if show_price else []
+        labels={"BIN_NAME": "Bid Price", "PRICE": "Average Electricity Price"},
         custom_data=["BIN_NAME"],
     )
 
@@ -447,6 +456,8 @@ def add_demand_trace(
             y=demand["TOTALDEMAND"],
             marker=dict(color="blue", size=4),
             name="Demand",
+            legendgroup="dispatch_traces",
+            legendgrouptitle_text="Dispatch Data",
         )
     )
     fig.update_traces(
@@ -499,6 +510,8 @@ def add_region_dispatch_data(
                 y=dispatch_data["COLUMNVALUES"],
                 marker=dict(color=DISPATCH_COLUMNS[metric]["color"], size=4),
                 name=metric,
+                legendgroup="dispatch_traces",
+                legendgrouptitle_text="Dispatch Data",
             )
         )
         fig.update_traces(
@@ -546,9 +559,13 @@ def add_price_subplot(
     bid_traces = []
     for i in range(len(fig["data"])):
         bid_traces.append(fig["data"][i])
-    price_trace = price_graph["data"][0]
     for trace in bid_traces:
-        plot.append_trace(trace, row=1, col=1)
+        if trace.legendgroup != "dispatch_traces":
+            trace.legendgroup = "bid_traces"
+            trace.legendgrouptitle = {"text": "Bid Price"}
+        plot.add_trace(trace, row=1, col=1)
+
+    price_trace = price_graph["data"][0]
     price_trace["showlegend"] = True
     price_trace["name"] = "Price"
     plot.add_trace(price_trace, row=2, col=1)
@@ -558,6 +575,7 @@ def add_price_subplot(
     )
     plot.update_yaxes(title_text="Volume (MW)", row=1, col=1)
     plot.update_yaxes(title_text="Average electricity<br>price ($/MWh)", row=2, col=1)
+    plot.update_layout(coloraxis_colorbar_title="Bid Price")
     if resolution == "hourly":
         plot.update_xaxes(
             title_text="Time (Bid stack sampled on the hour)",
@@ -614,3 +632,12 @@ def plot_price(
         hovertemplate="%{x}<br>Average electricity price: $%{y:.2f}/MWh<extra></extra>"
     )
     return price_graph
+
+
+def update_colorbar_length(fig):
+    c = 0
+    for trace in fig.data:
+        if trace.visible is True or trace.visible is None:
+            c += 1
+    c = min(c, 10)
+    fig.update_layout(coloraxis_colorbar_len=0.8 - c * 0.07)

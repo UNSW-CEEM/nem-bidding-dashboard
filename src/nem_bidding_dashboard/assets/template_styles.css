@@ -47,7 +47,7 @@ body::after {
 
 .banner {
   height: fit-content;
-  background-color: #ca8d2e;
+  background-color: #6ac9e6;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -920,7 +920,7 @@ body::after {
 }
 
 #duration-selector {
-  padding-top: 8px; 
+  padding-top: 8px;
   display:inline;
 }
 
@@ -931,7 +931,7 @@ body::after {
 }
 
 #region-checklist {
-  margin-left: 0px; 
+  margin-left: 0px;
 }
 
 
@@ -981,7 +981,7 @@ body::after {
 
 
 .VirtualizedSelectOption {
-  white-space: nowrap; 
-  overflow: clip; 
-  text-overflow: ellipsis; 
+  white-space: nowrap;
+  overflow: clip;
+  text-overflow: ellipsis;
 }

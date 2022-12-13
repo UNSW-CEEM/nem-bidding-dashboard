@@ -19,7 +19,25 @@ def build_banner():
             html.Div(
                 id="banner-text",
                 children=[
-                    html.H5("NEM Dashboard"),
+                    html.H5("NEM Bidding Dashboard (BETA TESTING VERSION)"),
+                    html.A(
+                        "Project page",
+                        href="https://github.com/UNSW-CEEM/nem-bidding-dashboard",
+                        target="_blank",
+                        style={"color": "black", "margin-left": "10px"},
+                    ),
+                    html.A(
+                        "License and disclaimer",
+                        href="https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/master/LICENSE",
+                        target="_blank",
+                        style={"color": "black", "margin-left": "10px"},
+                    ),
+                    html.A(
+                        "Funded by DGFI",
+                        href="https://www.dgfi.unsw.edu.au/",
+                        target="_blank",
+                        style={"color": "black", "margin-left": "10px"},
+                    ),
                 ],
             ),
         ],
@@ -204,14 +222,8 @@ def get_content(
                     id="dispatch-checklist",
                     options=list(DISPATCH_COLUMNS.keys()),
                     value=["Availability"],
+                    inline=True,
                 ),
-            ],
-        ),
-        html.Div(
-            id="how-to-use",
-            children=[
-                html.H6(id="how-to-use-header", children="How to use"),
-                how_to_use(),
             ],
         ),
     ]
@@ -245,9 +257,5 @@ def build(
                     tech_type_options,
                 ),
             ),
-            html.Div(
-                className="banner",
-                id="footer",
-            ),
-        ]
+        ],
     )

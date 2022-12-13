@@ -161,7 +161,7 @@ def aggregate_bids(
     return data
 
 
-def duid_bids(duids, start_time, end_time, resolution):
+def duid_bids(duids, start_time, end_time, resolution, adjusted):
     """
     Function to query bidding data from supabase. Data is filter according to the regions and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
@@ -207,12 +207,13 @@ def duid_bids(duids, start_time, end_time, resolution):
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
     data = supabase.rpc(
-        "get_bids_by_unit",
+        "get_bids_by_unit_v2",
         {
             "duids": duids,
             "start_datetime": start_time,
             "end_datetime": end_time,
             "resolution": resolution,
+            "adjusted": adjusted,
         },
     ).execute()
     data = pd.DataFrame(data.data)
@@ -462,7 +463,7 @@ def get_aggregated_vwap(regions, start_time, end_time):
     return data
 
 
-def unit_types():
+def unit_types(dispatch_type, regions):
     """
     Function to query distinct unit types from supabase. For this function to run the supabase url and key need to be
     configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
@@ -495,7 +496,9 @@ def unit_types():
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
-    data = supabase.rpc("distinct_unit_types", {}).execute()
+    data = supabase.rpc(
+        "distinct_unit_types_v3", {"dispatch_type": dispatch_type, "regions": regions}
+    ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
     return data

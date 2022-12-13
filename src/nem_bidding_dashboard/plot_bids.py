@@ -18,6 +18,7 @@ from create_plots import (
     get_duid_station_options,
     get_graph_name,
     plot_bids,
+    update_colorbar_length,
 )
 from dash import Dash, Input, Output, State
 from plotly.graph_objects import Figure
@@ -31,8 +32,8 @@ region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
 initial_regions = region_options
 max_date = date.today() - timedelta(days=1)
 # Sets initial start date to be yesterday, will require database updating daily
-# initial_start_date_obj = max_date
-initial_start_date_obj = date(2020, 1, 21)
+initial_start_date_obj = max_date
+# initial_start_date_obj = date(2020, 1, 21)
 initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
 initial_duration = "Daily"
 duid_station_options = get_duid_station_options(
@@ -40,7 +41,7 @@ duid_station_options = get_duid_station_options(
 )
 duid_options = sorted(duid_station_options["DUID"])  # [1:]
 station_options = sorted(list(set(duid_station_options["STATION NAME"])))
-tech_type_options = sorted(unit_types()["UNIT TYPE"])
+tech_type_options = sorted(unit_types("Generator", region_options)["UNIT TYPE"])
 
 app.layout = layout_template.build(
     region_options,
@@ -99,6 +100,31 @@ def update_duid_station_options(
         start_date, regions, duration, tech_types, dispatch_type
     )
     return sorted(duid_options["DUID"]), sorted(list(set(duid_options["STATION NAME"])))
+
+
+@app.callback(
+    Output("tech-type-dropdown", "options"),
+    Output("tech-type-dropdown", "value"),
+    Input("dispatch-type-selector", "value"),
+    Input("region-checklist", "value"),
+)
+def update_unit_type_options(
+    dispatch_type: str,
+    regions: List[str],
+) -> Tuple[List[str], List[str]]:
+    """
+    Update the possible duid and station options based on the time period,
+    duration and unit type.
+
+    Arguments:
+        dispatch_type: Either 'Generator' or 'Load'
+        regions: List of regions to show data for
+    Returns:
+        unit type options: List of possible duids for the given filters
+        unit type selected: List of possible stations for the given filters
+    """
+    unit_type_options = unit_types(dispatch_type, regions)
+    return sorted(unit_type_options["UNIT TYPE"]), None
 
 
 @app.callback(
@@ -264,6 +290,7 @@ def update_main_plot(
 
         if "Demand" in trace_names and "Demand" not in price_demand_checkbox:
             fig.update_traces(visible=False, selector={"name": "Demand"})
+            update_colorbar_length(fig)
             return fig, dash.no_update, ""
         if "Demand" in price_demand_checkbox:
             if "Demand" not in trace_names:
@@ -273,6 +300,7 @@ def update_main_plot(
         if ("Price" in trace_names and "Price" in price_demand_checkbox) or (
             "Price" not in trace_names and "Price" not in price_demand_checkbox
         ):
+            update_colorbar_length(fig)
             return fig, dash.no_update, ""
     if trigger == "dispatch-checklist":
         trace_names = [trace["name"] for trace in fig["data"]]
@@ -299,6 +327,7 @@ def update_main_plot(
                     )
             else:
                 fig.update_traces(visible=True, selector={"name": name})
+        update_colorbar_length(fig)
         return fig, dash.no_update, ""
 
     show_demand = "Demand" in price_demand_checkbox
@@ -321,6 +350,7 @@ def update_main_plot(
         return dash.no_update, dash.no_update, "No data found using current filters"
     fig = adjust_fig_layout(fig)
     graph_name = get_graph_name(duids)
+    update_colorbar_length(fig)
 
     return fig, graph_name, ""
 
