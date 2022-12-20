@@ -6,6 +6,7 @@ used in the app callbacks in plot_bids.py.
 from datetime import datetime, timedelta
 from typing import List
 
+import defaults
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -20,8 +21,6 @@ from query_supabase_db import (
     region_data,
     stations_and_duids_in_regions_and_time_window,
 )
-
-from nem_bidding_dashboard import defaults
 
 DISPATCH_COLUMNS = {
     "Availability": {"name": "AVAILABILITY", "color": "red"},
@@ -162,7 +161,8 @@ def plot_bids(
 
     if not duids:
         fig.update_layout(hovermode="x unified")
-        fig.update_traces(xaxis="x1")
+        fig.update_traces(xaxis="x1", row=1)
+        fig.update_traces(xaxis="x2", row=2)
     else:
 
         def price_to_frac(p):
@@ -250,7 +250,9 @@ def plot_duid_bids(
     )
     fig.update_layout(height=400)
     if resolution == "hourly":
-        fig.update_xaxes(title="Time (Bid stack sampled on the hour)")
+        fig.update_xaxes(
+            title="Time (Bid stack for dispatch intervals ending on the hour)"
+        )
     else:
         fig.update_xaxes(title="Time (Bid stack sampled at 5 min intervals)")
 
@@ -354,6 +356,7 @@ def plot_aggregate_bids(
         tech_types,
         dispatch_type,
     )
+
     if stacked_bids.empty:
         return None
 
@@ -394,7 +397,7 @@ def plot_aggregate_bids(
         category_orders={"BIN_NAME": bid_order},
         color="BIN_NAME",
         color_discrete_map=color_map,
-        labels={"BIN_NAME": "Bid Price", "PRICE": "Average Electricity Price"},
+        labels={"BIN_NAME": "Bid Price ($/MW/h)", "PRICE": "Average Electricity Price"},
         custom_data=["BIN_NAME"],
     )
 
@@ -406,9 +409,11 @@ def plot_aggregate_bids(
 
     fig.update_layout(height=400)
     if resolution == "hourly":
-        fig.update_xaxes(title="Time (Bid stack sampled on the hour)")
+        fig.update_xaxes(
+            title="Time (Bid stack for dispatch intervals ending on the hour)"
+        )
     else:
-        fig.update_xaxes(title="Time (Bid stack sampled at 5 min intervals)")
+        fig.update_xaxes(title="Time (Bid stack for each 5 min dispatch interval)")
 
     if show_demand:
         fig = add_demand_trace(fig, start_time, end_time, regions)
@@ -553,7 +558,7 @@ def add_price_subplot(
         cols=1,
         shared_xaxes=True,
         row_heights=[0.66, 0.34],
-        vertical_spacing=0.03,
+        vertical_spacing=0.0,
     )
 
     bid_traces = []
@@ -562,7 +567,7 @@ def add_price_subplot(
     for trace in bid_traces:
         if trace.legendgroup != "dispatch_traces":
             trace.legendgroup = "bid_traces"
-            trace.legendgrouptitle = {"text": "Bid Price"}
+            trace.legendgrouptitle = {"text": "Bid Price ($/MW/h)"}
         plot.add_trace(trace, row=1, col=1)
 
     price_trace = price_graph["data"][0]
@@ -574,23 +579,22 @@ def add_price_subplot(
         {"barmode": "stack", "height": 600},
     )
     plot.update_yaxes(title_text="Volume (MW)", row=1, col=1)
-    plot.update_yaxes(title_text="Average electricity<br>price ($/MWh)", row=2, col=1)
-    plot.update_layout(coloraxis_colorbar_title="Bid Price")
+    plot.update_yaxes(title_text="Average electricity<br>price ($/MW/h)", row=2, col=1)
+    plot.update_layout(coloraxis_colorbar_title="Bid Price ($/MW/h)")
     if resolution == "hourly":
         plot.update_xaxes(
-            title_text="Time (Bid stack sampled on the hour)",
+            title_text="Time (Bid stack for dispatch intervals ending on the hour)",
             visible=True,
             row=2,
             col=1,
         )
     else:
         plot.update_xaxes(
-            title_text="Time (Bid stack sampled at 5 min intervals)",
+            title_text="Time (Bid stack for each 5 min dispatch interval)",
             visible=True,
             row=2,
             col=1,
         )
-
     return plot
 
 
@@ -615,8 +619,6 @@ def plot_price(
     """
     prices = get_aggregated_vwap(regions, start_time, end_time)
     prices = prices.sort_values(by="SETTLEMENTDATE")
-    if resolution == "hourly":
-        prices = prices[prices["SETTLEMENTDATE"].str.contains(":00:00")]
 
     price_graph = px.line(
         prices,

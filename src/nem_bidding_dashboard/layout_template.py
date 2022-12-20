@@ -114,6 +114,8 @@ def get_settings_content(
         ),
         html.Div(
             id="show-demand-div",
+            title="Demand: summed across selected regions. \n"
+            + "Price: volume weighted average across selected regions.",
             children=[
                 html.H6("Show other Metrics", className="selector-title"),
                 dcc.Checklist(
@@ -141,7 +143,6 @@ graph_content = dls.Dot(
 def get_content(
     region_options,
     initial_regions,
-    max_date,
     initial_start_date_obj,
     initial_duration,
     duid_options,
@@ -168,7 +169,6 @@ def get_content(
                         dcc.DatePickerSingle(
                             id="start-date-picker",
                             date=initial_start_date_obj,
-                            max_date_allowed=max_date,
                             display_format="DD/MM/YY",
                         ),
                         dcc.Dropdown(
@@ -189,9 +189,10 @@ def get_content(
                 ),
                 dcc.RadioItems(
                     id="duration-selector",
-                    options=["Daily", "Weekly"],
+                    options=["Weekly", "Daily"],
                     value=initial_duration,
                     inline=True,
+                    title="Weekly displays bids and",
                 ),
             ],
         ),
@@ -234,7 +235,6 @@ def get_content(
 def build(
     region_options,
     initial_regions,
-    max_date,
     initial_start_date_obj,
     initial_duration,
     duid_options,
@@ -249,7 +249,6 @@ def build(
                 children=get_content(
                     region_options,
                     initial_regions,
-                    max_date,
                     initial_start_date_obj,
                     initial_duration,
                     duid_options,

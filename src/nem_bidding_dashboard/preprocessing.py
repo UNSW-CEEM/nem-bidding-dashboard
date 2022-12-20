@@ -3,7 +3,7 @@ import datetime
 import numpy as np
 import pandas as pd
 
-pd.set_option('display.width', None)
+pd.set_option("display.width", None)
 
 
 def stack_unit_bids(volume_bids, price_bids):
@@ -430,3 +430,8 @@ def calculate_unit_time_series_metrics(as_bid_metrics, after_dispatch_metrics):
             "MAXAVAIL",
         ],
     ]
+
+
+def add_on_hour_column(data):
+    data["ONHOUR"] = np.where(data["INTERVAL_DATETIME"].dt.minute == 0, True, False)
+    return data

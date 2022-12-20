@@ -27,15 +27,17 @@ from query_supabase_db import unit_types
 app = Dash(__name__)
 app.title = "NEM Dashboard"
 
+application = app.server
+
+
 # Initial state of the dashboard
 region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
 initial_regions = region_options
-max_date = date.today() - timedelta(days=1)
 # Sets initial start date to be yesterday, will require database updating daily
-initial_start_date_obj = max_date
-# initial_start_date_obj = date(2020, 1, 21)
+initial_start_date_obj = date.today() - timedelta(days=7)
+# initial_start_date_obj = date(2022, 1, 1)
 initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
-initial_duration = "Daily"
+initial_duration = "Weekly"
 duid_station_options = get_duid_station_options(
     initial_start_date_str, initial_regions, initial_duration
 )
@@ -46,7 +48,6 @@ tech_type_options = sorted(unit_types("Generator", region_options)["UNIT TYPE"])
 app.layout = layout_template.build(
     region_options,
     initial_regions,
-    max_date,
     initial_start_date_obj,
     initial_duration,
     duid_options,
@@ -174,7 +175,6 @@ def update_duids_from_station(
             the 'duid-dropdown' was the component that triggered the callback,
             this value is empty.
     """
-
     trigger_id = dash.callback_context.triggered_id
     if not trigger_id:
         return dash.no_update, dash.no_update
@@ -263,6 +263,7 @@ def update_main_plot(
         error message: message shown if graph does not have the required
             data to be displayed
     """
+
     if start_date is None:
         return (
             dash.no_update,
@@ -356,4 +357,4 @@ def update_main_plot(
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    application.run(debug=True, port=8080)

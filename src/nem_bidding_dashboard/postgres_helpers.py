@@ -194,7 +194,7 @@ def run_query(query):
 
     Examples:
 
-    >>> run_query("CREATE INDEX unit_dispatch_hour_index ON unit_dispatch (interval_datetime, duid, onhour);")
+    >>> run_query("CREATE INDEX bidding_data_hour_index ON bidding_data (interval_datetime, duid, bidband, onhour);;")
 
     Args:
         query: str query to run in supabase database
@@ -205,7 +205,7 @@ def run_query(query):
         address=os.environ.get("SUPABASEADDRESS"),
         password=os.environ.get("SUPABASEPASSWORD"),
     )
-    with psycopg.connect(connection_string) as conn:
+    with psycopg.connect(connection_string, autocommit=True) as conn:
         with conn.cursor() as cur:
             cur.execute(query)
         conn.commit()

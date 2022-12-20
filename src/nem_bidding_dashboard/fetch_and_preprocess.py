@@ -1,9 +1,8 @@
 import pandas as pd
 
-from nem_bidding_dashboard import preprocessing
-from nem_bidding_dashboard import fetch_data
+from nem_bidding_dashboard import fetch_data, preprocessing
 
-pd.set_option('display.width', None)
+pd.set_option("display.width", None)
 
 
 def region_data(start_time, end_time, raw_data_cache):
@@ -44,6 +43,7 @@ def region_data(start_time, end_time, raw_data_cache):
     regional_data["SETTLEMENTDATE"] = regional_data["SETTLEMENTDATE"].dt.strftime(
         "%Y-%m-%d %X"
     )
+    regional_data = regional_data.sort_values("SETTLEMENTDATE")
     return regional_data
 
 
@@ -71,20 +71,20 @@ def bid_data(start_time, end_time, raw_data_cache):
     ... '2020/01/01 00:00:00',
     ... '2020/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
-           INTERVAL_DATETIME      DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE
-    0    2020-01-01 00:05:00    BALBL1        1         20                0.0    -48.06
-    1    2020-01-01 00:05:00    RT_SA4        1       3000                0.0  -1000.00
-    2    2020-01-01 00:05:00    RT_SA5        1       3000                0.0  -1000.00
-    3    2020-01-01 00:05:00    RT_SA6        1       3000                0.0  -1000.00
-    4    2020-01-01 00:05:00   RT_TAS1        1       3000                0.0  -1000.00
-    ..                   ...       ...      ...        ...                ...       ...
-    523  2020-01-01 00:05:00   GSTONE6       10          5                0.0  13557.81
-    524  2020-01-01 00:05:00   GUTHEGA       10         80               67.0  13253.52
-    525  2020-01-01 00:05:00  JBUTTERS       10          4                0.0  12309.16
-    526  2020-01-01 00:05:00   GSTONE1       10          5                0.0  13557.81
-    527  2020-01-01 00:05:00     LBBG1       10         25               25.0  14585.34
+           INTERVAL_DATETIME      DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE  ONHOUR
+    0    2020-01-01 00:05:00    BALBL1        1         20                0.0    -48.06   False
+    1    2020-01-01 00:05:00    RT_SA4        1       3000                0.0  -1000.00   False
+    2    2020-01-01 00:05:00    RT_SA5        1       3000                0.0  -1000.00   False
+    3    2020-01-01 00:05:00    RT_SA6        1       3000                0.0  -1000.00   False
+    4    2020-01-01 00:05:00   RT_TAS1        1       3000                0.0  -1000.00   False
+    ..                   ...       ...      ...        ...                ...       ...     ...
+    523  2020-01-01 00:05:00   GSTONE6       10          5                0.0  13557.81   False
+    524  2020-01-01 00:05:00   GUTHEGA       10         80               67.0  13253.52   False
+    525  2020-01-01 00:05:00  JBUTTERS       10          4                0.0  12309.16   False
+    526  2020-01-01 00:05:00   GSTONE1       10          5                0.0  13557.81   False
+    527  2020-01-01 00:05:00     LBBG1       10         25               25.0  14585.34   False
     <BLANKLINE>
-    [528 rows x 6 columns]
+    [528 rows x 7 columns]
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -108,9 +108,11 @@ def bid_data(start_time, end_time, raw_data_cache):
     combined_bids = preprocessing.adjust_bids_for_availability(
         combined_bids, availability
     )
+    combined_bids = preprocessing.add_on_hour_column(combined_bids)
     combined_bids["INTERVAL_DATETIME"] = combined_bids["INTERVAL_DATETIME"].dt.strftime(
         "%Y-%m-%d %X"
     )
+    combined_bids = combined_bids.sort_values("INTERVAL_DATETIME")
     return combined_bids
 
 
@@ -179,23 +181,23 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> unit_dispatch(
-    ... '2020/01/01 00:00:00',
-    ... '2020/01/01 01:00:00',
+    ... '2020/01/02 00:55:00',
+    ... '2020/01/02 01:05:00',
     ... 'D:/nemosis_data_cache')
-            INTERVAL_DATETIME     DUID  AVAILABILITY  TOTALCLEARED   FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL
-    0     2020-01-01 00:05:00   AGLHAL       181.000         0.000   0.00000             60.00000              -60.00000        60.00000         -60.00000             181.0       181
-    1     2020-01-01 00:05:00   AGLSOM       140.000         0.000   0.00000             40.00000              -40.00000        40.00000         -40.00000             140.0       140
-    2     2020-01-01 00:05:00  ANGAST1        44.000         0.000   0.00000             70.00000              -70.00000        70.00000         -70.00000              44.0        44
-    3     2020-01-01 00:05:00    ARWF1        29.745        29.745  35.50000            130.40000              -19.60000       130.40000         -19.60000             241.0       241
-    4     2020-01-01 00:05:00   BALBG1         0.000         0.000   0.00000            500.00000             -500.00000       500.00000        -500.00000              30.0         0
-    ...                   ...      ...           ...           ...       ...                  ...                    ...             ...               ...               ...       ...
-    3306  2020-01-01 00:50:00    LBBL1        25.000         0.000   0.00000             25.00000              -25.00000        25.00000         -25.00000              25.0        25
-    3307  2020-01-01 00:55:00    HPRG1       100.000         0.000  12.00000             30.50000              -29.50000        30.50000         -29.50000             100.0       100
-    3308  2020-01-01 00:55:00    HPRL1        80.000         0.000   0.00000             40.00000              -40.00000        40.00000         -40.00000              80.0        80
-    3309  2020-01-01 00:55:00    LBBG1        25.000         0.000  10.26231             25.64302              -24.35698        25.64302         -24.35698              25.0        25
-    3310  2020-01-01 00:55:00    LBBL1        25.000         0.000   0.00000             25.00000              -25.00000        25.00000         -25.00000              25.0        25
+           INTERVAL_DATETIME      DUID  AVAILABILITY  TOTALCLEARED  FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL  ONHOUR
+    0    2020-01-02 01:00:00   DG_VIC1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    1    2020-01-02 01:00:00   RT_TAS1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    2    2020-01-02 01:00:00   DG_QLD1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    3    2020-01-02 01:00:00   DG_NSW1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    4    2020-01-02 01:00:00    DG_SA1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    ..                   ...       ...           ...           ...      ...                  ...                    ...             ...               ...               ...       ...     ...
+    296  2020-01-02 01:00:00      QPS3        23.000         0.000    0.000             15.00000              -15.00000        15.00000         -15.00000              23.0        23    True
+    297  2020-01-02 01:00:00  WOODLWN1        14.554        14.554   15.453             79.36401               -0.63599        79.36401          -0.63599              48.0        48    True
+    298  2020-01-02 01:00:00   RT_NSW3         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
+    299  2020-01-02 01:00:00   HAYMSF1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000              50.0        50    True
+    300  2020-01-02 01:00:00    NBHWF1        83.310        83.310   81.000            130.50000               30.50000       130.50000          30.50000             132.0       132    True
     <BLANKLINE>
-    [3311 rows x 11 columns]
+    [301 rows x 12 columns]
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -228,9 +230,13 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
     unit_time_series_metrics = preprocessing.calculate_unit_time_series_metrics(
         as_bid_metrics, after_dispatch_metrics
     )
+    unit_time_series_metrics = preprocessing.add_on_hour_column(
+        unit_time_series_metrics
+    )
     unit_time_series_metrics["INTERVAL_DATETIME"] = unit_time_series_metrics[
         "INTERVAL_DATETIME"
     ].dt.strftime("%Y-%m-%d %X")
+    unit_time_series_metrics = unit_time_series_metrics.sort_values("INTERVAL_DATETIME")
     return unit_time_series_metrics
 
 
