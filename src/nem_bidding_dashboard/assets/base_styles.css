@@ -395,7 +395,7 @@ select {
   height: 34px;
   /*
   border: 1px solid #D1D1D1;
-  padding: 6px 10px; 
+  padding: 6px 10px;
   height: 38px;
   */
   border-radius: 0px;
@@ -611,4 +611,44 @@ there.
 
 /* Larger than Desktop HD */
 @media (min-width: 1200px) {
+}
+
+/* https://www.w3schools.com/css/css_tooltip.asp */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip .tooltiptext {
+  visibility: hidden;
+  width: fit-content;
+  background-color: black;
+  color: #fff;
+  text-align: left;
+  border-radius: 6px;
+  padding: 10px 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 100%;
+  left: 10%;
+  margin-left: 60px;
+  text-transform: None;
+
+}
+
+.tooltip:hover .tooltiptext {
+  visibility: visible;
+  transition-delay:1s;
+}
+
+.tooltip .tooltiptext::after {
+  content: " ";
+  position: absolute;
+  top: 100%; /* At the bottom of the tooltip */
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: black transparent transparent transparent;
+  z-index: -1;
 }

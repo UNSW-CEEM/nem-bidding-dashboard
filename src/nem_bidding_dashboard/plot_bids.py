@@ -25,7 +25,7 @@ from plotly.graph_objects import Figure
 from query_supabase_db import unit_types
 
 app = Dash(__name__)
-app.title = "NEM Dashboard"
+app.title = "NEM Bidding Dashboard"
 
 application = app.server
 

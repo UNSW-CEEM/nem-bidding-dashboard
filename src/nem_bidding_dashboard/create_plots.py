@@ -26,8 +26,14 @@ DISPATCH_COLUMNS = {
     "Availability": {"name": "AVAILABILITY", "color": "red"},
     "Dispatch Volume": {"name": "TOTALCLEARED", "color": "green"},
     "Final MW": {"name": "FINALMW", "color": "cyan"},
-    "As Bid Ramp Up Max Avail": {"name": "ASBIDRAMPUPMAXAVAIL", "color": "magenta"},
-    "As Bid Ramp Down Min Avail": {"name": "ASBIDRAMPDOWNMINAVAIL", "color": "violet"},
+    "As Bid Ramp Up Max Availability": {
+        "name": "ASBIDRAMPUPMAXAVAIL",
+        "color": "magenta",
+    },
+    "As Bid Ramp Down Min Availability": {
+        "name": "ASBIDRAMPDOWNMINAVAIL",
+        "color": "violet",
+    },
     "Ramp Up Max Avail": {"name": "RAMPUPMAXAVAIL", "color": "lightgrey"},
     "Ramp Down Min Avail": {"name": "RAMPDOWNMINAVAIL", "color": "crimson"},
     "PASA Availability": {"name": "PASAAVAILABILITY", "color": "hotpink"},
@@ -162,7 +168,6 @@ def plot_bids(
     if not duids:
         fig.update_layout(hovermode="x unified")
         fig.update_traces(xaxis="x1", row=1)
-        fig.update_traces(xaxis="x2", row=2)
     else:
 
         def price_to_frac(p):
@@ -407,7 +412,7 @@ def plot_aggregate_bids(
         hovertemplate="Price range %{customdata[0]}: %{y:.0f} MW<extra></extra>"
     )
 
-    fig.update_layout(height=400)
+    fig.update_layout(height=600)
     if resolution == "hourly":
         fig.update_xaxes(
             title="Time (Bid stack for dispatch intervals ending on the hour)"
