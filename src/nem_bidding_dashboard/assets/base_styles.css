@@ -622,7 +622,7 @@ there.
 .tooltip .tooltiptext {
   visibility: hidden;
   width: fit-content;
-  background-color: black;
+  background-color: #6ac9e6;
   color: #fff;
   text-align: left;
   border-radius: 6px;
@@ -630,10 +630,8 @@ there.
   position: absolute;
   z-index: 1;
   bottom: 100%;
-  left: 10%;
-  margin-left: 60px;
+  float: left;
   text-transform: None;
-
 }
 
 .tooltip:hover .tooltiptext {
@@ -645,10 +643,10 @@ there.
   content: " ";
   position: absolute;
   top: 100%; /* At the bottom of the tooltip */
-  left: 50%;
+  left: 5%;
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: black transparent transparent transparent;
+  border-color: #6ac9e6 transparent transparent transparent;
   z-index: -1;
 }
