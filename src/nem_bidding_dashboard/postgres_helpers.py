@@ -1,5 +1,4 @@
 import math
-import os
 
 import numpy as np
 import pandas as pd
@@ -7,7 +6,9 @@ import psycopg
 from psycopg.rows import dict_row
 
 
-def build_connection_string(hostname, dbname, username, password, port):
+def build_connection_string(
+    hostname, dbname, username, password, port, timeout_seconds=None
+):
     """
     Creates a properly formatted connection string for connecting to a PostgresSQL database.
 
@@ -28,6 +29,7 @@ def build_connection_string(hostname, dbname, username, password, port):
         username: str name of user that has read and write permission on database
         password: str password of user
         port: int or str port that you can connect to the database on
+        timeout_seconds: int number of seconds before timeout
 
     Returns: str in formatted required for connecting to postgres database.
 
@@ -41,6 +43,13 @@ def build_connection_string(hostname, dbname, username, password, port):
         password=password,
         port=port,
     )
+
+    if timeout_seconds is not None:
+        timeout_setting = " options='-c statement_timeout={time_milliseconds}'".format(
+            time_milliseconds=timeout_seconds * 1000
+        )
+        connection_string += timeout_setting
+
     return connection_string
 
 
@@ -56,6 +65,7 @@ _list_of_functions = [
     "distinct_unit_types",
     "aggregate_bids_v2",
     "aggregate_dispatch_data",
+    "aggregate_dispatch_data_duids",
     "get_bids_by_unit",
     "get_duids_for_stations",
     "get_duids_and_stations",
@@ -187,25 +197,39 @@ def run_query_return_dataframe(connection_string, query):
     return data
 
 
-def run_query(query):
+def run_query(connection_string, query, autocommit=False):
     """
-    Drop all the tables and functions created by build_postgres.create_db_tables_and_functions. Intended for  to  help
-    developement when testing the creation of tables and functions.
+    Run a genric query in the database which isn't inserting or retrieving data. For example, creating and dropping
+    tables, functions and indexes.
 
     Examples:
 
-    >>> run_query("CREATE INDEX bidding_data_hour_index ON bidding_data (interval_datetime, duid, bidband, onhour);;")
+    >>> import os
+
+    >>> from nem_bidding_dashboard import postgres_helpers
+
+    >>> con_string = postgres_helpers.build_connection_string(
+    ... hostname=os.environ.get("SUPABASEADDRESS"),
+    ... dbname='postgres',
+    ... username='postgres',
+    ... password=os.environ.get("SUPABASEPASSWORD"),
+    ... port=5432
+    ... timeout_seconds=6000)
+
+    >>> run_query_return_dataframe(con_string, "CREATE INDEX bidding_data_hour_index ON bidding_data (onhour, interval_datetime DESC);")
+
+    >>> run_query_return_dataframe(con_string, "CREATE INDEX bidding_data_hour_index ON bidding_data (onhour, interval_datetime DESC);")
 
     Args:
+        connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
+            can be used to build a properly formated connection string, or alternative any string that matches the
+            format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
+            can be used
         query: str query to run in supabase database
+        autocommit: boolean, set to True to run queries that must be run outside a transaction such as vaccum
 
     """
-    connection_string = "host={address} dbname=postgres user=postgres password={password} port=5432 options='-c statement_timeout=600000'"
-    connection_string = connection_string.format(
-        address=os.environ.get("SUPABASEADDRESS"),
-        password=os.environ.get("SUPABASEPASSWORD"),
-    )
-    with psycopg.connect(connection_string, autocommit=True) as conn:
+    with psycopg.connect(connection_string, autocommit=autocommit) as conn:
         with conn.cursor() as cur:
             cur.execute(query)
         conn.commit()

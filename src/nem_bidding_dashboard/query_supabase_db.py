@@ -9,6 +9,8 @@ postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
 import pandas as pd
 from supabase import create_client
 
+from nem_bidding_dashboard import defaults
+
 pd.set_option("display.width", None)
 
 
@@ -21,23 +23,23 @@ def region_data(regions, start_time, end_time):
     Examples:
     >>> region_data(
     ... ['NSW'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 00:30:00")
+    ... "2022/01/01 00:00:00",
+    ... "2022/01/01 00:30:00")
             SETTLEMENTDATE  TOTALDEMAND
-    0  2020-01-01T00:30:00      7007.70
-    1  2020-01-01T00:20:00      7107.16
-    2  2020-01-01T00:25:00      7051.24
-    3  2020-01-01T00:10:00      7233.57
-    4  2020-01-01T00:05:00      7245.31
-    5  2020-01-01T00:15:00      7159.89
+    1  2022-01-01T00:05:00      7206.03
+    2  2022-01-01T00:10:00      7174.26
+    3  2022-01-01T00:15:00      7135.00
+    0  2022-01-01T00:20:00      7065.84
+    4  2022-01-01T00:25:00      6995.08
+    5  2022-01-01T00:30:00      6988.47
 
     Args:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
 
     Returns:
-        pd.DataFrame with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (demand to be meet by schedualed and
-        semischedualed generators, not including schedualed loads), and RRP (energy price at regional reference node).
+        pd.DataFrame with columns SETTLEMENTDATE, REGIONID, and TOTALDEMAND (demand to be meet by schedualed and
+        semischedualed generators, not including schedualed loads)
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -48,86 +50,85 @@ def region_data(regions, start_time, end_time):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values("SETTLEMENTDATE")
 
 
 def aggregate_bids(
-    regions,
-    start_time,
-    end_time,
-    resolution,
-    raw_adjusted="adjusted",
-    tech_types=[],
-    dispatch_type="Generator",
+    regions, start_time, end_time, resolution, raw_adjusted, tech_types, dispatch_type
 ):
     """
-    TODO
-    Function to query bidding data from supabase. Data is filter according to the regions and time window provided, it
-    is then aggregated into a set of predefined bins. Data can queried at hourly or 5 minute resolution. If a hourly
-    resolution is chosen only bid for 5 minute interval ending on the hour are returned. For this function to run the
-    supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query bidding data from supabase. Data is filtered according to the regions, dispatch type, tech types
+    and time window provided, it is then aggregated into a set of predefined bins. Data can queried at hourly or
+    5 minute resolution. If a hourly resolution is chosen only bid for 5 minute interval ending on the hour are
+    returned. For this function to run the supabase url and key need to be configured as environment variables labeled
+    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
     Examples:
 
     >>> aggregate_bids(
     ... ['QLD', 'NSW', 'SA'],
-    ... "2022/06/01 00:00:00",
-    ... "2022/06/07 00:00:00",
-    ... 'hourly')
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
+    ... 'hourly',
+    ... 'adjusted',
+    ... [],
+    ... 'Generator')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    0   2020-01-21T00:00:00   [5000, 10000)     20.000
-    1   2020-01-21T01:00:00         [0, 50)   3390.080
-    2   2020-01-21T00:00:00         [0, 50)   3716.120
-    3   2020-01-21T00:00:00     [500, 1000)    737.000
-    4   2020-01-21T01:00:00       [50, 100)   1588.000
-    5   2020-01-21T01:00:00    [1000, 5000)    993.000
-    6   2020-01-21T00:00:00      [300, 500)    633.000
-    7   2020-01-21T01:00:00   [5000, 10000)     20.000
-    8   2020-01-21T00:00:00       [-100, 0)      6.746
-    9   2020-01-21T01:00:00       [-100, 0)      7.614
-    10  2020-01-21T00:00:00      [200, 300)   1540.000
-    11  2020-01-21T00:00:00       [50, 100)   2163.000
-    12  2020-01-21T01:00:00   [-1000, -100)  10366.600
-    13  2020-01-21T00:00:00      [100, 200)    220.000
-    14  2020-01-21T01:00:00     [500, 1000)    737.000
-    15  2020-01-21T01:00:00  [10000, 15500)   4270.000
-    16  2020-01-21T00:00:00   [-1000, -100)  10451.800
-    17  2020-01-21T01:00:00      [100, 200)    160.000
-    18  2020-01-21T00:00:00    [1000, 5000)    991.000
-    19  2020-01-21T00:00:00  [10000, 15500)   3683.000
-    20  2020-01-21T01:00:00      [200, 300)   2100.000
-    21  2020-01-21T01:00:00      [300, 500)    783.000
+    16  2022-01-02T00:00:00   [-1000, -100)   9195.340
+    20  2022-01-02T00:00:00       [-100, 0)    260.731
+    13  2022-01-02T00:00:00         [0, 50)   1543.000
+    17  2022-01-02T00:00:00       [50, 100)   1853.000
+    1   2022-01-02T00:00:00      [100, 200)   1491.000
+    10  2022-01-02T00:00:00      [200, 300)   1977.000
+    15  2022-01-02T00:00:00      [300, 500)    895.000
+    18  2022-01-02T00:00:00     [500, 1000)    185.000
+    3   2022-01-02T00:00:00    [1000, 5000)    231.000
+    2   2022-01-02T00:00:00   [5000, 10000)     15.000
+    6   2022-01-02T00:00:00  [10000, 15500)   5014.000
+    4   2022-01-02T01:00:00   [-1000, -100)   9035.600
+    19  2022-01-02T01:00:00       [-100, 0)    198.353
+    12  2022-01-02T01:00:00         [0, 50)   1357.000
+    11  2022-01-02T01:00:00       [50, 100)   1358.000
+    14  2022-01-02T01:00:00      [100, 200)   1371.000
+    7   2022-01-02T01:00:00      [200, 300)   2133.000
+    21  2022-01-02T01:00:00      [300, 500)    957.000
+    9   2022-01-02T01:00:00     [500, 1000)    217.000
+    8   2022-01-02T01:00:00    [1000, 5000)    231.000
+    5   2022-01-02T01:00:00   [5000, 10000)     15.000
+    0   2022-01-02T01:00:00  [10000, 15500)   5543.000
 
 
-    # >>> aggregate_bids(
-    # ... ['QLD', 'NSW', 'SA'],
-    # ... "2020/01/21 00:00:00",
-    # ... "2020/01/21 00:05:00",
-    # ... '5-min')
+    >>> aggregate_bids(
+    ... ['QLD', 'NSW', 'SA'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 00:05:00",
+    ... '5-min',
+    ... 'adjusted',
+    ... [],
+    ... 'Generator')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    0   2020-01-21T00:00:00   [5000, 10000)     20.000
-    1   2020-01-21T00:00:00         [0, 50)   3716.120
-    2   2020-01-21T00:05:00      [200, 300)   1550.000
-    3   2020-01-21T00:00:00     [500, 1000)    737.000
-    4   2020-01-21T00:05:00  [10000, 15500)   4101.000
-    5   2020-01-21T00:05:00       [50, 100)   2174.000
-    6   2020-01-21T00:05:00      [300, 500)    783.000
-    7   2020-01-21T00:00:00      [300, 500)    633.000
-    8   2020-01-21T00:00:00       [-100, 0)      6.746
-    9   2020-01-21T00:00:00      [200, 300)   1540.000
-    10  2020-01-21T00:00:00       [50, 100)   2163.000
-    11  2020-01-21T00:05:00      [100, 200)    175.000
-    12  2020-01-21T00:05:00         [0, 50)   3460.720
-    13  2020-01-21T00:00:00      [100, 200)    220.000
-    14  2020-01-21T00:00:00   [-1000, -100)  10451.800
-    15  2020-01-21T00:00:00    [1000, 5000)    991.000
-    16  2020-01-21T00:05:00   [-1000, -100)  10220.100
-    17  2020-01-21T00:05:00    [1000, 5000)    993.000
-    18  2020-01-21T00:05:00       [-100, 0)      5.658
-    19  2020-01-21T00:00:00  [10000, 15500)   3683.000
-    20  2020-01-21T00:05:00   [5000, 10000)     20.000
-    21  2020-01-21T00:05:00     [500, 1000)    737.000
+    13  2022-01-02T00:00:00   [-1000, -100)   9195.340
+    20  2022-01-02T00:00:00       [-100, 0)    260.731
+    12  2022-01-02T00:00:00         [0, 50)   1543.000
+    14  2022-01-02T00:00:00       [50, 100)   1853.000
+    15  2022-01-02T00:00:00      [100, 200)   1491.000
+    17  2022-01-02T00:00:00      [200, 300)   1977.000
+    19  2022-01-02T00:00:00      [300, 500)    895.000
+    6   2022-01-02T00:00:00     [500, 1000)    185.000
+    9   2022-01-02T00:00:00    [1000, 5000)    231.000
+    2   2022-01-02T00:00:00   [5000, 10000)     15.000
+    3   2022-01-02T00:00:00  [10000, 15500)   5014.000
+    10  2022-01-02T00:05:00   [-1000, -100)   9120.230
+    21  2022-01-02T00:05:00       [-100, 0)    252.163
+    5   2022-01-02T00:05:00         [0, 50)   1387.000
+    1   2022-01-02T00:05:00       [50, 100)   1798.000
+    11  2022-01-02T00:05:00      [100, 200)   1371.000
+    4   2022-01-02T00:05:00      [200, 300)   1957.000
+    18  2022-01-02T00:05:00      [300, 500)    935.000
+    8   2022-01-02T00:05:00     [500, 1000)    217.000
+    7   2022-01-02T00:05:00    [1000, 5000)    231.000
+    0   2022-01-02T00:05:00   [5000, 10000)     15.000
+    16  2022-01-02T00:05:00  [10000, 15500)   5367.000
 
 
     Args:
@@ -135,6 +136,11 @@ def aggregate_bids(
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
+        dispatch_type: str 'Generator' or 'Load'
+        raw_adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
+            adjusted down so the total bid does not exceed the unit availability.
+        tech_types: list[str] the technology types to filter for e.g. Solar, Black Coal, CCGT. An empty list
+            will result in no filtering by technology
 
     Returns:
         pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
@@ -158,13 +164,15 @@ def aggregate_bids(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    data["BIN_NAME"] = data["BIN_NAME"].astype("category")
+    data["BIN_NAME"] = data["BIN_NAME"].cat.set_categories(defaults.bid_order)
+    return data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"])
 
 
 def duid_bids(duids, start_time, end_time, resolution, adjusted):
     """
-    Function to query bidding data from supabase. Data is filter according to the regions and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
+    Function to query bidding data from supabase. Data is filter according to the DUID list and time window provided,
+    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution is chosen
     only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
     need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
@@ -172,33 +180,49 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     Examples:
 
     >>> duid_bids(
-    ... ['AGLHAL'],
-    ... "2019/01/21 00:00:00",
-    ... "2019/01/21 01:00:00",
-    ... 'hourly')
-         INTERVAL_DATETIME    DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    0  2019-01-21T01:00:00  AGLHAL       10        110  13600.02
-    1  2019-01-21T00:00:00  AGLHAL        7         60    562.31
-    2  2019-01-21T01:00:00  AGLHAL        7         60    562.31
-    3  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
+    ... ['AGLHAL', 'BASTYAN'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
+    ... 'hourly',
+    ... 'adjusted')
+         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
+    5  2022-01-02T00:00:00   AGLHAL        1         32   -963.00
+    8  2022-01-02T00:00:00   AGLHAL       10        121  14541.30
+    6  2022-01-02T00:00:00  BASTYAN        2         53    -55.64
+    7  2022-01-02T00:00:00  BASTYAN        4         28     -0.91
+    9  2022-01-02T00:00:00  BASTYAN       10          0  14021.90
+    1  2022-01-02T01:00:00   AGLHAL        7         32    557.39
+    3  2022-01-02T01:00:00   AGLHAL       10        121  14541.30
+    4  2022-01-02T01:00:00  BASTYAN        2         53    -55.64
+    0  2022-01-02T01:00:00  BASTYAN        4         28     -0.91
+    2  2022-01-02T01:00:00  BASTYAN       10          0  14021.90
 
 
     >>> duid_bids(
-    ... ['AGLHAL'],
-    ... "2019/01/21 00:00:00",
-    ... "2019/01/21 00:05:00",
-    ... '5-min')
-         INTERVAL_DATETIME    DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    0  2019-01-21T00:00:00  AGLHAL        7         60    562.31
-    1  2019-01-21T00:00:00  AGLHAL       10        110  13600.02
-    2  2019-01-21T00:05:00  AGLHAL        7         60    562.31
-    3  2019-01-21T00:05:00  AGLHAL       10        110  13600.02
+    ... ['AGLHAL', 'BASTYAN'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
+    ... 'hourly',
+    ... 'adjusted')
+         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
+    5  2022-01-02T00:00:00   AGLHAL        1         32   -963.00
+    8  2022-01-02T00:00:00   AGLHAL       10        121  14541.30
+    6  2022-01-02T00:00:00  BASTYAN        2         53    -55.64
+    7  2022-01-02T00:00:00  BASTYAN        4         28     -0.91
+    9  2022-01-02T00:00:00  BASTYAN       10          0  14021.90
+    1  2022-01-02T01:00:00   AGLHAL        7         32    557.39
+    3  2022-01-02T01:00:00   AGLHAL       10        121  14541.30
+    4  2022-01-02T01:00:00  BASTYAN        2         53    -55.64
+    0  2022-01-02T01:00:00  BASTYAN        4         28     -0.91
+    2  2022-01-02T01:00:00  BASTYAN       10          0  14021.90
 
     Args:
         duids: list[str] of duids to return in result.
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
+        adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
+            adjusted down so the total bid does not exceed the unit availability.
 
     Returns:
         pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
@@ -218,14 +242,13 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"])
 
 
 def stations_and_duids_in_regions_and_time_window(
     regions, start_date, end_date, dispatch_type="Generator", tech_types=[]
 ):
     """
-    TODO
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
     corresponding Station Names. For this function to run the supabase url and key need to be configured as environment
     variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
@@ -234,27 +257,30 @@ def stations_and_duids_in_regions_and_time_window(
 
     >>> stations_and_duids_in_regions_and_time_window(
     ... ['NSW', 'VIC'],
-    ... "2020/01/21 00:00:00",
-    ... "2020/01/21 01:00:00")
-             DUID                                    STATION NAME
-    0       APPIN                               Appin Power Plant
-    1     GUTHEGA                           Guthega Power Station
-    2       HDWF1                             Hornsdale Wind Farm
-    3    BLUEGSF1                           Blue Grass Solar Farm
-    4     CRWASF1                               Corowa Solar Farm
-    ..        ...                                             ...
-    462  WOODLWN1                              Woodlawn Wind Farm
-    463  WOOLNTH1  Woolnorth Studland Bay / Bluff Point Wind Farm
-    464  WOOLGSF1                             Woolooga Solar Farm
-    465  WYANGALA                        Wyangala A Power Station
-    466   YENDWF1                                Yendon Wind Farm
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00")
+             DUID                            STATION NAME
+    109    AGLSOM                  Somerton Power Station
+    27      ARWF1                        Ararat Wind Farm
+    12     BALBG1  Ballarat Battery Energy Storage System
+    11   BALDHWF1                    Bald Hills Wind Farm
+    13   BANGOWF1                     Bango 973 Wind Farm
+    ..        ...                                     ...
+    145   YENDWF1                        Yendon Wind Farm
+    140     YWPS1              Yallourn 'W' Power Station
+    141     YWPS2              Yallourn 'W' Power Station
+    142     YWPS3              Yallourn 'W' Power Station
+    143     YWPS4              Yallourn 'W' Power Station
     <BLANKLINE>
-    [467 rows x 2 columns]
+    [146 rows x 2 columns]
 
     Args:
-        duids: list[str] of duids to return in result.
+        regions: list[str] regions to filter, should only be QLD, NSW, VIC, SA or TAS.
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
+        dispatch_type: str 'Generator' or 'Load'
+        tech_types: list[str] the technology types to filter for e.g. Solar, Black Coal, CCGT. An empty list
+            will result in no filtering by technology
 
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
@@ -274,59 +300,65 @@ def stations_and_duids_in_regions_and_time_window(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values("DUID")
 
 
 def get_aggregated_dispatch_data(
     column_name, regions, start_time, end_time, resolution, dispatch_type, tech_types
 ):
     """
-    Function to query dispatch data from supabase. Data is filter according to the regions and time window provided,
-    and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If a hourly resolution is chosen
-    only bid for 5 minute interval ending on the hour are returned. For this function to run the supabase url and key
-    need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
-    SUPABASE_BIDDING_DASHBOARD_KEY respectively.
+    Function to query dispatch and aggregate data from a postgres database. Data is filter according to the regions,
+    time window, dispatch type, and technology type  provided. Data can queryed at hourly or 5 minute resolution.
+    If an hourly resolution is chosen only data for 5 minute interval ending on the hour are returned. For this function
+    to run the supabase url and key need to be configured as environment variables labeled
+    SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
     Examples:
 
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... ['NSW'],
-    ... "2020/01/21 00:00:00",
-    ... "2020/01/21 01:00:00",
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
     ... 'hourly',
     ... 'Generator',
     ... [])
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-21T01:00:00       11259.1
-    1  2020-01-21T00:00:00       10973.5
+    1  2022-01-02T00:00:00       10698.7
+    0  2022-01-02T01:00:00       10606.3
 
 
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... ['NSW'],
-    ... "2020/01/21 00:00:00",
-    ... "2020/01/21 00:05:00",
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 00:05:00",
     ... '5-min',
     ... 'Generator',
     ... [])
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-21T00:00:00       10973.5
-    1  2020-01-21T00:05:00       11021.5
+    0  2022-01-02T00:00:00       10698.7
+    1  2022-01-02T00:05:00       10686.9
 
     Arguments:
-        duids: list[str] of duids to return in result.
+        column_name: str, which column of dispatch data to aggregate and return. Should be one of NTERVAL_DATETIME,
+            ASBIDRAMPUPMAXAVAIL (upper dispatch limit based on as bid ramp rate, when aggregated unit contribution cannot
+            exceed MAXAVAIL), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate, when aggregated unit
+            contribution cannot be less than zero), RAMPUPMAXAVAIL (upper dispatch limit based lesser of as bid and
+            telemetry ramp rates, when aggregated unit contribution cannot exceed AVAILABILITY), RAMPDOWNMINAVAIL (lower
+            dispatch limit based lesser of as bid and telemetry ramp rates, when aggregated unit contribution cannot be less
+            than zero), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics), PASAAVAILABILITY, MAXAVAIL (as for
+            as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch interval).
+        regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
+        dispatch_type: str 'Generator' or 'Load'
+        tech_types: list[str] the technology types to filter for e.g. Solar, Black Coal, CCGT. An empty list
+            will result in no filtering by technology
 
     Returns:
-        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-        interval).
+        pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -345,7 +377,7 @@ def get_aggregated_dispatch_data(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values("INTERVAL_DATETIME")
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -362,36 +394,41 @@ def get_aggregated_dispatch_data_by_duids(
 
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
-    ... ['AGLHAL'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 01:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
     ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-01T01:00:00           181
+    1  2022-01-02T00:00:00           234
+    0  2022-01-02T01:00:00           234
 
 
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
-    ... ['AGLHAL'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 00:05:00",
+    ... ['AGLHAL', 'BASTYAN'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 00:05:00",
     ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-01T00:05:00           181
+    0  2022-01-02T00:00:00           234
+    1  2022-01-02T00:05:00           234
 
     Args:
+        column_name: str, which column of dispatch data to aggregate and return. Should be one of NTERVAL_DATETIME,
+            ASBIDRAMPUPMAXAVAIL (upper dispatch limit based on as bid ramp rate, when aggregated unit contribution cannot
+            exceed MAXAVAIL), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate, when aggregated unit
+            contribution cannot be less than zero), RAMPUPMAXAVAIL (upper dispatch limit based lesser of as bid and
+            telemetry ramp rates, when aggregated unit contribution cannot exceed AVAILABILITY), RAMPDOWNMINAVAIL (lower
+            dispatch limit based lesser of as bid and telemetry ramp rates, when aggregated unit contribution cannot be less
+            than zero), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics), PASAAVAILABILITY, MAXAVAIL (as for
+            as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch interval).
         duids: list[str] of duids to return in result.
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
 
     Returns:
-        pd.DataFrame containing columns INTERVAL_DATETIME, ASBIDRAMPUPMAXAVAIL (upper dispatch limit based
-        on as bid ramp rate), ASBIDRAMPDOWNMINAVAIL (lower dispatch limit based on as bid ramp rate), RAMPUPMAXAVAIL (
-        upper dispatch limit based lesser of as bid and telemetry ramp rates), RAMPDOWNMINAVAIL (lower dispatch limit based
-        lesser of as bid and telemetry ramp rates), AVAILABILITY, TOTALCLEARED (as for after_dispatch_metrics),
-        PASAAVAILABILITY, MAXAVAIL (as for as_bid_metrics), and FINALMW (the unit operating level at the end of the dispatch
-        interval).
+        pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
@@ -408,7 +445,7 @@ def get_aggregated_dispatch_data_by_duids(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values(["INTERVAL_DATETIME"])
 
 
 def get_aggregated_vwap(regions, start_time, end_time):
@@ -421,23 +458,23 @@ def get_aggregated_vwap(regions, start_time, end_time):
     Examples:
 
     >>> get_aggregated_vwap(
-    ... ['NSW1'],
-    ... "2020/01/21 00:00:00",
-    ... "2020/01/21 01:00:00")
-             SETTLEMENTDATE     PRICE
-    0   2020-01-21T00:45:00  59.18295
-    1   2020-01-21T00:25:00  48.54982
-    2   2020-01-21T00:55:00  57.18075
-    3   2020-01-21T00:20:00  58.86935
-    4   2020-01-21T00:50:00  56.94314
-    5   2020-01-21T00:10:00  59.97000
-    6   2020-01-21T00:35:00  54.01522
-    7   2020-01-21T01:00:00  46.76269
-    8   2020-01-21T00:30:00  48.54982
-    9   2020-01-21T00:40:00  59.97000
-    10  2020-01-21T00:15:00  59.97000
-    11  2020-01-21T00:00:00  48.52000
-    12  2020-01-21T00:05:00  60.72276
+    ... ['NSW'],
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00")
+             SETTLEMENTDATE      PRICE
+    8   2022-01-02T00:00:00   95.71777
+    11  2022-01-02T00:05:00  110.22005
+    3   2022-01-02T00:10:00  104.30393
+    6   2022-01-02T00:15:00   85.50552
+    9   2022-01-02T00:20:00   78.07000
+    4   2022-01-02T00:25:00   85.00000
+    1   2022-01-02T00:30:00   85.00000
+    7   2022-01-02T00:35:00  103.51609
+    0   2022-01-02T00:40:00   94.31247
+    12  2022-01-02T00:45:00  103.13011
+    10  2022-01-02T00:50:00   96.08903
+    2   2022-01-02T00:55:00   86.38491
+    5   2022-01-02T01:00:00   87.05018
 
     Args:
         regions: list[str] of region to aggregate.
@@ -460,7 +497,7 @@ def get_aggregated_vwap(regions, start_time, end_time):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values("SETTLEMENTDATE")
 
 
 def unit_types(dispatch_type, regions):
@@ -471,23 +508,20 @@ def unit_types(dispatch_type, regions):
 
     Examples:
 
-    >>> unit_types()
-                     UNIT TYPE
-    0                     CCGT
-    1                    Solar
-    2                     Wind
-    3   Pump Storage Discharge
-    4           Battery Charge
-    5                   Engine
-    6                  Bagasse
-    7              Gas Thermal
-    8                    Hydro
-    9      Pump Storage Charge
-    10              Black Coal
-    11       Battery Discharge
-    12                    OCGT
-    13              Brown Coal
-    14      Run of River Hydro
+    >>> unit_types(
+    ... 'Generator',
+    ... ['NSW'])
+                UNIT TYPE
+    8             Bagasse
+    4   Battery Discharge
+    1          Black Coal
+    0                CCGT
+    5              Engine
+    7               Hydro
+    6                OCGT
+    9  Run of River Hydro
+    2               Solar
+    3                Wind
 
     Returns:
         pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
@@ -501,7 +535,7 @@ def unit_types(dispatch_type, regions):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data
+    return data.sort_values("UNIT TYPE")
 
 
 if __name__ == "__main__":

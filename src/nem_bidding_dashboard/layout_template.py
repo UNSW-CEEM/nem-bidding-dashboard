@@ -5,10 +5,69 @@ TODO:
     Documentation
 """
 
+import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import plotly.graph_objects as go
 from create_plots import DISPATCH_COLUMNS
 from dash import dcc, html
+
+
+def build_info_popup():
+    return dbc.Modal(
+        [
+            dbc.ModalBody(
+                [
+                    html.H4(
+                        "An Open-source tool for exploring National Electricity Market participant behaviour"
+                    ),
+                    dcc.Markdown(
+                        """A key driver of market pricing and dispatch outcomes is the operational decision
+                                  making of participants. The Australian Energy Market Operator (AEMO) publishes the
+                                  bids submitted by participants to the market via its
+                                  [data portal](https://aemo.com.au/en/energy-systems/electricity/national-electricity-market-nem/data-nem/market-data-nemweb).
+                                  This data provides an excellent opportunity to study participant behaviour. However,
+                                  downloading, processing, and visualising the data requires significant effort or
+                                  access to a commercial data platform. **NEM Bidding Dashboard** allows anyone to
+                                  easily visualise energy market bidding and dispatch data. Additionally, the backend
+                                  code for running the web app has been published as an
+                                  [open-source python package](https://github.com/UNSW-CEEM/nem-bidding-dashboard)."""
+                    ),
+                    html.H5("Functionality"),
+                    dcc.Markdown(
+                        """The web app functionality allows the user to visualise the bidding and dispatch
+                        data over the time period of a week or day. Currently only energy market data is available, and
+                        FCAS markets are not included. To limit cloud computing resource use, the weekly
+                        visualisation only displays bidding data for the last dispatch interval of every hour. Filtering
+                        can be done by region, dispatch type, unit type, station name and dispatch unit ID (DUID). Hover
+                        your cursor over filters and options for more details. The underlying data can be access by
+                        using the [nem-bidding-dashboard python package](https://github.com/UNSW-CEEM/nem-bidding-dashboard).
+                        """
+                    ),
+                    html.H5("Project status"),
+                    dcc.Markdown(
+                        """The project is currently in a beta testing phase. The primary ongoing activities
+                        are testing and documentation."""
+                    ),
+                    html.H5("Funding and project team"),
+                    dcc.Markdown(
+                        """**NEM Bidding Dashboard** is a project of the
+                        [Collaboration on Energy and Environmental Markets](https://www.ceem.unsw.edu.au/) and the
+                         [Digital Grid Futures Institute](https://www.dgfi.unsw.edu.au/)"""
+                    ),
+                    dcc.Markdown(
+                        """Development by [Nicholas Gorman](https://www.linkedin.com/in/nicholas-gorman-32433a20b/)
+                        and Patrick Chambers"""
+                    ),
+                ]
+            ),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close", className="ms-auto", n_clicks=0)
+            ),
+        ],
+        id="info",
+        is_open=False,
+        backdrop=False,
+    )
 
 
 def build_banner():
@@ -21,7 +80,15 @@ def build_banner():
                 children=[
                     html.H5("NEM Bidding Dashboard (BETA TESTING VERSION)"),
                     html.A(
-                        "Project page",
+                        "About",
+                        target="_blank",
+                        style={"color": "black", "margin-left": "10px"},
+                        id="open",
+                        n_clicks=0,
+                    ),
+                    build_info_popup(),
+                    html.A(
+                        "GitHub page",
                         href="https://github.com/UNSW-CEEM/nem-bidding-dashboard",
                         target="_blank",
                         style={"color": "black", "margin-left": "10px"},
@@ -42,15 +109,6 @@ def build_banner():
             ),
         ],
     )
-
-
-def how_to_use():
-    return """
-This dashboard plots the aggregate bids made in the National Electricity Market (NEM).
-This data can be filtered by datetime, and will either be shown in daily periods
-(at 5-min resolution) or weekly periods (at hourly resolution).
-...
-"""
 
 
 def get_settings_content(

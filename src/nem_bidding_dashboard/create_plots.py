@@ -378,6 +378,7 @@ def plot_aggregate_bids(
         "[5000, 10000)",
         "[10000, 15500)",
     ]
+
     color_map = {}
     color_sequence = [
         "lightsalmon",

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
+
 import pytz
 
+from nem_bidding_dashboard import fetch_and_preprocess, postgres_helpers
 from nem_bidding_dashboard.postgres_helpers import insert_data_into_postgres
-from . import fetch_and_preprocess
-from . import postgres_helpers
 
 """This module is used for populating the database used by the dashboard. The functions it contains co-ordinate
  fetching historical AEMO data, pre-processing to limit the work done by the dashboard (to improve responsiveness),
@@ -12,9 +12,7 @@ from . import postgres_helpers
  on their local machine."""
 
 
-def region_data(
-    connection_string, start_time, end_time, raw_data_cache
-):
+def region_data(connection_string, start_time, end_time, raw_data_cache):
     """
     Function to populate database table containing electricity demand and price data by region. Data is preped for
     loading by the function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.define_and_return_price_bins`.
@@ -52,13 +50,11 @@ def region_data(
     insert_data_into_postgres(connection_string, "demand_data", regional_data)
 
 
-def bid_data(
-    connection_string, start_time, end_time, raw_data_cache
-):
+def bid_data(connection_string, start_time, end_time, raw_data_cache):
     """
     Function to populate database table containing bidding data by unit. Data is preped for loading by the
     function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.bid_data`.
-    
+
     Examples:
 
     >>> from nem_bidding_dashboard import postgres_helpers
@@ -124,9 +120,7 @@ def duid_info(connection_string, raw_data_cache):
     insert_data_into_postgres(connection_string, "duid_info", duid_info)
 
 
-def unit_dispatch(
-    connection_string, start_time, end_time, raw_data_cache
-):
+def unit_dispatch(connection_string, start_time, end_time, raw_data_cache):
     """
     Function to populate database table containing unit time series metrics. Data is preped for loading by the
     function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.unit_dispatch`.
@@ -229,9 +223,7 @@ def all_tables_two_most_recent_market_days(connection_string, cache):
         end_time=start_today,
         raw_data_cache=cache,
     )
-    duid_info(
-        connection_string=connection_string, raw_data_cache=cache
-    )
+    duid_info(connection_string=connection_string, raw_data_cache=cache)
     unit_dispatch(
         connection_string=connection_string,
         start_time=two_days_before_today,
@@ -241,7 +233,7 @@ def all_tables_two_most_recent_market_days(connection_string, cache):
 
 
 if __name__ == "__main__":
-    raw_data_cache = "D:/nemosis_cache"
+    raw_data_cache = "D:/nemosis_data_cache"
     con_string = postgres_helpers.build_connection_string(
         hostname="localhost",
         dbname="bidding_dashboard_db",
@@ -250,8 +242,8 @@ if __name__ == "__main__":
         port=5433,
     )
     for m in [1]:
-        start = "2020/{}/01 00:00:00".format((str(m)).zfill(2))
-        end = "2020/{}/01 00:00:00".format((str(m + 1)).zfill(2))
+        start = "2022/{}/01 00:00:00".format((str(m)).zfill(2))
+        end = "2022/{}/01 00:00:00".format((str(m + 1)).zfill(2))
         print(start)
         print(end)
         duid_info(con_string, raw_data_cache)
