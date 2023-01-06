@@ -130,7 +130,7 @@ def get_region_demand(start_time: str, end_time: str) -> pd.DataFrame:
     if run_local:
         df = fetch_data.get_region_demand_data(start_time, end_time, raw_data_cache)
     else:
-        df = query_supabase_db.region_data(start_time, end_time)
+        df = query_supabase_db.region_demand(start_time, end_time)
     # Change dates in dataframe to ISO formatted dates for use in plotly figure
     df["SETTLEMENTDATE"] = df["SETTLEMENTDATE"].apply(
         lambda txt: str(txt).replace("/", "-")

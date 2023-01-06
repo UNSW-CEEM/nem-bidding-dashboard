@@ -14,7 +14,7 @@ from nem_bidding_dashboard.postgres_helpers import insert_data_into_postgres
 
 def region_data(connection_string, start_time, end_time, raw_data_cache):
     """
-    Function to populate database table containing electricity demand and price data by region. Data is preped for
+    Function to populate database table containing electricity demand and price data by region. Data is prepped for
     loading by the function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.define_and_return_price_bins`.
 
     Examples:
@@ -52,7 +52,7 @@ def region_data(connection_string, start_time, end_time, raw_data_cache):
 
 def bid_data(connection_string, start_time, end_time, raw_data_cache):
     """
-    Function to populate database table containing bidding data by unit. Data is preped for loading by the
+    Function to populate database table containing bidding data by unit. Data is prepped for loading by the
     function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.bid_data`.
 
     Examples:
@@ -88,7 +88,7 @@ def bid_data(connection_string, start_time, end_time, raw_data_cache):
 
 def duid_info(connection_string, raw_data_cache):
     """
-    Function to populate database table containing bidding data by unit. Data is preped for loading by the
+    Function to populate database table containing bidding data by unit. Data is prepped for loading by the
     function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.duid_info`.
 
     Examples:
@@ -122,7 +122,7 @@ def duid_info(connection_string, raw_data_cache):
 
 def unit_dispatch(connection_string, start_time, end_time, raw_data_cache):
     """
-    Function to populate database table containing unit time series metrics. Data is preped for loading by the
+    Function to populate database table containing unit time series metrics. Data is prepped for loading by the
     function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.unit_dispatch`.
 
     Examples:
@@ -161,7 +161,8 @@ def unit_dispatch(connection_string, start_time, end_time, raw_data_cache):
 
 def price_bin_edges_table(connection_string):
     """
-    Function to populate database table containing bin definitions for aggregating bids.
+    Function to populate database table containing bin definitions for aggregating bids. Data is prepped for loading by
+    the function :py:func:`nem_bidding_dashboard.fetch_and_preprocess.region_data`.
 
     Examples:
 
@@ -190,7 +191,22 @@ def price_bin_edges_table(connection_string):
 def all_tables_two_most_recent_market_days(connection_string, cache):
     """
     Load data to postgres database for a window starting at 4 am of the current day and going back 48 hrs. Loading is
-    performed for all tables.
+    performed for all tables except price_bin_edges.
+
+    Examples:
+
+    >>> from nem_bidding_dashboard import postgres_helpers
+
+    >>> con_string = postgres_helpers.build_connection_string(
+    ... hostname='localhost',
+    ... dbname='bidding_dashboard_db',
+    ... username='bidding_dashboard_maintainer',
+    ... password='1234abcd',
+    ... port=5433)
+
+    >>> all_tables_two_most_recent_market_days(
+    ...  con_string
+    ... "D:/nemosis_data_cache")
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`

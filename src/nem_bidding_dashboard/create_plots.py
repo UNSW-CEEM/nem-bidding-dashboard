@@ -18,7 +18,7 @@ from query_supabase_db import (
     get_aggregated_dispatch_data,
     get_aggregated_dispatch_data_by_duids,
     get_aggregated_vwap,
-    region_data,
+    region_demand,
     stations_and_duids_in_regions_and_time_window,
 )
 
@@ -459,7 +459,7 @@ def add_demand_trace(
         Updated plotly express figure consisting of the electricity demand curve
         plotted on top of the original figure
     """
-    demand = region_data(regions, start_time, end_time)
+    demand = region_demand(regions, start_time, end_time)
     demand = demand.sort_values("SETTLEMENTDATE")
     fig.add_trace(
         go.Scatter(

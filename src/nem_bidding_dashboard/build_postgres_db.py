@@ -76,155 +76,147 @@ _create_distinct_unit_types_function = """
 
 
 _create_aggregate_bids_function = """
-    CREATE OR REPLACE FUNCTION aggregate_bids_v2(regions text[], start_timetime timestamp, end_timetime timestamp,
-                                                 resolution text, dispatch_type text, adjusted text, tech_types text[])
+    CREATE OR REPLACE FUNCTION aggregate_bids_v2(regions text[], start_datetime timestamp, end_datetime timestamp, resolution text, dispatch_type text, adjusted text, tech_types text[])
       RETURNS TABLE (interval_datetime timestamp, bin_name text, bidvolume float4)
       LANGUAGE plpgsql AS
     $func$
+      DECLARE hourly_filter text;
+      DECLARE bidvolume_col text;
     BEGIN
 
       DROP TABLE IF EXISTS filtered_regions;
       DROP TABLE IF EXISTS filtered_duid_info;
-      DROP TABLE IF EXISTS time_filtered_bids;
-      DROP TABLE IF EXISTS correct_volume_column;
-      DROP TABLE IF EXISTS region_filtered_bids;
-      DROP TABLE IF EXISTS bids_with_bins;
+      DROP TABLE IF EXISTS return_table;
 
       IF array_length(tech_types, 1) > 0 THEN
-        CREATE TEMP TABLE filtered_duid_info as
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
         SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types);
       ELSE
-        CREATE TEMP TABLE filtered_duid_info as
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
         SELECT * FROM duid_info d;
       END IF;
 
-      CREATE TEMP TABLE filtered_regions AS
+      CREATE TEMP TABLE filtered_regions ON COMMIT DROP AS
       SELECT * FROM filtered_duid_info WHERE region = ANY(regions) and "dispatch type" = dispatch_type;
 
       IF resolution = 'hourly' THEN
-        CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0
-                                       AND b.interval_datetime between start_timetime and end_timetime;
+        hourly_filter:= ' onhour = true and';
       ELSE
-       CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
+        hourly_filter:= '';
       END IF;
 
       IF adjusted = 'adjusted' THEN
-        CREATE TEMP TABLE correct_volume_column as
-        SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolumeadjusted as bidvolume, t.bidprice
-          FROM time_filtered_bids t;
+        bidvolume_col:= 'bidvolumeadjusted';
       ELSE
-        CREATE TEMP TABLE correct_volume_column as
-        SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolume, t.bidprice FROM time_filtered_bids t;
+        bidvolume_col:= 'bidvolume';
       END IF;
 
-      CREATE TEMP TABLE region_filtered_bids as
-      SELECT * FROM correct_volume_column WHERE duid IN (SELECT duid FROM filtered_regions);
+      EXECUTE format($$CREATE TEMP TABLE return_table ON COMMIT DROP as SELECT t.interval_datetime, t.bin_name, SUM(t.bidvolume) as bidvolume FROM
+                          ((SELECT b.interval_datetime, b.bidprice, b.%s as bidvolume FROM bidding_data b WHERE%s b.interval_datetime > (timestamp '%s') and b.interval_datetime <= (timestamp '%s')
+                            and b.duid IN (SELECT duid FROM filtered_regions)) a
+                          LEFT JOIN price_bins p ON a.bidprice >= p.lower_edge AND a.bidprice < p.upper_edge) t
+                        group by t.interval_datetime, t.bin_name;$$,
+                      bidvolume_col, hourly_filter, start_datetime, end_datetime);
 
-      CREATE TEMP TABLE bids_with_bins as
-      SELECT * FROM region_filtered_bids a LEFT JOIN price_bins b ON a.bidprice >= b.lower_edge
-                                                                 AND a.bidprice < b.upper_edge;
-
-      RETURN QUERY SELECT b.interval_datetime, b.bin_name, SUM(b.bidvolume) as bidvolume
-                     FROM bids_with_bins b group by b.interval_datetime, b.bin_name;
+      RETURN QUERY SELECT * FROM return_table;
 
     END
     $func$;
     """
 
 _create_aggregate_dispatch_data_function = """
-CREATE OR REPLACE FUNCTION aggregate_dispatch_data_v2(column_name text, regions text[], start_datetime timestamp, end_datetime timestamp, resolution text, dispatch_type text, tech_types text[])
-  RETURNS TABLE (interval_datetime timestamp, columnvalues float4)
-  LANGUAGE plpgsql AS
-$func$
+    CREATE OR REPLACE FUNCTION aggregate_dispatch_data_v2(column_name text, regions text[], start_datetime timestamp, end_datetime timestamp, resolution text, dispatch_type text, tech_types text[])
+      RETURNS TABLE (interval_datetime timestamp, columnvalues float4)
+      LANGUAGE plpgsql AS
+    $func$
 
-  DECLARE extra_col text;
+      DECLARE extra_col text;
 
-BEGIN
+    BEGIN
 
-  DROP TABLE IF EXISTS filtered_duid_info;
-  DROP TABLE IF EXISTS filtered_regions;
-  DROP TABLE IF EXISTS time_filtered_dispatch;
-  DROP TABLE IF EXISTS region_filtered_dispatch;
-  DROP TABLE IF EXISTS return_data;
+      DROP TABLE IF EXISTS filtered_duid_info;
+      DROP TABLE IF EXISTS filtered_regions;
+      DROP TABLE IF EXISTS time_filtered_dispatch;
+      DROP TABLE IF EXISTS region_filtered_dispatch;
+      DROP TABLE IF EXISTS return_data;
 
-  IF array_length(tech_types, 1) > 0 THEN
-    CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
-    SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types);
-  ELSE
-    CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
-    SELECT * FROM duid_info d;
-  END IF;
+      IF array_length(tech_types, 1) > 0 THEN
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
+        SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types);
+      ELSE
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
+        SELECT * FROM duid_info d;
+      END IF;
 
-  CREATE TEMP TABLE filtered_regions ON COMMIT DROP AS
-  SELECT * FROM filtered_duid_info WHERE region = ANY(regions) and "dispatch type" = dispatch_type;
+      CREATE TEMP TABLE filtered_regions ON COMMIT DROP AS
+      SELECT * FROM filtered_duid_info WHERE region = ANY(regions) and "dispatch type" = dispatch_type;
 
-  IF column_name = 'asbidrampupmaxavail' THEN
-    extra_col:= ', d.maxavail';
-  ELSIF column_name = 'rampupmaxavail' THEN
-    extra_col:= ', d.availability';
-  ELSE
-    extra_col:= '';
-  END IF;
+      IF column_name = 'asbidrampupmaxavail' THEN
+        extra_col:= ', d.maxavail';
+      ELSIF column_name = 'rampupmaxavail' THEN
+        extra_col:= ', d.availability';
+      ELSE
+        extra_col:= '';
+      END IF;
 
-  IF resolution = 'hourly' THEN
-    EXECUTE format($$CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-                    SELECT d.interval_datetime, d.duid, d.%s as columnvalue %s
-                      FROM unit_dispatch d WHERE onhour = true AND d.interval_datetime between (timestamp '%s') and (timestamp '%s');$$, column_name, extra_col, start_datetime, end_datetime);
-  ELSE
-    EXECUTE format($$CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-                    SELECT d.interval_datetime, d.duid, d.%s as columnvalue %s
-                      FROM unit_dispatch d WHERE d.interval_datetime between (timestamp '%s') and (timestamp '%s');$$, column_name, extra_col, start_datetime, end_datetime);
-  END IF;
+      IF resolution = 'hourly' THEN
+        EXECUTE format($$CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
+                        SELECT d.interval_datetime, d.duid, d.%s as columnvalue %s
+                          FROM unit_dispatch d WHERE onhour = true AND d.interval_datetime > (timestamp '%s') and d.interval_datetime <= (timestamp '%s');$$, column_name, extra_col, start_datetime, end_datetime);
+      ELSE
+        EXECUTE format($$CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
+                        SELECT d.interval_datetime, d.duid, d.%s as columnvalue %s
+                          FROM unit_dispatch d WHERE d.interval_datetime > (timestamp '%s') and d.interval_datetime <= (timestamp '%s');$$, column_name, extra_col, start_datetime, end_datetime);
+      END IF;
 
-  CREATE TEMP TABLE region_filtered_dispatch ON COMMIT DROP as
-  SELECT * FROM time_filtered_dispatch WHERE duid IN (SELECT duid FROM filtered_regions);
+      CREATE TEMP TABLE region_filtered_dispatch ON COMMIT DROP as
+      SELECT * FROM time_filtered_dispatch WHERE duid IN (SELECT duid FROM filtered_regions);
 
-  IF column_name = 'asbidrampupmaxavail' THEN
-    UPDATE region_filtered_dispatch d SET columnvalue = d.maxavail WHERE d.columnvalue > d.maxavail;
-  ELSIF column_name = 'asbidrampdownminavail' THEN
-    UPDATE region_filtered_dispatch d SET columnvalue = 0  WHERE d.columnvalue < 0;
-  ELSIF column_name = 'rampupmaxavail' THEN
-    UPDATE region_filtered_dispatch d SET columnvalue = d.availability WHERE d.columnvalue > d.availability;
-  ELSIF column_name = 'rampdownminavail' THEN
-    UPDATE region_filtered_dispatch d SET columnvalue = 0 WHERE d.columnvalue < 0;
-  END IF;
+      IF column_name = 'asbidrampupmaxavail' THEN
+        UPDATE region_filtered_dispatch d SET columnvalue = d.maxavail WHERE d.columnvalue > d.maxavail;
+      ELSIF column_name = 'asbidrampdownminavail' THEN
+        UPDATE region_filtered_dispatch d SET columnvalue = 0  WHERE d.columnvalue < 0;
+      ELSIF column_name = 'rampupmaxavail' THEN
+        UPDATE region_filtered_dispatch d SET columnvalue = d.availability WHERE d.columnvalue > d.availability;
+      ELSIF column_name = 'rampdownminavail' THEN
+        UPDATE region_filtered_dispatch d SET columnvalue = 0 WHERE d.columnvalue < 0;
+      END IF;
 
-  CREATE TEMP TABLE return_data ON COMMIT DROP AS SELECT d.interval_datetime, sum(d.columnvalue) as column_value
-    FROM region_filtered_dispatch d group by d.interval_datetime;
+      CREATE TEMP TABLE return_data ON COMMIT DROP AS SELECT d.interval_datetime, sum(d.columnvalue) as column_value
+        FROM region_filtered_dispatch d group by d.interval_datetime;
 
-  RETURN QUERY SELECT * FROM return_data;
+      RETURN QUERY SELECT * FROM return_data;
 
-END
-$func$;
+    END
+    $func$;
 """
 
 _create_get_bids_by_unit_function = """
-    CREATE OR REPLACE FUNCTION get_bids_by_unit_v2(duids text[], start_timetime timestamp, end_timetime timestamp, resolution text, adjusted text)
+    CREATE OR REPLACE FUNCTION get_bids_by_unit_v2(duids text[], start_datetime timestamp, end_datetime timestamp, resolution text, adjusted text)
       RETURNS TABLE (interval_datetime timestamp, duid text, bidband int, bidvolume float4, bidprice float4)
       LANGUAGE plpgsql AS
     $func$
     BEGIN
 
+      -- set temp_buffers = 10000;
+
       DROP TABLE IF EXISTS time_filtered_bids;
       DROP TABLE IF EXISTS correct_volume_column;
 
       IF resolution = 'hourly' THEN
-        CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE EXTRACT(MINUTE FROM b.interval_datetime) = 0 AND b.interval_datetime between
-        start_timetime and end_timetime;
+        CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
+        SELECT * FROM bidding_data b WHERE onhour AND b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
       ELSE
-       CREATE TEMP TABLE time_filtered_bids as
-        SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
+       CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
+        SELECT * FROM bidding_data b WHERE b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
       END IF;
 
       IF adjusted = 'adjusted' THEN
-        CREATE TEMP TABLE correct_volume_column as
+        CREATE TEMP TABLE correct_volume_column ON COMMIT DROP as
         SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolumeadjusted as bidvolume, t.bidprice
           FROM time_filtered_bids t;
       ELSE
-        CREATE TEMP TABLE correct_volume_column as
+        CREATE TEMP TABLE correct_volume_column ON COMMIT DROP as
         SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolume, t.bidprice FROM time_filtered_bids t;
       END IF;
 
@@ -249,10 +241,10 @@ _create_aggregate_dispatch_data_duids_function = """
 
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-        SELECT * FROM unit_dispatch d WHERE onhour = true AND d.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM unit_dispatch d WHERE onhour = true AND d.interval_datetime > start_datetime and d.interval_datetime <= end_datetime;
       ELSE
        CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-        SELECT * FROM unit_dispatch d WHERE d.interval_datetime between start_datetime and end_datetime;
+        SELECT * FROM unit_dispatch d WHERE d.interval_datetime > start_datetime and d.interval_datetime <= end_datetime;
       END IF;
 
       CREATE TEMP TABLE duids_filtered_dispatch ON COMMIT DROP as
@@ -289,8 +281,7 @@ _create_get_duids_for_stations = """
     """
 
 _create_get_duids_and_stations_function = """
-    CREATE OR REPLACE FUNCTION get_duids_and_stations(regions text[], start_timetime timestamp, end_timetime timestamp,
-                                                     dispatch_type text, tech_types text[])
+    CREATE OR REPLACE FUNCTION get_duids_and_staions_in_regions_and_time_window_v2(regions text[], start_datetime timestamp, end_datetime timestamp, dispatch_type text, tech_types text[])
       RETURNS TABLE (duid text, "station name" text)
       LANGUAGE plpgsql AS
     $func$
@@ -302,20 +293,19 @@ _create_get_duids_and_stations_function = """
       DROP TABLE IF EXISTS time_filtered_bids;
       DROP TABLE IF EXISTS filtered_duid_info;
 
-      CREATE TEMP TABLE time_filtered_bids as
-      SELECT * FROM bidding_data b WHERE b.interval_datetime between start_timetime and end_timetime;
+      CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
+      SELECT DISTINCT b.duid FROM bidding_data b WHERE onhour = true and b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
 
       IF array_length(tech_types, 1) > 0 THEN
-        CREATE TEMP TABLE filtered_duid_info as
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
         SELECT * FROM duid_info d WHERE d."unit type" = ANY(tech_types) and "dispatch type" = dispatch_type
                                         and region = ANY(regions);
       ELSE
-        CREATE TEMP TABLE filtered_duid_info as
+        CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as
         SELECT * FROM duid_info d WHERE "dispatch type" = dispatch_type and region = ANY(regions);
       END IF;
 
-      RETURN QUERY SELECT d.duid, d."station name" FROM duid_info d
-                    WHERE d.duid IN (SELECT DISTINCT t.duid from filtered_duid_info t);
+      RETURN QUERY SELECT d.duid, d."station name" FROM filtered_duid_info d WHERE d.duid IN (SELECT t.duid from time_filtered_bids t);
 
     END
     $func$;
@@ -331,7 +321,7 @@ _create_aggregate_prices_function = """
       DROP TABLE IF EXISTS time_filtered_price;
 
       CREATE TEMP TABLE time_filtered_price ON COMMIT DROP as
-      SELECT b.settlementdate, b.regionid, b.totaldemand, b.rrp FROM demand_data b WHERE b.settlementdate between start_datetime and end_datetime and regionid = ANY(regions);
+      SELECT b.settlementdate, b.regionid, b.totaldemand, b.rrp FROM demand_data b WHERE b.settlementdate > start_datetime and b.settlementdate <= end_datetime and regionid = ANY(regions);
 
       RETURN QUERY SELECT b.settlementdate, sum(b.rrp*b.totaldemand)/sum(b.totaldemand) as vwap FROM time_filtered_price b GROUP BY b.settlementdate;
 
@@ -350,7 +340,7 @@ _create_aggregate_demand_function = """
 
       CREATE TEMP TABLE time_filtered_demand ON COMMIT DROP as
       SELECT b.settlementdate, b.regionid, b.totaldemand FROM demand_data b
-        WHERE b.settlementdate between start_datetime and end_datetime and regionid = ANY(regions);
+        WHERE b.settlementdate > start_datetime and b.settlementdate <= end_datetime and regionid = ANY(regions);
 
       RETURN QUERY SELECT b.settlementdate, sum(b.totaldemand) as totaldemand
                       FROM time_filtered_demand b GROUP BY b.settlementdate;
@@ -430,7 +420,7 @@ def create_db_functions(connection_string):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> postgres_helpers.run_query(con_string, 'DROP FUNCTION distinct_unit_types;')
+    >>> postgres_helpers.run_query(con_string, 'DROP FUNCTION get_bids_by_unit_v2;')
 
     >>> create_db_functions(con_string)
 

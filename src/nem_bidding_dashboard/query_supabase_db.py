@@ -14,24 +14,24 @@ from nem_bidding_dashboard import defaults
 pd.set_option("display.width", None)
 
 
-def region_data(regions, start_time, end_time):
+def region_demand(regions, start_time, end_time):
     """
     Query demand data from supabase. To aggregate demand data is summed. For this function to run the supabase url and
     key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
     SUPABASE_BIDDING_DASHBOARD_KEY respectively.
 
     Examples:
-    >>> region_data(
+    >>> region_demand(
     ... ['NSW'],
-    ... "2022/01/01 00:00:00",
-    ... "2022/01/01 00:30:00")
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 00:30:00")
             SETTLEMENTDATE  TOTALDEMAND
-    1  2022-01-01T00:05:00      7206.03
-    2  2022-01-01T00:10:00      7174.26
-    3  2022-01-01T00:15:00      7135.00
-    0  2022-01-01T00:20:00      7065.84
-    4  2022-01-01T00:25:00      6995.08
-    5  2022-01-01T00:30:00      6988.47
+    5  2022-01-02T00:05:00      6850.57
+    1  2022-01-02T00:10:00      6774.01
+    3  2022-01-02T00:15:00      6758.63
+    4  2022-01-02T00:20:00      6732.82
+    2  2022-01-02T00:25:00      6704.92
+    0  2022-01-02T00:30:00      6672.90
 
     Args:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
@@ -74,26 +74,15 @@ def aggregate_bids(
     ... [],
     ... 'Generator')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    16  2022-01-02T00:00:00   [-1000, -100)   9195.340
-    20  2022-01-02T00:00:00       [-100, 0)    260.731
-    13  2022-01-02T00:00:00         [0, 50)   1543.000
-    17  2022-01-02T00:00:00       [50, 100)   1853.000
-    1   2022-01-02T00:00:00      [100, 200)   1491.000
-    10  2022-01-02T00:00:00      [200, 300)   1977.000
-    15  2022-01-02T00:00:00      [300, 500)    895.000
-    18  2022-01-02T00:00:00     [500, 1000)    185.000
-    3   2022-01-02T00:00:00    [1000, 5000)    231.000
-    2   2022-01-02T00:00:00   [5000, 10000)     15.000
-    6   2022-01-02T00:00:00  [10000, 15500)   5014.000
-    4   2022-01-02T01:00:00   [-1000, -100)   9035.600
-    19  2022-01-02T01:00:00       [-100, 0)    198.353
-    12  2022-01-02T01:00:00         [0, 50)   1357.000
-    11  2022-01-02T01:00:00       [50, 100)   1358.000
-    14  2022-01-02T01:00:00      [100, 200)   1371.000
-    7   2022-01-02T01:00:00      [200, 300)   2133.000
-    21  2022-01-02T01:00:00      [300, 500)    957.000
-    9   2022-01-02T01:00:00     [500, 1000)    217.000
-    8   2022-01-02T01:00:00    [1000, 5000)    231.000
+    3   2022-01-02T01:00:00   [-1000, -100)   9035.600
+    8   2022-01-02T01:00:00       [-100, 0)    198.353
+    2   2022-01-02T01:00:00         [0, 50)   1357.000
+    1   2022-01-02T01:00:00       [50, 100)   1358.000
+    4   2022-01-02T01:00:00      [100, 200)   1371.000
+    6   2022-01-02T01:00:00      [200, 300)   2133.000
+    9   2022-01-02T01:00:00      [300, 500)    957.000
+    10  2022-01-02T01:00:00     [500, 1000)    217.000
+    7   2022-01-02T01:00:00    [1000, 5000)    231.000
     5   2022-01-02T01:00:00   [5000, 10000)     15.000
     0   2022-01-02T01:00:00  [10000, 15500)   5543.000
 
@@ -107,28 +96,17 @@ def aggregate_bids(
     ... [],
     ... 'Generator')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    13  2022-01-02T00:00:00   [-1000, -100)   9195.340
-    20  2022-01-02T00:00:00       [-100, 0)    260.731
-    12  2022-01-02T00:00:00         [0, 50)   1543.000
-    14  2022-01-02T00:00:00       [50, 100)   1853.000
-    15  2022-01-02T00:00:00      [100, 200)   1491.000
-    17  2022-01-02T00:00:00      [200, 300)   1977.000
-    19  2022-01-02T00:00:00      [300, 500)    895.000
-    6   2022-01-02T00:00:00     [500, 1000)    185.000
-    9   2022-01-02T00:00:00    [1000, 5000)    231.000
-    2   2022-01-02T00:00:00   [5000, 10000)     15.000
-    3   2022-01-02T00:00:00  [10000, 15500)   5014.000
-    10  2022-01-02T00:05:00   [-1000, -100)   9120.230
-    21  2022-01-02T00:05:00       [-100, 0)    252.163
+    1   2022-01-02T00:05:00   [-1000, -100)   9120.230
+    7   2022-01-02T00:05:00       [-100, 0)    252.163
     5   2022-01-02T00:05:00         [0, 50)   1387.000
-    1   2022-01-02T00:05:00       [50, 100)   1798.000
-    11  2022-01-02T00:05:00      [100, 200)   1371.000
-    4   2022-01-02T00:05:00      [200, 300)   1957.000
-    18  2022-01-02T00:05:00      [300, 500)    935.000
+    9   2022-01-02T00:05:00       [50, 100)   1798.000
+    6   2022-01-02T00:05:00      [100, 200)   1371.000
+    3   2022-01-02T00:05:00      [200, 300)   1957.000
+    10  2022-01-02T00:05:00      [300, 500)    935.000
     8   2022-01-02T00:05:00     [500, 1000)    217.000
-    7   2022-01-02T00:05:00    [1000, 5000)    231.000
+    4   2022-01-02T00:05:00    [1000, 5000)    231.000
     0   2022-01-02T00:05:00   [5000, 10000)     15.000
-    16  2022-01-02T00:05:00  [10000, 15500)   5367.000
+    2   2022-01-02T00:05:00  [10000, 15500)   5367.000
 
 
     Args:
@@ -186,11 +164,6 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    5  2022-01-02T00:00:00   AGLHAL        1         32   -963.00
-    8  2022-01-02T00:00:00   AGLHAL       10        121  14541.30
-    6  2022-01-02T00:00:00  BASTYAN        2         53    -55.64
-    7  2022-01-02T00:00:00  BASTYAN        4         28     -0.91
-    9  2022-01-02T00:00:00  BASTYAN       10          0  14021.90
     1  2022-01-02T01:00:00   AGLHAL        7         32    557.39
     3  2022-01-02T01:00:00   AGLHAL       10        121  14541.30
     4  2022-01-02T01:00:00  BASTYAN        2         53    -55.64
@@ -205,11 +178,6 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    5  2022-01-02T00:00:00   AGLHAL        1         32   -963.00
-    8  2022-01-02T00:00:00   AGLHAL       10        121  14541.30
-    6  2022-01-02T00:00:00  BASTYAN        2         53    -55.64
-    7  2022-01-02T00:00:00  BASTYAN        4         28     -0.91
-    9  2022-01-02T00:00:00  BASTYAN       10          0  14021.90
     1  2022-01-02T01:00:00   AGLHAL        7         32    557.39
     3  2022-01-02T01:00:00   AGLHAL       10        121  14541.30
     4  2022-01-02T01:00:00  BASTYAN        2         53    -55.64
@@ -256,23 +224,24 @@ def stations_and_duids_in_regions_and_time_window(
     Examples:
 
     >>> stations_and_duids_in_regions_and_time_window(
-    ... ['NSW', 'VIC'],
+    ... ['NSW'],
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 01:00:00")
-             DUID                            STATION NAME
-    109    AGLSOM                  Somerton Power Station
-    27      ARWF1                        Ararat Wind Farm
-    12     BALBG1  Ballarat Battery Energy Storage System
-    11   BALDHWF1                    Bald Hills Wind Farm
-    13   BANGOWF1                     Bango 973 Wind Farm
-    ..        ...                                     ...
-    145   YENDWF1                        Yendon Wind Farm
-    140     YWPS1              Yallourn 'W' Power Station
-    141     YWPS2              Yallourn 'W' Power Station
-    142     YWPS3              Yallourn 'W' Power Station
-    143     YWPS4              Yallourn 'W' Power Station
+            DUID             STATION NAME
+    7   BANGOWF1      Bango 973 Wind Farm
+    8   BANGOWF2      Bango 999 Wind Farm
+    13  BERYLSF1         Beryl Solar Farm
+    14  BLOWERNG  Blowering Power Station
+    15  BOCORWF1      Boco Rock Wind Farm
+    ..       ...                      ...
+    72  WALGRVG1         Wallgrove BESS 1
+    66   WELLSF1    Wellington Solar Farm
+    73  WOODLWN1       Woodlawn Wind Farm
+    61     WRSF1    White Rock Solar Farm
+    67     WRWF1     White Rock Wind Farm
     <BLANKLINE>
-    [146 rows x 2 columns]
+    [74 rows x 2 columns]
+
 
     Args:
         regions: list[str] regions to filter, should only be QLD, NSW, VIC, SA or TAS.
@@ -324,7 +293,6 @@ def get_aggregated_dispatch_data(
     ... 'Generator',
     ... [])
          INTERVAL_DATETIME  COLUMNVALUES
-    1  2022-01-02T00:00:00       10698.7
     0  2022-01-02T01:00:00       10606.3
 
 
@@ -337,8 +305,7 @@ def get_aggregated_dispatch_data(
     ... 'Generator',
     ... [])
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2022-01-02T00:00:00       10698.7
-    1  2022-01-02T00:05:00       10686.9
+    0  2022-01-02T00:05:00       10686.9
 
     Arguments:
         column_name: str, which column of dispatch data to aggregate and return. Should be one of NTERVAL_DATETIME,
@@ -399,7 +366,6 @@ def get_aggregated_dispatch_data_by_duids(
     ... "2022/01/02 01:00:00",
     ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
-    1  2022-01-02T00:00:00           234
     0  2022-01-02T01:00:00           234
 
 
@@ -410,8 +376,7 @@ def get_aggregated_dispatch_data_by_duids(
     ... "2022/01/02 00:05:00",
     ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2022-01-02T00:00:00           234
-    1  2022-01-02T00:05:00           234
+    0  2022-01-02T00:05:00           234
 
     Args:
         column_name: str, which column of dispatch data to aggregate and return. Should be one of NTERVAL_DATETIME,
@@ -462,17 +427,16 @@ def get_aggregated_vwap(regions, start_time, end_time):
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 01:00:00")
              SETTLEMENTDATE      PRICE
-    8   2022-01-02T00:00:00   95.71777
-    11  2022-01-02T00:05:00  110.22005
+    10  2022-01-02T00:05:00  110.22005
     3   2022-01-02T00:10:00  104.30393
     6   2022-01-02T00:15:00   85.50552
-    9   2022-01-02T00:20:00   78.07000
+    8   2022-01-02T00:20:00   78.07000
     4   2022-01-02T00:25:00   85.00000
     1   2022-01-02T00:30:00   85.00000
     7   2022-01-02T00:35:00  103.51609
     0   2022-01-02T00:40:00   94.31247
-    12  2022-01-02T00:45:00  103.13011
-    10  2022-01-02T00:50:00   96.08903
+    11  2022-01-02T00:45:00  103.13011
+    9   2022-01-02T00:50:00   96.08903
     2   2022-01-02T00:55:00   86.38491
     5   2022-01-02T01:00:00   87.05018
 

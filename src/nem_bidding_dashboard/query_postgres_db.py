@@ -6,7 +6,7 @@ from nem_bidding_dashboard.postgres_helpers import run_query_return_dataframe
 pd.set_option("display.width", None)
 
 
-def region_data(connection_string, regions, start_time, end_time):
+def region_demand(connection_string, regions, start_time, end_time):
     """
     Query demand and price data from a postgres database. To aggregate demand data is summed.
 
@@ -21,18 +21,18 @@ def region_data(connection_string, regions, start_time, end_time):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> region_data(
+    >>> region_demand(
     ... con_string,
     ... ['NSW'],
-    ... "2022/01/01 00:00:00",
-    ... "2022/01/01 00:30:00")
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 00:30:00")
            SETTLEMENTDATE  TOTALDEMAND
-    1 2022-01-01 00:05:00      7206.03
-    2 2022-01-01 00:10:00      7174.26
-    3 2022-01-01 00:15:00      7135.00
-    0 2022-01-01 00:20:00      7065.84
-    4 2022-01-01 00:25:00      6995.08
-    5 2022-01-01 00:30:00      6988.47
+    5 2022-01-02 00:05:00      6850.57
+    1 2022-01-02 00:10:00      6774.01
+    3 2022-01-02 00:15:00      6758.63
+    4 2022-01-02 00:20:00      6732.82
+    2 2022-01-02 00:25:00      6704.92
+    0 2022-01-02 00:30:00      6672.90
 
 
     Arguments:
@@ -96,29 +96,18 @@ def aggregate_bids(
     ... 'adjusted',
     ... [],
     ... 'Generator')
-         INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
-    18 2022-01-02 00:00:00   [-1000, -100)  9195.33900
-    6  2022-01-02 00:00:00       [-100, 0)   260.73145
-    10 2022-01-02 00:00:00         [0, 50)  1543.00000
-    20 2022-01-02 00:00:00       [50, 100)  1853.00000
-    3  2022-01-02 00:00:00      [100, 200)  1491.00000
-    21 2022-01-02 00:00:00      [200, 300)  1977.00000
-    17 2022-01-02 00:00:00      [300, 500)   895.00000
-    0  2022-01-02 00:00:00     [500, 1000)   185.00000
-    5  2022-01-02 00:00:00    [1000, 5000)   231.00000
-    4  2022-01-02 00:00:00   [5000, 10000)    15.00000
-    14 2022-01-02 00:00:00  [10000, 15500)  5014.00000
-    11 2022-01-02 01:00:00   [-1000, -100)  9035.59500
-    1  2022-01-02 01:00:00       [-100, 0)   198.35330
-    9  2022-01-02 01:00:00         [0, 50)  1357.00000
-    8  2022-01-02 01:00:00       [50, 100)  1358.00000
-    12 2022-01-02 01:00:00      [100, 200)  1371.00000
-    15 2022-01-02 01:00:00      [200, 300)  2133.00000
-    7  2022-01-02 01:00:00      [300, 500)   957.00000
-    16 2022-01-02 01:00:00     [500, 1000)   217.00000
-    19 2022-01-02 01:00:00    [1000, 5000)   231.00000
-    13 2022-01-02 01:00:00   [5000, 10000)    15.00000
-    2  2022-01-02 01:00:00  [10000, 15500)  5543.00000
+         INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
+    9  2022-01-02 01:00:00   [-1000, -100)  9035.5950
+    4  2022-01-02 01:00:00       [-100, 0)   198.3533
+    7  2022-01-02 01:00:00         [0, 50)  1357.0000
+    0  2022-01-02 01:00:00       [50, 100)  1358.0000
+    5  2022-01-02 01:00:00      [100, 200)  1371.0000
+    2  2022-01-02 01:00:00      [200, 300)  2133.0000
+    8  2022-01-02 01:00:00      [300, 500)   957.0000
+    3  2022-01-02 01:00:00     [500, 1000)   217.0000
+    1  2022-01-02 01:00:00    [1000, 5000)   231.0000
+    6  2022-01-02 01:00:00   [5000, 10000)    15.0000
+    10 2022-01-02 01:00:00  [10000, 15500)  5543.0000
 
 
     >>> aggregate_bids(
@@ -131,28 +120,17 @@ def aggregate_bids(
     ... [],
     ... 'Generator')
          INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
-    18 2022-01-02 00:00:00   [-1000, -100)  9195.33900
-    8  2022-01-02 00:00:00       [-100, 0)   260.73145
-    10 2022-01-02 00:00:00         [0, 50)  1543.00000
-    19 2022-01-02 00:00:00       [50, 100)  1853.00000
-    4  2022-01-02 00:00:00      [100, 200)  1491.00000
-    20 2022-01-02 00:00:00      [200, 300)  1977.00000
-    17 2022-01-02 00:00:00      [300, 500)   895.00000
-    1  2022-01-02 00:00:00     [500, 1000)   185.00000
-    7  2022-01-02 00:00:00    [1000, 5000)   231.00000
-    5  2022-01-02 00:00:00   [5000, 10000)    15.00000
-    15 2022-01-02 00:00:00  [10000, 15500)  5014.00000
-    11 2022-01-02 00:05:00   [-1000, -100)  9120.23200
-    12 2022-01-02 00:05:00       [-100, 0)   252.16272
-    6  2022-01-02 00:05:00         [0, 50)  1387.00000
-    14 2022-01-02 00:05:00       [50, 100)  1798.00000
-    9  2022-01-02 00:05:00      [100, 200)  1371.00000
-    2  2022-01-02 00:05:00      [200, 300)  1957.00000
-    21 2022-01-02 00:05:00      [300, 500)   935.00000
-    13 2022-01-02 00:05:00     [500, 1000)   217.00000
-    3  2022-01-02 00:05:00    [1000, 5000)   231.00000
-    0  2022-01-02 00:05:00   [5000, 10000)    15.00000
-    16 2022-01-02 00:05:00  [10000, 15500)  5367.00000
+    1  2022-01-02 00:05:00   [-1000, -100)  9120.23200
+    10 2022-01-02 00:05:00       [-100, 0)   252.16272
+    9  2022-01-02 00:05:00         [0, 50)  1387.00000
+    5  2022-01-02 00:05:00       [50, 100)  1798.00000
+    3  2022-01-02 00:05:00      [100, 200)  1371.00000
+    6  2022-01-02 00:05:00      [200, 300)  1957.00000
+    0  2022-01-02 00:05:00      [300, 500)   935.00000
+    2  2022-01-02 00:05:00     [500, 1000)   217.00000
+    4  2022-01-02 00:05:00    [1000, 5000)   231.00000
+    7  2022-01-02 00:05:00   [5000, 10000)    15.00000
+    8  2022-01-02 00:05:00  [10000, 15500)  5367.00000
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
@@ -217,16 +195,11 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
     ... 'hourly',
     ... 'adjusted')
         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    0 2022-01-02 00:00:00   AGLHAL        1       32.0   -963.00
-    1 2022-01-02 00:00:00   AGLHAL       10      121.0  14541.30
-    2 2022-01-02 00:00:00  BASTYAN        2       53.0    -55.64
-    3 2022-01-02 00:00:00  BASTYAN        4       28.0     -0.91
-    4 2022-01-02 00:00:00  BASTYAN       10        0.0  14021.86
-    5 2022-01-02 01:00:00   AGLHAL        7       32.0    557.39
-    6 2022-01-02 01:00:00   AGLHAL       10      121.0  14541.30
-    7 2022-01-02 01:00:00  BASTYAN        2       53.0    -55.64
-    8 2022-01-02 01:00:00  BASTYAN        4       28.0     -0.91
-    9 2022-01-02 01:00:00  BASTYAN       10        0.0  14021.86
+    0 2022-01-02 01:00:00   AGLHAL        7       32.0    557.39
+    1 2022-01-02 01:00:00   AGLHAL       10      121.0  14541.30
+    2 2022-01-02 01:00:00  BASTYAN        2       53.0    -55.64
+    3 2022-01-02 01:00:00  BASTYAN        4       28.0     -0.91
+    4 2022-01-02 01:00:00  BASTYAN       10        0.0  14021.86
 
 
     >>> duid_bids(
@@ -237,16 +210,11 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
     ... 'hourly',
     ... 'adjusted')
         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    0 2022-01-02 00:00:00   AGLHAL        1       32.0   -963.00
-    1 2022-01-02 00:00:00   AGLHAL       10      121.0  14541.30
-    2 2022-01-02 00:00:00  BASTYAN        2       53.0    -55.64
-    3 2022-01-02 00:00:00  BASTYAN        4       28.0     -0.91
-    4 2022-01-02 00:00:00  BASTYAN       10        0.0  14021.86
-    5 2022-01-02 01:00:00   AGLHAL        7       32.0    557.39
-    6 2022-01-02 01:00:00   AGLHAL       10      121.0  14541.30
-    7 2022-01-02 01:00:00  BASTYAN        2       53.0    -55.64
-    8 2022-01-02 01:00:00  BASTYAN        4       28.0     -0.91
-    9 2022-01-02 01:00:00  BASTYAN       10        0.0  14021.86
+    0 2022-01-02 01:00:00   AGLHAL        7       32.0    557.39
+    1 2022-01-02 01:00:00   AGLHAL       10      121.0  14541.30
+    2 2022-01-02 01:00:00  BASTYAN        2       53.0    -55.64
+    3 2022-01-02 01:00:00  BASTYAN        4       28.0     -0.91
+    4 2022-01-02 01:00:00  BASTYAN       10        0.0  14021.86
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
@@ -303,24 +271,24 @@ def stations_and_duids_in_regions_and_time_window(
     >>> stations_and_duids_in_regions_and_time_window(
     ... con_string,
     ... ['NSW'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 00:05:00",
+    ... "2022/01/02 00:00:00",
+    ... "2022/01/02 01:00:00",
     ... "Generator",
     ... [])
-             DUID                    STATION NAME
-    0    AGLSITA1                 Agl Kemps Creek
-    1       APPIN               Appin Power Plant
-    2    BANGOWF1             Bango 973 Wind Farm
-    3    BANGOWF2             Bango 999 Wind Farm
-    17   BDONGHYD  Burrendong Hydro Power Station
-    ..        ...                             ...
-    112     WRSF1           White Rock Solar Farm
-    113     WRWF1            White Rock Wind Farm
-    110  WSTWYSF1         West Wyalong Solar Farm
-    118  WYANGALA        Wyangala A Power Station
-    119  WYANGALB        Wyangala B Power Station
+            DUID             STATION NAME
+    0   BANGOWF1      Bango 973 Wind Farm
+    1   BANGOWF2      Bango 999 Wind Farm
+    6   BERYLSF1         Beryl Solar Farm
+    7   BLOWERNG  Blowering Power Station
+    8   BOCORWF1      Boco Rock Wind Farm
+    ..       ...                      ...
+    69  WALGRVG1         Wallgrove BESS 1
+    70   WELLSF1    Wellington Solar Farm
+    73  WOODLWN1       Woodlawn Wind Farm
+    71     WRSF1    White Rock Solar Farm
+    72     WRWF1     White Rock Wind Farm
     <BLANKLINE>
-    [120 rows x 2 columns]
+    [74 rows x 2 columns]
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
@@ -341,7 +309,7 @@ def stations_and_duids_in_regions_and_time_window(
     regions = ", ".join(regions)
     tech_types = ['"{t}"'.format(t=t) for t in tech_types]
     tech_types = ", ".join(tech_types)
-    query = f"""SELECT * FROM get_duids_and_stations(
+    query = f"""SELECT * FROM get_duids_and_staions_in_regions_and_time_window_v2(
                 '{{{regions}}}',
                 (timestamp '{start_time}'),
                 (timestamp '{end_time}'),
@@ -388,7 +356,6 @@ def get_aggregated_dispatch_data(
     ... 'Generator',
     ... [])
         INTERVAL_DATETIME  COLUMNVALUES
-    1 2022-01-02 00:00:00     10698.651
     0 2022-01-02 01:00:00     10606.271
 
 
@@ -402,8 +369,7 @@ def get_aggregated_dispatch_data(
     ... 'Generator',
     ... [])
         INTERVAL_DATETIME  COLUMNVALUES
-    0 2022-01-02 00:00:00     10698.651
-    1 2022-01-02 00:05:00     10686.938
+    0 2022-01-02 00:05:00     10686.938
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
@@ -473,7 +439,6 @@ def get_aggregated_dispatch_data_by_duids(
     ... "2022/01/02 01:00:00",
     ... 'hourly')
         INTERVAL_DATETIME  COLUMNVALUES
-    1 2022-01-02 00:00:00         234.0
     0 2022-01-02 01:00:00         234.0
 
 
@@ -485,8 +450,7 @@ def get_aggregated_dispatch_data_by_duids(
     ... "2022/01/02 00:05:00",
     ... '5-min')
         INTERVAL_DATETIME  COLUMNVALUES
-    0 2022-01-02 00:00:00         234.0
-    1 2022-01-02 00:05:00         234.0
+    0 2022-01-02 00:05:00         234.0
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
@@ -552,17 +516,16 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 01:00:00")
             SETTLEMENTDATE      PRICE
-    8  2022-01-02 00:00:00   95.71777
-    11 2022-01-02 00:05:00  110.22005
+    10 2022-01-02 00:05:00  110.22005
     3  2022-01-02 00:10:00  104.30393
     6  2022-01-02 00:15:00   85.50552
-    9  2022-01-02 00:20:00   78.07000
+    8  2022-01-02 00:20:00   78.07000
     4  2022-01-02 00:25:00   85.00000
     1  2022-01-02 00:30:00   85.00000
     7  2022-01-02 00:35:00  103.51609
     0  2022-01-02 00:40:00   94.31247
-    12 2022-01-02 00:45:00  103.13011
-    10 2022-01-02 00:50:00   96.08903
+    11 2022-01-02 00:45:00  103.13011
+    9  2022-01-02 00:50:00   96.08903
     2  2022-01-02 00:55:00   86.38491
     5  2022-01-02 01:00:00   87.05018
 
@@ -577,7 +540,8 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
         end_time: Ending datetime, formatted identical to start_time
 
     Returns:
-        pd.DataFrame with column SETTLEMENTDATE and PRICE
+        pd.DataFrame with columns SETTLEMENTDATE, TOTALDEMAND and RRP (volume weighted avergae of energy price at
+        regional reference nodes).
     """
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
@@ -627,6 +591,8 @@ def unit_types(connection_string, dispatch_type, regions):
             can be used to build a properly formated connection string, or alternative any string that matches the
             format allowed by `PostgresSQL <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING>`_
             can be used
+        dispatch_type: str 'Generator' or 'Load'
+        regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
 
     Returns:
         pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
