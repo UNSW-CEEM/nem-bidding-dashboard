@@ -163,6 +163,7 @@ def aggregate_bids(
 
     bids["BIN_NAME"] = bids["BIN_NAME"].astype("category")
     bids["BIN_NAME"] = bids["BIN_NAME"].cat.set_categories(defaults.bid_order)
+    bids["BIN_NAME"] = bids["BIN_NAME"].astype(str)
     return bids.sort_values(["INTERVAL_DATETIME", "BIN_NAME"])
 
 
@@ -503,11 +504,8 @@ def get_aggregated_dispatch_data_by_duids(
     )
 
     dispatch = dispatch.loc[:, ["INTERVAL_DATETIME", column_name]]
-    dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"].sort_values(
-        ["INTERVAL_DATETIME"]
-    )
-
-    return dispatch
+    dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"]
+    return dispatch.sort_values(["INTERVAL_DATETIME"])
 
 
 def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):

@@ -26,12 +26,12 @@ def region_demand(regions, start_time, end_time):
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 00:30:00")
             SETTLEMENTDATE  TOTALDEMAND
-    5  2022-01-02T00:05:00      6850.57
-    1  2022-01-02T00:10:00      6774.01
-    3  2022-01-02T00:15:00      6758.63
-    4  2022-01-02T00:20:00      6732.82
-    2  2022-01-02T00:25:00      6704.92
-    0  2022-01-02T00:30:00      6672.90
+    5  2022-01-02 00:05:00      6850.57
+    1  2022-01-02 00:10:00      6774.01
+    3  2022-01-02 00:15:00      6758.63
+    4  2022-01-02 00:20:00      6732.82
+    2  2022-01-02 00:25:00      6704.92
+    0  2022-01-02 00:30:00      6672.90
 
     Args:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
@@ -50,6 +50,7 @@ def region_demand(regions, start_time, end_time):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
+    data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].str.replace("T", " ")
     return data.sort_values("SETTLEMENTDATE")
 
 

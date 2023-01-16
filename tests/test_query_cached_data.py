@@ -1,0 +1,608 @@
+import sys
+
+import pandas as pd
+
+sys.modules["nemosis"] = __import__("mock_nemosis")
+
+from nem_bidding_dashboard import query_cached_data
+
+
+def test_region_demand_filter_regions():
+    region_demand = query_cached_data.region_demand(
+        ["SA"], "dummy_start", "dummy_end", "dummy_cache"
+    )
+    expected_region_demand = pd.DataFrame(
+        columns=["SETTLEMENTDATE", "TOTALDEMAND"],
+        data=[("2020/01/01 01:00:00", 1000.0), ("2020/01/01 05:00:00", 1010.0)],
+    )
+    expected_region_demand["SETTLEMENTDATE"] = pd.to_datetime(
+        expected_region_demand["SETTLEMENTDATE"]
+    )
+    expected_region_demand["SETTLEMENTDATE"] = expected_region_demand[
+        "SETTLEMENTDATE"
+    ].dt.strftime("%Y-%m-%d %X")
+    region_demand = region_demand.sort_values(["SETTLEMENTDATE"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(region_demand, expected_region_demand)
+
+
+def test_region_demand():
+    region_demand = query_cached_data.region_demand(
+        ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
+    )
+    expected_region_demand = pd.DataFrame(
+        columns=["SETTLEMENTDATE", "TOTALDEMAND"],
+        data=[("2020/01/01 01:00:00", 3000.0), ("2020/01/01 05:00:00", 3020.0)],
+    )
+    expected_region_demand["SETTLEMENTDATE"] = pd.to_datetime(
+        expected_region_demand["SETTLEMENTDATE"]
+    )
+    expected_region_demand["SETTLEMENTDATE"] = expected_region_demand[
+        "SETTLEMENTDATE"
+    ].dt.strftime("%Y-%m-%d %X")
+    region_demand = region_demand.sort_values(["SETTLEMENTDATE"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(region_demand, expected_region_demand)
+
+
+def test_aggregate_bids_generator():
+    bids = query_cached_data.aggregate_bids(
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        adjusted="adjusted",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    bids_expected = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
+        data=[
+            ("2020/01/01 01:00:00", "[0, 50)", 110.0),
+            ("2020/01/01 05:00:00", "[0, 50)", 203.0),
+        ],
+    )
+    bids_expected["INTERVAL_DATETIME"] = pd.to_datetime(
+        bids_expected["INTERVAL_DATETIME"]
+    )
+    bids_expected["INTERVAL_DATETIME"] = bids_expected["INTERVAL_DATETIME"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    bids = bids.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(bids, bids_expected)
+
+
+def test_aggregate_bids_generator_not_adjusted():
+    bids = query_cached_data.aggregate_bids(
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        adjusted="raw",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    bids_expected = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
+        data=[
+            ("2020/01/01 01:00:00", "[0, 50)", 110),
+            ("2020/01/01 05:00:00", "[0, 50)", 210),
+        ],
+    )
+    bids_expected["INTERVAL_DATETIME"] = pd.to_datetime(
+        bids_expected["INTERVAL_DATETIME"]
+    )
+    bids_expected["INTERVAL_DATETIME"] = bids_expected["INTERVAL_DATETIME"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    bids = bids.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(bids, bids_expected)
+
+
+def test_aggregate_bids_load():
+    bids = query_cached_data.aggregate_bids(
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Load",
+        adjusted="adjusted",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    bids_expected = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
+        data=[
+            ("2020/01/01 01:00:00", "[0, 50)", 101.0),
+            ("2020/01/01 05:00:00", "[0, 50)", 82.0),
+        ],
+    )
+    bids_expected["INTERVAL_DATETIME"] = pd.to_datetime(
+        bids_expected["INTERVAL_DATETIME"]
+    )
+    bids_expected["INTERVAL_DATETIME"] = bids_expected["INTERVAL_DATETIME"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    bids = bids.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(bids, bids_expected)
+
+
+def test_duid_bids():
+    bids = query_cached_data.duid_bids(
+        duids=["A", "B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        adjusted="adjusted",
+        raw_data_cache="dummy",
+    )
+    bids_expected = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"],
+        data=[
+            ("2020/01/01 01:00:00", "A", 4, 70.0, 4.1),
+            ("2020/01/01 01:00:00", "A", 10, 31.0, 10.1),
+            ("2020/01/01 01:00:00", "B", 5, 100.0, 5.3),
+            ("2020/01/01 01:00:00", "B", 9, 10.0, 9.3),
+            ("2020/01/01 05:00:00", "A", 3, 70.0, 3.2),
+            ("2020/01/01 05:00:00", "A", 9, 12.0, 9.2),
+            ("2020/01/01 05:00:00", "B", 4, 100.0, 4.4),
+            ("2020/01/01 05:00:00", "B", 8, 100.0, 8.4),
+            ("2020/01/01 05:00:00", "B", 9, 3.0, 9.4),
+        ],
+    )
+    bids_expected["INTERVAL_DATETIME"] = pd.to_datetime(
+        bids_expected["INTERVAL_DATETIME"]
+    )
+    bids_expected["INTERVAL_DATETIME"] = bids_expected["INTERVAL_DATETIME"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    bids = bids.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(bids, bids_expected)
+
+
+def test_duid_bids_raw():
+    bids = query_cached_data.duid_bids(
+        duids=["A", "B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        adjusted="raw",
+        raw_data_cache="dummy",
+    )
+    bids_expected = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"],
+        data=[
+            ("2020/01/01 01:00:00", "A", 4, 70, 4.1),
+            ("2020/01/01 01:00:00", "A", 10, 40, 10.1),
+            ("2020/01/01 01:00:00", "B", 5, 100, 5.3),
+            ("2020/01/01 01:00:00", "B", 9, 10, 9.3),
+            ("2020/01/01 05:00:00", "A", 3, 70, 3.2),
+            ("2020/01/01 05:00:00", "A", 9, 12, 9.2),
+            ("2020/01/01 05:00:00", "B", 4, 100, 4.4),
+            ("2020/01/01 05:00:00", "B", 8, 100, 8.4),
+            ("2020/01/01 05:00:00", "B", 9, 10, 9.4),
+        ],
+    )
+    bids_expected["INTERVAL_DATETIME"] = pd.to_datetime(
+        bids_expected["INTERVAL_DATETIME"]
+    )
+    bids_expected["INTERVAL_DATETIME"] = bids_expected["INTERVAL_DATETIME"].dt.strftime(
+        "%Y-%m-%d %X"
+    )
+    bids = bids.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(bids, bids_expected)
+
+
+def stations_and_duids_in_regions_and_time_window_load():
+    stations_and_duids = (
+        query_cached_data.stations_and_duids_in_regions_and_time_window(
+            regions=["SA", "TAS"],
+            start_time="dummy",
+            end_time="dummy",
+            dispatch_type="Load",
+            tech_types=[],
+            raw_data_cache="dummy",
+        )
+    )
+    stations_and_duids_expected = pd.DataFrame(
+        columns=["DUID", "STATION NAME"], data=[("A", "Adelaide Desalination Plant")]
+    )
+    stations_and_duids = stations_and_duids.sort_values(["DUID"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(stations_and_duids, stations_and_duids_expected)
+
+
+def stations_and_duids_in_regions_and_time_window_generator():
+    stations_and_duids = (
+        query_cached_data.stations_and_duids_in_regions_and_time_window(
+            regions=["SA", "TAS"],
+            start_time="dummy",
+            end_time="dummy",
+            dispatch_type="Generator",
+            tech_types=[],
+            raw_data_cache="dummy",
+        )
+    )
+    stations_and_duids_expected = pd.DataFrame(
+        columns=["DUID", "STATION NAME"], data=[("A", "Ararat Wind Farm")]
+    )
+    stations_and_duids = stations_and_duids.sort_values(["DUID"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(stations_and_duids, stations_and_duids_expected)
+
+
+def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="ASBIDRAMPUPMAXAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Load",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 101.0), ("2020/01/01 05:00:00", 72.0 + 1 * 5)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="ASBIDRAMPDOWNMINAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Load",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 71.0 - 1 * 5), ("2020/01/01 05:00:00", 0.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_ramp_up_max_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="RAMPUPMAXAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Load",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[
+            ("2020/01/01 01:00:00", 101.0),
+            ("2020/01/01 05:00:00", 72.0 + 246.0 / 12),
+        ],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_ramp_down_min_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="RAMPDOWNMINAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Load",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 71.0 - 122.0 / 12), ("2020/01/01 05:00:00", 0.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="ASBIDRAMPUPMAXAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 61.0 + 2 * 5), ("2020/01/01 05:00:00", 104.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="ASBIDRAMPDOWNMINAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 0.0), ("2020/01/01 05:00:00", 0.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="RAMPUPMAXAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[
+            ("2020/01/01 01:00:00", 61.0 + 128.0 / 12),
+            ("2020/01/01 05:00:00", 62.0 + 248.0 / 12),
+        ],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator():
+    column_values = query_cached_data.get_aggregated_dispatch_data(
+        column_name="RAMPDOWNMINAVAIL",
+        regions=["SA", "TAS"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        dispatch_type="Generator",
+        tech_types=[],
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[
+            ("2020/01/01 01:00:00", 61.0 - 124.0 / 12),
+            ("2020/01/01 05:00:00", 62.0 - 244.0 / 12),
+        ],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        column_name="ASBIDRAMPUPMAXAVAIL",
+        duids=["B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 61.0 + 2 * 5), ("2020/01/01 05:00:00", 104.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        column_name="ASBIDRAMPDOWNMINAVAIL",
+        duids=["B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[("2020/01/01 01:00:00", 0.0), ("2020/01/01 05:00:00", 0.0)],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        column_name="RAMPUPMAXAVAIL",
+        duids=["B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[
+            ("2020/01/01 01:00:00", 61.0 + 128.0 / 12),
+            ("2020/01/01 05:00:00", 62.0 + 248.0 / 12),
+        ],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail():
+    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        column_name="RAMPDOWNMINAVAIL",
+        duids=["B"],
+        start_time="dummy",
+        end_time="dummy",
+        resolution="hourly",
+        raw_data_cache="dummy",
+    )
+    expected_column_values = pd.DataFrame(
+        columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
+        data=[
+            ("2020/01/01 01:00:00", 61.0 - 124.0 / 12),
+            ("2020/01/01 05:00:00", 62.0 - 244.0 / 12),
+        ],
+    )
+    expected_column_values["INTERVAL_DATETIME"] = pd.to_datetime(
+        expected_column_values["INTERVAL_DATETIME"]
+    )
+    expected_column_values["INTERVAL_DATETIME"] = expected_column_values[
+        "INTERVAL_DATETIME"
+    ].dt.strftime("%Y-%m-%d %X")
+    column_values = column_values.sort_values(["INTERVAL_DATETIME"]).reset_index(
+        drop=True
+    )
+    pd.testing.assert_frame_equal(column_values, expected_column_values)
+
+
+def test_get_aggregated_vwap():
+    region_demand = query_cached_data.get_aggregated_vwap(
+        ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
+    )
+    expected_region_demand = pd.DataFrame(
+        columns=["SETTLEMENTDATE", "PRICE"],
+        data=[
+            ("2020/01/01 01:00:00", (1000.0 * 55.4 + 2000.0 * 75.4) / 3000.0),
+            ("2020/01/01 05:00:00", (1010.0 * 80.1 + 2010.0 * 90.0) / 3020.0),
+        ],
+    )
+    expected_region_demand["SETTLEMENTDATE"] = pd.to_datetime(
+        expected_region_demand["SETTLEMENTDATE"]
+    )
+    expected_region_demand["SETTLEMENTDATE"] = expected_region_demand[
+        "SETTLEMENTDATE"
+    ].dt.strftime("%Y-%m-%d %X")
+    region_demand = region_demand.sort_values(["SETTLEMENTDATE"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(region_demand, expected_region_demand)
+
+
+def test_unit_types_vwap():
+    unit_types = query_cached_data.unit_types(
+        "dummy_cache",
+        "Generator",
+        ["SA"],
+    )
+    unit_types_expected = pd.DataFrame(
+        columns=["UNIT TYPE"],
+        data=[
+            ("Battery Discharge",),
+            ("Engine",),
+            ("Gas Thermal",),
+            ("OCGT",),
+            ("Pump Storage Discharge",),
+            ("Run of River Hydro",),
+            ("Solar",),
+            ("Wind",),
+        ],
+    )
+    unit_types = unit_types.sort_values(["UNIT TYPE"]).reset_index(drop=True)
+    pd.testing.assert_frame_equal(unit_types, unit_types_expected)
