@@ -10,11 +10,10 @@ from defaults import (
     region_combos,
     resolutions,
     tech_types_combos,
+    test_cache,
 )
 
 from nem_bidding_dashboard import query_cached_data, query_postgres_db
-
-test_cache = "D:/nemosis_data_cache"
 
 
 @pytest.mark.parametrize("regions", region_combos)

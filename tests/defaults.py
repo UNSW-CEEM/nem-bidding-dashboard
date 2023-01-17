@@ -16,3 +16,5 @@ con_string = postgres_helpers.build_connection_string(
     password="1234abcd",
     port=5433,
 )
+
+test_cache = "nemosis_cache"
