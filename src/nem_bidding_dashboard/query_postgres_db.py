@@ -57,7 +57,8 @@ def region_demand(connection_string, regions, start_time, end_time):
                 )"""
     query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values("SETTLEMENTDATE")
+    data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].dt.strftime("%Y-%m-%d %X")
+    return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def aggregate_bids(
@@ -167,7 +168,10 @@ def aggregate_bids(
     data = run_query_return_dataframe(connection_string, query)
     data["BIN_NAME"] = data["BIN_NAME"].astype("category")
     data["BIN_NAME"] = data["BIN_NAME"].cat.set_categories(defaults.bid_order)
-    return data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"])
+    data = data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
+    data["BIN_NAME"] = data["BIN_NAME"].astype(str)
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    return data
 
 
 def duid_bids(connection_string, duids, start_time, end_time, resolution, adjusted):
@@ -247,7 +251,10 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
         adjusted=adjusted,
     )
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"])
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
+        drop=True
+    )
 
 
 def stations_and_duids_in_regions_and_time_window(
@@ -317,7 +324,7 @@ def stations_and_duids_in_regions_and_time_window(
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values("DUID")
+    return data.sort_values("DUID").reset_index(drop=True)
 
 
 def get_aggregated_dispatch_data(
@@ -409,7 +416,8 @@ def get_aggregated_dispatch_data(
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values("INTERVAL_DATETIME")
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    return data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -490,7 +498,8 @@ def get_aggregated_dispatch_data_by_duids(
         resolution=resolution,
     )
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values(["INTERVAL_DATETIME"])
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
 def get_aggregated_vwap(connection_string, regions, start_time, end_time):
@@ -552,7 +561,8 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
                 )"""
     query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values("SETTLEMENTDATE")
+    data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].dt.strftime("%Y-%m-%d %X")
+    return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def unit_types(connection_string, dispatch_type, regions):
@@ -606,4 +616,4 @@ def unit_types(connection_string, dispatch_type, regions):
                 )"""
     query = query.format(dispatch_type=dispatch_type, regions=regions)
     data = run_query_return_dataframe(connection_string, query)
-    return data.sort_values("UNIT TYPE")
+    return data.sort_values("UNIT TYPE").reset_index(drop=True)

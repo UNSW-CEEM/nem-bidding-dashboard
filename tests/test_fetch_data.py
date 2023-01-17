@@ -1,13 +1,13 @@
-import sys
-
 import pandas as pd
-
-sys.modules["nemosis"] = __import__("mock_nemosis")
+from mock_nemosis import dynamic_data_compiler
 
 from nem_bidding_dashboard import fetch_data
 
 
-def test_fetch_data_region_data_current_and_archive():
+def test_fetch_data_region_data_current_and_archive(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     region_data = fetch_data.get_region_data(
         "2020/01/01 00:00:00", "2020/01/02 00:00:00", "dummy_directory"
     )
@@ -30,7 +30,10 @@ def test_fetch_data_region_data_current_and_archive():
     pd.testing.assert_frame_equal(region_data, expected_data)
 
 
-def test_fetch_data_region_data_archive():
+def test_fetch_data_region_data_archive(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     region_data = fetch_data.get_region_data(
         "2020/01/01 00:00:00", "2020/01/01 01:00:00", "dummy_directory"
     )
@@ -51,8 +54,11 @@ def test_fetch_data_region_data_archive():
     pd.testing.assert_frame_equal(region_data, expected_data)
 
 
-def test_fetch_data_availability_data_current_and_archive():
-    region_data = fetch_data.get_duid_availability_data(
+def test_fetch_data_availability_data_current_and_archive(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    unit_dispatch = fetch_data.get_duid_availability_data(
         "2020/01/01 00:00:00", "2020/01/02 00:00:00", "dummy_directory"
     )
     expected_data = pd.DataFrame(
@@ -73,17 +79,21 @@ def test_fetch_data_availability_data_current_and_archive():
         ],
     )
     expected_data["SETTLEMENTDATE"] = pd.to_datetime(expected_data["SETTLEMENTDATE"])
-    region_data = region_data.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
+    unit_dispatch = unit_dispatch[unit_dispatch["SETTLEMENTDATE"].dt.minute == 0].copy()
+    unit_dispatch = unit_dispatch.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
         drop=True
     )
-    expected_data = expected_data.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
+    expected_data = unit_dispatch.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
         drop=True
     )
-    pd.testing.assert_frame_equal(region_data, expected_data)
+    pd.testing.assert_frame_equal(unit_dispatch, expected_data)
 
 
-def test_fetch_data_availability_data_archive():
-    region_data = fetch_data.get_duid_availability_data(
+def test_fetch_data_availability_data_archive(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    unit_dispatch = fetch_data.get_duid_availability_data(
         "2020/01/01 00:00:00", "2020/01/01 01:00:00", "dummy_directory"
     )
     expected_data = pd.DataFrame(
@@ -97,15 +107,16 @@ def test_fetch_data_availability_data_archive():
             "RAMPUPRATE",
         ],
         data=[
-            ("2020/01/01 01:00:00", "A", 101.0, 81.0, 71.0, 122.0, 126.0),
+            ("2020/01/01 01:00:00", "A", 101.0, 81.0, 71.0, 122.0, 426.0),
             ("2020/01/01 01:00:00", "B", 201.0, 91.0, 61.0, 124.0, 128.0),
         ],
     )
     expected_data["SETTLEMENTDATE"] = pd.to_datetime(expected_data["SETTLEMENTDATE"])
-    region_data = region_data.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
+    unit_dispatch = unit_dispatch[unit_dispatch["SETTLEMENTDATE"].dt.minute == 0].copy()
+    unit_dispatch = unit_dispatch.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
         drop=True
     )
     expected_data = expected_data.sort_values(["SETTLEMENTDATE", "DUID"]).reset_index(
         drop=True
     )
-    pd.testing.assert_frame_equal(region_data, expected_data)
+    pd.testing.assert_frame_equal(unit_dispatch, expected_data)

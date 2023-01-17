@@ -51,7 +51,7 @@ def region_demand(regions, start_time, end_time):
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
     data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].str.replace("T", " ")
-    return data.sort_values("SETTLEMENTDATE")
+    return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def aggregate_bids(
@@ -145,7 +145,10 @@ def aggregate_bids(
     data.columns = data.columns.str.upper()
     data["BIN_NAME"] = data["BIN_NAME"].astype("category")
     data["BIN_NAME"] = data["BIN_NAME"].cat.set_categories(defaults.bid_order)
-    return data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"])
+    data = data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
+    data["BIN_NAME"] = data["BIN_NAME"].astype(str)
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    return data
 
 
 def duid_bids(duids, start_time, end_time, resolution, adjusted):
@@ -211,7 +214,10 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"])
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
+        drop=True
+    )
 
 
 def stations_and_duids_in_regions_and_time_window(
@@ -270,7 +276,7 @@ def stations_and_duids_in_regions_and_time_window(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values("DUID")
+    return data.sort_values("DUID").reset_index(drop=True)
 
 
 def get_aggregated_dispatch_data(
@@ -345,7 +351,8 @@ def get_aggregated_dispatch_data(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values("INTERVAL_DATETIME")
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    return data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -411,7 +418,8 @@ def get_aggregated_dispatch_data_by_duids(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values(["INTERVAL_DATETIME"])
+    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
 def get_aggregated_vwap(regions, start_time, end_time):
@@ -462,7 +470,8 @@ def get_aggregated_vwap(regions, start_time, end_time):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values("SETTLEMENTDATE")
+    data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].str.replace("T", " ")
+    return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def unit_types(dispatch_type, regions):
@@ -500,7 +509,7 @@ def unit_types(dispatch_type, regions):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
-    return data.sort_values("UNIT TYPE")
+    return data.sort_values("UNIT TYPE").reset_index(drop=True)
 
 
 if __name__ == "__main__":

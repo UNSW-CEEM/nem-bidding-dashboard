@@ -1,13 +1,13 @@
-import sys
-
 import pandas as pd
-
-sys.modules["nemosis"] = __import__("mock_nemosis")
+from mock_nemosis import dynamic_data_compiler, static_table
 
 from nem_bidding_dashboard import query_cached_data
 
 
-def test_region_demand_filter_regions():
+def test_region_demand_filter_regions(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     region_demand = query_cached_data.region_demand(
         ["SA"], "dummy_start", "dummy_end", "dummy_cache"
     )
@@ -25,7 +25,10 @@ def test_region_demand_filter_regions():
     pd.testing.assert_frame_equal(region_demand, expected_region_demand)
 
 
-def test_region_demand():
+def test_region_demand(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     region_demand = query_cached_data.region_demand(
         ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
     )
@@ -43,11 +46,15 @@ def test_region_demand():
     pd.testing.assert_frame_equal(region_demand, expected_region_demand)
 
 
-def test_aggregate_bids_generator():
+def test_aggregate_bids_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         adjusted="adjusted",
@@ -71,11 +78,15 @@ def test_aggregate_bids_generator():
     pd.testing.assert_frame_equal(bids, bids_expected)
 
 
-def test_aggregate_bids_generator_not_adjusted():
+def test_aggregate_bids_generator_not_adjusted(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         adjusted="raw",
@@ -99,11 +110,15 @@ def test_aggregate_bids_generator_not_adjusted():
     pd.testing.assert_frame_equal(bids, bids_expected)
 
 
-def test_aggregate_bids_load():
+def test_aggregate_bids_load(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Load",
         adjusted="adjusted",
@@ -127,11 +142,14 @@ def test_aggregate_bids_load():
     pd.testing.assert_frame_equal(bids, bids_expected)
 
 
-def test_duid_bids():
+def test_duid_bids(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     bids = query_cached_data.duid_bids(
         duids=["A", "B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         adjusted="adjusted",
         raw_data_cache="dummy",
@@ -162,11 +180,14 @@ def test_duid_bids():
     pd.testing.assert_frame_equal(bids, bids_expected)
 
 
-def test_duid_bids_raw():
+def test_duid_bids_raw(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     bids = query_cached_data.duid_bids(
         duids=["A", "B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         adjusted="raw",
         raw_data_cache="dummy",
@@ -197,12 +218,15 @@ def test_duid_bids_raw():
     pd.testing.assert_frame_equal(bids, bids_expected)
 
 
-def stations_and_duids_in_regions_and_time_window_load():
+def stations_and_duids_in_regions_and_time_window_load(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     stations_and_duids = (
         query_cached_data.stations_and_duids_in_regions_and_time_window(
             regions=["SA", "TAS"],
-            start_time="dummy",
-            end_time="dummy",
+            start_time="2020/01/01 00:00:00",
+            end_time="2020/01/01 05:00:00",
             dispatch_type="Load",
             tech_types=[],
             raw_data_cache="dummy",
@@ -215,12 +239,15 @@ def stations_and_duids_in_regions_and_time_window_load():
     pd.testing.assert_frame_equal(stations_and_duids, stations_and_duids_expected)
 
 
-def stations_and_duids_in_regions_and_time_window_generator():
+def stations_and_duids_in_regions_and_time_window_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     stations_and_duids = (
         query_cached_data.stations_and_duids_in_regions_and_time_window(
             regions=["SA", "TAS"],
-            start_time="dummy",
-            end_time="dummy",
+            start_time="2020/01/01 00:00:00",
+            end_time="2020/01/01 05:00:00",
             dispatch_type="Generator",
             tech_types=[],
             raw_data_cache="dummy",
@@ -233,12 +260,16 @@ def stations_and_duids_in_regions_and_time_window_generator():
     pd.testing.assert_frame_equal(stations_and_duids, stations_and_duids_expected)
 
 
-def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail():
+def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="ASBIDRAMPUPMAXAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Load",
         tech_types=[],
@@ -260,12 +291,16 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail():
+def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="ASBIDRAMPDOWNMINAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Load",
         tech_types=[],
@@ -287,12 +322,16 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_ramp_up_max_avail():
+def test_get_aggregated_dispatch_data_ramp_up_max_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="RAMPUPMAXAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Load",
         tech_types=[],
@@ -317,12 +356,16 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_ramp_down_min_avail():
+def test_get_aggregated_dispatch_data_ramp_down_min_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="RAMPDOWNMINAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Load",
         tech_types=[],
@@ -344,12 +387,16 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator():
+def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="ASBIDRAMPUPMAXAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         tech_types=[],
@@ -371,12 +418,16 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator():
+def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="ASBIDRAMPDOWNMINAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         tech_types=[],
@@ -398,12 +449,16 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator():
+def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="RAMPUPMAXAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         tech_types=[],
@@ -428,12 +483,16 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator():
+def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
         column_name="RAMPDOWNMINAVAIL",
         regions=["SA", "TAS"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         dispatch_type="Generator",
         tech_types=[],
@@ -458,12 +517,15 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail():
+def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
         column_name="ASBIDRAMPUPMAXAVAIL",
         duids=["B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         raw_data_cache="dummy",
     )
@@ -483,12 +545,15 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail():
+def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
         column_name="ASBIDRAMPDOWNMINAVAIL",
         duids=["B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         raw_data_cache="dummy",
     )
@@ -508,12 +573,15 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail():
+def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
         column_name="RAMPUPMAXAVAIL",
         duids=["B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         raw_data_cache="dummy",
     )
@@ -536,12 +604,15 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail():
+def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
         column_name="RAMPDOWNMINAVAIL",
         duids=["B"],
-        start_time="dummy",
-        end_time="dummy",
+        start_time="2020/01/01 00:00:00",
+        end_time="2020/01/01 05:00:00",
         resolution="hourly",
         raw_data_cache="dummy",
     )
@@ -564,7 +635,10 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail():
     pd.testing.assert_frame_equal(column_values, expected_column_values)
 
 
-def test_get_aggregated_vwap():
+def test_get_aggregated_vwap(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
     region_demand = query_cached_data.get_aggregated_vwap(
         ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
     )
@@ -585,7 +659,11 @@ def test_get_aggregated_vwap():
     pd.testing.assert_frame_equal(region_demand, expected_region_demand)
 
 
-def test_unit_types_vwap():
+def test_unit_types_vwap(monkeypatch):
+    monkeypatch.setattr(
+        "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
+    )
+    monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     unit_types = query_cached_data.unit_types(
         "dummy_cache",
         "Generator",

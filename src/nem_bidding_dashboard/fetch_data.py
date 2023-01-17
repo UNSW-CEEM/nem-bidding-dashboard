@@ -6,7 +6,7 @@ from nemosis import defaults, dynamic_data_compiler, static_table
 
 defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCUP"]
 
-pd.set_option('display.width', None)
+pd.set_option("display.width", None)
 
 
 def get_region_data(start_time, end_time, raw_data_cache):
@@ -194,7 +194,7 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
 
     if (
         availability_data.empty
-        or availability_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X") != end_time
+        or availability_data["SETTLEMENTDATE"].max().strftime("%Y/%m/%d %X") < end_time
     ):
         if not availability_data.empty:
             start_time = (
@@ -222,8 +222,12 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
             availability_data = pd.concat([availability_data, recent_availability_data])
         except nemosis.custom_errors.NoDataToReturn:
             pass
-    availability_data = availability_data.sort_values(["SETTLEMENTDATE", "INTERVENTION"])
-    availability_data = availability_data.drop_duplicates(keep='last', subset=['SETTLEMENTDATE', 'DUID'])
+    availability_data = availability_data.sort_values(
+        ["SETTLEMENTDATE", "INTERVENTION"]
+    )
+    availability_data = availability_data.drop_duplicates(
+        keep="last", subset=["SETTLEMENTDATE", "DUID"]
+    )
     return availability_data.loc[
         :,
         [

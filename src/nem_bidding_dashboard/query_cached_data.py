@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 import numpy as np
 import pandas as pd
 
@@ -38,8 +40,10 @@ def region_demand(regions, start_time, end_time, raw_data_cache):
     data = fetch_and_preprocess.region_data(start_time, end_time, raw_data_cache)
     data = data.loc[data["REGIONID"].isin(regions), :]
     data = data.groupby("SETTLEMENTDATE", as_index=False).agg({"TOTALDEMAND": "sum"})
-    return data.loc[:, ["SETTLEMENTDATE", "TOTALDEMAND"]].sort_values(
-        ["SETTLEMENTDATE"]
+    return (
+        data.loc[:, ["SETTLEMENTDATE", "TOTALDEMAND"]]
+        .sort_values(["SETTLEMENTDATE"])
+        .reset_index(drop=True)
     )
 
 
@@ -48,9 +52,9 @@ def aggregate_bids(
     start_time,
     end_time,
     resolution,
-    dispatch_type,
     adjusted,
     tech_types,
+    dispatch_type,
     raw_data_cache,
 ):
     """
@@ -66,22 +70,22 @@ def aggregate_bids(
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 01:00:00",
     ... 'hourly',
-    ... 'Generator',
     ... 'adjusted',
     ... [],
+    ... 'Generator',
     ... 'D:/nemosis_data_cache')
-          INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    0   2020-01-01 01:00:00       [-100, 0)      7.442
-    1   2020-01-01 01:00:00   [-1000, -100)   9672.090
-    2   2020-01-01 01:00:00         [0, 50)   4810.708
-    3   2020-01-01 01:00:00      [100, 200)    300.000
-    4   2020-01-01 01:00:00    [1000, 5000)   1004.000
-    5   2020-01-01 01:00:00  [10000, 15500)   4359.000
-    6   2020-01-01 01:00:00      [200, 300)   1960.000
-    7   2020-01-01 01:00:00      [300, 500)    157.000
-    8   2020-01-01 01:00:00       [50, 100)   1788.000
-    9   2020-01-01 01:00:00     [500, 1000)    728.000
-    10  2020-01-01 01:00:00   [5000, 10000)     20.000
+          INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
+    0   2022-01-02 01:00:00   [-1000, -100)  9035.59489
+    1   2022-01-02 01:00:00       [-100, 0)   198.35329
+    2   2022-01-02 01:00:00         [0, 50)  1357.00000
+    3   2022-01-02 01:00:00       [50, 100)  1358.00000
+    4   2022-01-02 01:00:00      [100, 200)  1371.00000
+    5   2022-01-02 01:00:00      [200, 300)  2133.00000
+    6   2022-01-02 01:00:00      [300, 500)   957.00000
+    7   2022-01-02 01:00:00     [500, 1000)   217.00000
+    8   2022-01-02 01:00:00    [1000, 5000)   231.00000
+    9   2022-01-02 01:00:00   [5000, 10000)    15.00000
+    10  2022-01-02 01:00:00  [10000, 15500)  5543.00000
 
 
     >>> aggregate_bids(
@@ -89,22 +93,22 @@ def aggregate_bids(
     ... "2022/01/02 00:00:00",
     ... "2022/01/02 00:05:00",
     ... '5-min',
-    ... 'Generator',
     ... 'adjusted',
     ... [],
+    ... 'Generator',
     ... 'D:/nemosis_data_cache')
-          INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
-    0   2020-01-01 00:05:00       [-100, 0)      1.680
-    1   2020-01-01 00:05:00   [-1000, -100)  10020.555
-    2   2020-01-01 00:05:00         [0, 50)   5046.485
-    3   2020-01-01 00:05:00      [100, 200)      0.000
-    4   2020-01-01 00:05:00    [1000, 5000)   1004.000
-    5   2020-01-01 00:05:00  [10000, 15500)   4279.000
-    6   2020-01-01 00:05:00      [200, 300)   1270.000
-    7   2020-01-01 00:05:00      [300, 500)    157.000
-    8   2020-01-01 00:05:00       [50, 100)   1773.000
-    9   2020-01-01 00:05:00     [500, 1000)    728.000
-    10  2020-01-01 00:05:00   [5000, 10000)     20.000
+          INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
+    0   2022-01-02 00:05:00   [-1000, -100)  9120.23281
+    1   2022-01-02 00:05:00       [-100, 0)   252.16273
+    2   2022-01-02 00:05:00         [0, 50)  1387.00000
+    3   2022-01-02 00:05:00       [50, 100)  1798.00000
+    4   2022-01-02 00:05:00      [100, 200)  1371.00000
+    5   2022-01-02 00:05:00      [200, 300)  1957.00000
+    6   2022-01-02 00:05:00      [300, 500)   935.00000
+    7   2022-01-02 00:05:00     [500, 1000)   217.00000
+    8   2022-01-02 00:05:00    [1000, 5000)   231.00000
+    9   2022-01-02 00:05:00   [5000, 10000)    15.00000
+    10  2022-01-02 00:05:00  [10000, 15500)  5367.00000
 
 
     Arguments:
@@ -163,8 +167,9 @@ def aggregate_bids(
 
     bids["BIN_NAME"] = bids["BIN_NAME"].astype("category")
     bids["BIN_NAME"] = bids["BIN_NAME"].cat.set_categories(defaults.bid_order)
+    bids = bids.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
     bids["BIN_NAME"] = bids["BIN_NAME"].astype(str)
-    return bids.sort_values(["INTERVAL_DATETIME", "BIN_NAME"])
+    return bids
 
 
 def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache):
@@ -230,14 +235,16 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
             :, ["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"]
         ]
 
-    return bids.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"])
+    return bids.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
+        drop=True
+    )
 
 
 def stations_and_duids_in_regions_and_time_window(
     regions, start_time, end_time, dispatch_type, tech_types, raw_data_cache
 ):
     """
-    Function to query units from given regions with bids available in the given time window, with the the given dispatch
+    Function to query units from given regions with bids available in the given time window, with the given dispatch
     and technology type. Data returned is DUIDs and corresponding Station Names.
 
     Examples:
@@ -290,7 +297,11 @@ def stations_and_duids_in_regions_and_time_window(
 
     unit_info = unit_info[unit_info["DUID"].isin(duids)].copy()
 
-    return unit_info.loc[:, ["DUID", "STATION NAME"]].sort_values("DUID")
+    return (
+        unit_info.loc[:, ["DUID", "STATION NAME"]]
+        .sort_values("DUID")
+        .reset_index(drop=True)
+    )
 
 
 def get_aggregated_dispatch_data(
@@ -357,6 +368,16 @@ def get_aggregated_dispatch_data(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    if resolution == "hourly":
+        end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
+            hours=1
+        )
+    else:
+        end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
+            minutes=5
+        )
+    end_time = datetime.strftime(end_time_dt, "%Y/%m/%d %H:%M:%S")
+
     dispatch = fetch_and_preprocess.unit_dispatch(start_time, end_time, raw_data_cache)
 
     if resolution == "hourly":
@@ -408,7 +429,7 @@ def get_aggregated_dispatch_data(
 
     dispatch = dispatch.loc[:, ["INTERVAL_DATETIME", column_name]]
     dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"]
-    return dispatch.sort_values(["INTERVAL_DATETIME"])
+    return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -461,6 +482,15 @@ def get_aggregated_dispatch_data_by_duids(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    if resolution == "hourly":
+        end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
+            hours=1
+        )
+    else:
+        end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
+            minutes=5
+        )
+    end_time = datetime.strftime(end_time_dt, "%Y/%m/%d %H:%M:%S")
 
     dispatch = fetch_and_preprocess.unit_dispatch(start_time, end_time, raw_data_cache)
 
@@ -505,7 +535,7 @@ def get_aggregated_dispatch_data_by_duids(
 
     dispatch = dispatch.loc[:, ["INTERVAL_DATETIME", column_name]]
     dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"]
-    return dispatch.sort_values(["INTERVAL_DATETIME"])
+    return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
 def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
@@ -552,7 +582,11 @@ def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
         {"pricebydemand": "sum", "TOTALDEMAND": "sum"}
     )
     data["PRICE"] = data["pricebydemand"] / data["TOTALDEMAND"]
-    return data.loc[:, ["SETTLEMENTDATE", "PRICE"]].sort_values(["SETTLEMENTDATE"])
+    return (
+        data.loc[:, ["SETTLEMENTDATE", "PRICE"]]
+        .sort_values(["SETTLEMENTDATE"])
+        .reset_index(drop=True)
+    )
 
 
 def unit_types(raw_data_cache, dispatch_type, regions):
@@ -591,4 +625,4 @@ def unit_types(raw_data_cache, dispatch_type, regions):
         (data["DISPATCH TYPE"] == dispatch_type) & (data["REGION"].isin(regions))
     ]
     data = data.loc[:, ["UNIT TYPE"]].drop_duplicates()
-    return data.sort_values("UNIT TYPE")
+    return data.sort_values("UNIT TYPE").reset_index(drop=True)
