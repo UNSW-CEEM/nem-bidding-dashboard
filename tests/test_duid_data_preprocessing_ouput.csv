@@ -1,0 +1,48 @@
+STATION NAME,REGION,DISPATCH TYPE,FUEL SOURCE - DESCRIPTOR,TECHNOLOGY TYPE - DESCRIPTOR,DUID,UNIT TYPE
+Adelaide Desalination Plant,SA,Generator,Grid,Battery and Inverter,ADPBA1G,Battery Discharge
+Adelaide Desalination Plant,SA,Load,Grid,Battery and Inverter,A,Battery Charge
+Adelaide Desalination Plant,SA,Generator,Water,Run of River,ADPMH1,Run of River Hydro
+Adelaide Desalination Plant,SA,Generator,Solar,Photovoltaic Flat panel,ADPPV3,Solar
+Adelaide Desalination Plant,SA,Generator,Solar,Photovoltaic Tracking Flat panel,ADPPV1,Solar
+Agl Kemps Creek,NSW,Generator,Landfill Methane / Landfill Gas,Compression Reciprocating Engine,AGLSITA1,Engine
+Angaston Power Station,SA,Generator,Diesel,Compression Reciprocating Engine,ANGAST1,Engine
+Appin Power Plant,NSW,Generator,Waste Coal Mine Gas,Spark Ignition Reciprocating Engine,APPIN,Engine
+Ararat Wind Farm,TAS,Generator,Wind,Wind - Onshore,B,Wind
+Bairnsdale Power Station,VIC,Generator,Natural Gas,Open Cycle Gas turbines (OCGT),BDL01,OCGT
+Ballarat Base Hospital Plant,VIC,Generator,Natural Gas,Compression Reciprocating Engine,BBASEHOS,Engine
+Ballarat Battery Energy Storage System,VIC,Generator,Grid,Battery,BALBG1,Battery Discharge
+Ballarat Battery Energy Storage System,VIC,Load,-,Battery,BALBL1,Battery Charge
+Banimboola Power Station,VIC,Generator,Water,Hydro - Gravity,BAPS,Hydro
+Barcaldine Power Station,QLD,Generator,Natural Gas,Combined Cycle Gas Turbine (CCGT),BARCALDN,CCGT
+Bayswater Power Station,NSW,Generator,Black Coal,Steam Sub-Critical,BW01,Black Coal
+Berwick Power Plant,VIC,Generator,Landfill Methane / Landfill Gas,Spark Ignition Reciprocating Engine,-,Engine
+Braemar 2 Power Station,QLD,Generator,Coal Seam Methane,Open Cycle Gas turbines (OCGT),BRAEMAR5,OCGT
+Broadwater Power Station,NSW,Generator,Bagasse,Steam Sub-Critical,BWTR1,Bagasse
+Broken Hill Gas Turbines,NSW,Generator,Diesel,Open Cycle Gas turbines (OCGT),GB01,OCGT
+Bulgana Green Power Hub,VIC,Load,Grid,Battery,BULBESL1,Battery Charge
+Callide C Nett Off,QLD,Generator,Black Coal,Steam Super Critical,CPP_3,Black Coal
+Christies Beach Wastewater Treatment Plant,SA,Load,-,Battery and Inverter,CBWWBA1L,Battery Charge
+Christies Beach Wastewater Treatment Plant,SA,Generator,Biogas - sludge,Compression Reciprocating Engine,CBWWBG1,Engine
+Collinsville Solar PV Power Station,QLD,Generator,Solar,Photovoltaic Flat Panel,CSPVPS1,Solar
+Daandine Power Station,QLD,Generator,Coal Seam Methane,Compression Reciprocating Engine,DAANDINE,Engine
+Finley Solar Farm,NSW,Generator,Solar,Photovoltaic Tracking Flat Panel,FINLYSF1,Solar
+Glennies Creek Power Station,NSW,Generator,Waste Coal Mine Gas,Compression Reciprocating Engine,GLENNCRK,Engine
+Hallett Power Station,SA,Generator,Natural Gas / Diesel,Open Cycle Gas turbines (OCGT),AGLHAL,OCGT
+Hornsdale Power Reserve,SA,Generator,Wind,Battery and Inverter,HPRG1,Wind
+Loy Yang A Power Station,VIC,Generator,Brown Coal,Steam Sub-Critical,LYA1,Brown Coal
+Metz Solar Farm,NSW,GENERATOR,Solar,Photovoltaic Tracking Flat panel,METZSF1,Solar
+Morgan-Whyalla Pipeline Pumping Station No 1,SA,Generator,solar,Photovoltaic Tracking Flat panel,MWPS1PV1,Solar
+Mt Stuart Power Station,QLD,Generator,Kerosene,Open Cycle Gas turbines (OCGT),MSTUART1,OCGT
+Newport Power Station,VIC,Generator,Natural Gas,Steam Sub-Critical,NPS,Gas Thermal
+Bolivar Waste Water Treatment Plant,SA,Generator,Sewerage / Waste Water,Pump Storage,BOLIVAR1,Pump Storage Discharge
+Shepparton Wastewater Treatment Facility,VIC,Generator,Sewerage / Waste Water,Compression Reciprocating Engine,SHEP1,Engine
+Shoalhaven Power Station (Bendeela And Kangaroo Valley Power Station And Pumps),NSW,Load,-,-,SHPUMP,Pump Storage Charge
+Tableland Mill Unit 2,QLD,Generator,Bagasse,Steam Super Critical,TABMILL2,Bagasse
+Torrens Island Power Station,SA,Generator,Natural Gas / Fuel Oil,Steam Sub-Critical,TORRB1,Gas Thermal
+Traralgon Network Support Station,VIC,Generator,Natural Gas,Spark Ignition Reciprocating Engine,TGNSS1,Engine
+Tumut 3 Pumps,NSW,Load,-,-,SNOWYP,Pump Storage Charge
+Victorian Big Battery,VIC,Load,-,Battery and Inverter,VBBL1,Battery Charge
+Wallgrove BESS 1,NSW,Load,-,Battery and Inverter,WALGRVL1,Battery Charge
+Wandoan Battery Energy Storage System (BESS),QLD,Load,-,Battery,WANDBL1,Battery Charge
+Wilga Park B,NSW,Generator,Coal Seam Methane,Spark Ignition Reciprocating Engine,WILGB01,Engine
+Wivenhoe Power Station,QLD,Generator,Water,Pump Storage,W/HOE#1,Pump Storage Discharge
