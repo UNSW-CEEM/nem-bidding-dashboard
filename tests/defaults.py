@@ -17,4 +17,4 @@ con_string = postgres_helpers.build_connection_string(
     port=5433,
 )
 
-test_cache = "nemosis_cache"
+test_cache = "tests/nemosis_cache"

@@ -7,7 +7,7 @@ from nem_bidding_dashboard import fetch_and_preprocess
 def test_duid_info(monkeypatch):
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     duid_info = fetch_and_preprocess.duid_info("dummy_directory")
-    expected_duid_info = pd.read_csv("test_duid_data_preprocessing_ouput.csv")
+    expected_duid_info = pd.read_csv("tests/test_duid_data_preprocessing_output.csv")
     pd.testing.assert_frame_equal(duid_info, expected_duid_info)
 
 

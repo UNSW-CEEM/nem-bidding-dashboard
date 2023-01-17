@@ -335,7 +335,7 @@ mock_tables = {
             ),
         ],
     ),
-    "Generators and Scheduled Loads": pd.read_csv("test_duid_data.csv"),
+    "Generators and Scheduled Loads": pd.read_csv("tests/test_duid_data.csv"),
 }
 
 
