@@ -143,11 +143,20 @@ def aggregate_bids(
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "INTERVAL_DATETIME": pd.Series(dtype="str"),
+                "BIN_NAME": pd.Series(dtype="str"),
+                "BIDVOLUME": pd.Series(dtype="float"),
+            }
+        )
     data.columns = data.columns.str.upper()
     data["BIN_NAME"] = data["BIN_NAME"].astype("category")
     data["BIN_NAME"] = data["BIN_NAME"].cat.set_categories(defaults.bid_order)
     data = data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
     data["BIN_NAME"] = data["BIN_NAME"].astype(str)
+    data["BIDVOLUME"] = data["BIDVOLUME"].astype(float)
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
     return data
 
@@ -277,6 +286,8 @@ def stations_and_duids_in_regions_and_time_window(
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
+    if data.empty:
+        data = pd.DataFrame(columns=["DUID", "STATION NAME"])
     return data.sort_values("DUID").reset_index(drop=True)
 
 
@@ -351,9 +362,14 @@ def get_aggregated_dispatch_data(
         },
     ).execute()
     data = pd.DataFrame(data.data)
-    data.columns = data.columns.str.upper()
-    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
-    return data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
+    if not data.empty:
+        data.columns = data.columns.str.upper()
+        data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    else:
+        data = pd.DataFrame(columns=["INTERVAL_DATETIME", "COLUMNVALUES"])
+    data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
+    data = data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
+    return data
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -420,6 +436,7 @@ def get_aggregated_dispatch_data_by_duids(
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
+    data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 

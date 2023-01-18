@@ -129,23 +129,34 @@ def aggregate_bids(
     """
     bids = fetch_and_preprocess.bid_data(start_time, end_time, raw_data_cache)
 
+    print(bids["BIDVOLUME"].sum())
+
     if resolution == "hourly":
         bids = bids[bids["INTERVAL_DATETIME"].str[14:16] == "00"].copy()
+
+    print(bids["BIDVOLUME"].sum())
 
     unit_info = fetch_and_preprocess.duid_info(raw_data_cache)
 
     unit_info = unit_info[unit_info["REGION"].isin(regions)].copy()
     unit_info = unit_info[unit_info["DISPATCH TYPE"] == dispatch_type].copy()
 
+    print(bids["BIDVOLUME"].sum())
+
     if tech_types:
         unit_info = unit_info[unit_info["UNIT TYPE"].isin(tech_types)].copy()
-
+    print(bids["BIDVOLUME"].sum())
     bids = bids[bids["DUID"].isin(unit_info["DUID"])].copy()
+
+    print(unit_info.drop_duplicates()["DUID"].shape)
+    print(bids["BIDVOLUME"].sum())
 
     bins = fetch_and_preprocess.define_and_return_price_bins()
 
     bids["d"] = 1
     bins["d"] = 1
+
+    print(bids["BIDVOLUME"].sum())
 
     bids = pd.merge(bids, bins, on="d")
     bids = bids.drop(columns=["d"])
@@ -169,6 +180,7 @@ def aggregate_bids(
     bids["BIN_NAME"] = bids["BIN_NAME"].cat.set_categories(defaults.bid_order)
     bids = bids.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
     bids["BIN_NAME"] = bids["BIN_NAME"].astype(str)
+    bids["BIDVOLUME"] = bids["BIDVOLUME"].astype(float)
     return bids
 
 
@@ -236,7 +248,7 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
         bids = bids.loc[
             :, ["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"]
         ]
-
+    bids["BIDVOLUME"] = bids["BIDVOLUME"].astype(float)
     return bids.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
         drop=True
     )
@@ -431,6 +443,7 @@ def get_aggregated_dispatch_data(
 
     dispatch = dispatch.loc[:, ["INTERVAL_DATETIME", column_name]]
     dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"]
+    dispatch["COLUMNVALUES"] = dispatch["COLUMNVALUES"].astype(float)
     return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
@@ -537,6 +550,7 @@ def get_aggregated_dispatch_data_by_duids(
 
     dispatch = dispatch.loc[:, ["INTERVAL_DATETIME", column_name]]
     dispatch.columns = ["INTERVAL_DATETIME", "COLUMNVALUES"]
+    dispatch["COLUMNVALUES"] = dispatch["COLUMNVALUES"].astype(float)
     return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 

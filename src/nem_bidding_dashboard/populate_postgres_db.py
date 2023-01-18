@@ -104,7 +104,7 @@ def duid_info(connection_string, raw_data_cache):
 
     >>> duid_info(
     ...  con_string,
-    ... "D:/nemosis_cache",)
+    ... "D:/nemosis_data_cache",)
 
     Arguments:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`

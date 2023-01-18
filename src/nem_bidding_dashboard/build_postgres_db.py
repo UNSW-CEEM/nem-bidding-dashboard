@@ -420,8 +420,6 @@ def create_db_functions(connection_string):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> postgres_helpers.run_query(con_string, 'DROP FUNCTION get_bids_by_unit_v2;')
-
     >>> create_db_functions(con_string)
 
     Args:

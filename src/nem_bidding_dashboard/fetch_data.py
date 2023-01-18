@@ -279,6 +279,7 @@ def get_duid_data(raw_data_cache):
     duid_data = static_table(
         "Generators and Scheduled Loads",
         raw_data_cache,
+        update_static_file=False,
         select_columns=[
             "DUID",
             "Region",

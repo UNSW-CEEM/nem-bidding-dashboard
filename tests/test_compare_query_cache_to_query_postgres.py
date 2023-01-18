@@ -50,6 +50,7 @@ def test_aggregate_bids(
         dispatch_type,
         test_cache,
     )
+    print(test_cache)
     aggregate_bids_postgres = query_postgres_db.aggregate_bids(
         con_string,
         regions,
@@ -84,7 +85,6 @@ def test_duid_bids(
         resolution,
         adjusted,
     )
-    duid_bids_postgres["BIDVOLUME"] = duid_bids_postgres["BIDVOLUME"].astype(float)
     pd.testing.assert_frame_equal(duid_bids_cache, duid_bids_postgres)
 
 

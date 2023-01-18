@@ -166,11 +166,20 @@ def aggregate_bids(
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "INTERVAL_DATETIME": pd.Series(dtype="datetime64[ns]"),
+                "BIN_NAME": pd.Series(dtype="str"),
+                "BIDVOLUME": pd.Series(dtype="float"),
+            }
+        )
     data["BIN_NAME"] = data["BIN_NAME"].astype("category")
     data["BIN_NAME"] = data["BIN_NAME"].cat.set_categories(defaults.bid_order)
     data = data.sort_values(["INTERVAL_DATETIME", "BIN_NAME"]).reset_index(drop=True)
     data["BIN_NAME"] = data["BIN_NAME"].astype(str)
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    data["BIDVOLUME"] = data["BIDVOLUME"].astype(float)
     return data
 
 
@@ -252,6 +261,7 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
     )
     data = run_query_return_dataframe(connection_string, query)
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    data["BIDVOLUME"] = data["BIDVOLUME"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
         drop=True
     )
@@ -324,6 +334,8 @@ def stations_and_duids_in_regions_and_time_window(
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(columns=["DUID", "STATION NAME"])
     return data.sort_values("DUID").reset_index(drop=True)
 
 
@@ -407,7 +419,7 @@ def get_aggregated_dispatch_data(
     tech_types = ['"{t}"'.format(t=t) for t in tech_types]
     tech_types = ", ".join(tech_types)
     query = f"""SELECT * FROM aggregate_dispatch_data_v2(
-                '{column_name}',
+                '{column_name.lower()}',
                 '{{{regions}}}',
                 (timestamp '{start_time}'),
                 (timestamp '{end_time}'),
@@ -416,8 +428,16 @@ def get_aggregated_dispatch_data(
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
-    data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
-    return data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
+    if not data.empty:
+        data.columns = data.columns.str.upper()
+        data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+        data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
+        data = data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
+    else:
+        data = pd.DataFrame(columns=["INTERVAL_DATETIME", "COLUMNVALUES"])
+    data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
+    data = data.sort_values("INTERVAL_DATETIME").reset_index(drop=True)
+    return data
 
 
 def get_aggregated_dispatch_data_by_duids(
@@ -499,6 +519,7 @@ def get_aggregated_dispatch_data_by_duids(
     )
     data = run_query_return_dataframe(connection_string, query)
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
+    data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 

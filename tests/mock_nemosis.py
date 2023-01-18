@@ -367,7 +367,9 @@ def dynamic_data_compiler(
     return data
 
 
-def static_table(table_name, raw_data_location, select_columns=None):
+def static_table(
+    table_name, raw_data_location, select_columns=None, update_static_file=False
+):
 
     data = mock_tables[table_name]
 
