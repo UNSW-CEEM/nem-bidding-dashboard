@@ -159,7 +159,7 @@ def adjust_bids_for_availability(stacked_bids, unit_availability):
         bids["SPAREBIDVOLUME"] < 0, 0, bids["SPAREBIDVOLUME"]
     )
     bids["BIDVOLUMEADJUSTED"] = bids[["BIDVOLUME", "SPAREBIDVOLUME"]].min(axis=1)
-    return bids.loc[
+    bids = bids.loc[
         :,
         [
             "INTERVAL_DATETIME",
@@ -170,6 +170,13 @@ def adjust_bids_for_availability(stacked_bids, unit_availability):
             "BIDPRICE",
         ],
     ]
+    return bids.sort_values(
+        [
+            "INTERVAL_DATETIME",
+            "DUID",
+            "BIDBAND",
+        ]
+    ).reset_index(drop=True)
 
 
 def remove_number_from_region_names(region_column, data):

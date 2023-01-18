@@ -135,4 +135,4 @@ We will implement the fix described [here](https://github.com/python-poetry/poet
 ## Code of Conduct
 
 Please note that the `bidding-dashboard` project is released with a
-[Code of Conduct](CONDUCT.md). By contributing to this project you agree to abide by its terms.
+[Code of Conduct](https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/master/CONDUCT.md). By contributing to this project you agree to abide by its terms.

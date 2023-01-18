@@ -16,16 +16,16 @@ def region_demand(regions, start_time, end_time, raw_data_cache):
 
     >>> region_demand(
     ... regions=['NSW'],
-    ... start_time="2022/01/02 00:00:00",
-    ... end_time="2022/01/02 00:30:00",
+    ... start_time="2022/01/01 01:00:00",
+    ... end_time="2022/01/01 01:30:00",
     ... raw_data_cache="D:/nemosis_data_cache")
             SETTLEMENTDATE  TOTALDEMAND
-    0  2022-01-02 00:05:00      6850.57
-    1  2022-01-02 00:10:00      6774.01
-    2  2022-01-02 00:15:00      6758.63
-    3  2022-01-02 00:20:00      6732.82
-    4  2022-01-02 00:25:00      6704.92
-    5  2022-01-02 00:30:00      6672.90
+    0  2022-01-01 01:05:00      6631.21
+    1  2022-01-01 01:10:00      6655.52
+    2  2022-01-01 01:15:00      6496.85
+    3  2022-01-01 01:20:00      6520.86
+    4  2022-01-01 01:25:00      6439.22
+    5  2022-01-01 01:30:00      6429.13
 
     Arguments:
         regions: regions to aggregate demand and price from
@@ -67,48 +67,48 @@ def aggregate_bids(
 
     >>> aggregate_bids(
     ... ['QLD', 'NSW', 'SA'],
-    ... "2022/01/02 00:00:00",
-    ... "2022/01/02 01:00:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 02:00:00",
     ... 'hourly',
     ... 'adjusted',
     ... [],
     ... 'Generator',
     ... 'D:/nemosis_data_cache')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
-    0   2022-01-02 01:00:00   [-1000, -100)  9035.59489
-    1   2022-01-02 01:00:00       [-100, 0)   198.35329
-    2   2022-01-02 01:00:00         [0, 50)  1357.00000
-    3   2022-01-02 01:00:00       [50, 100)  1358.00000
-    4   2022-01-02 01:00:00      [100, 200)  1371.00000
-    5   2022-01-02 01:00:00      [200, 300)  2133.00000
-    6   2022-01-02 01:00:00      [300, 500)   957.00000
-    7   2022-01-02 01:00:00     [500, 1000)   217.00000
-    8   2022-01-02 01:00:00    [1000, 5000)   231.00000
-    9   2022-01-02 01:00:00   [5000, 10000)    15.00000
-    10  2022-01-02 01:00:00  [10000, 15500)  5543.00000
+    0   2022-01-01 02:00:00   [-1000, -100)  9158.02765
+    1   2022-01-01 02:00:00       [-100, 0)   299.74402
+    2   2022-01-01 02:00:00         [0, 50)  1142.00000
+    3   2022-01-01 02:00:00       [50, 100)  1141.00000
+    4   2022-01-01 02:00:00      [100, 200)   918.00000
+    5   2022-01-01 02:00:00      [200, 300)  1138.00000
+    6   2022-01-01 02:00:00      [300, 500)   920.00000
+    7   2022-01-01 02:00:00     [500, 1000)   273.00000
+    8   2022-01-01 02:00:00    [1000, 5000)   210.00000
+    9   2022-01-01 02:00:00   [5000, 10000)   125.00000
+    10  2022-01-01 02:00:00  [10000, 15500)  7009.00000
 
 
     >>> aggregate_bids(
     ... ['QLD', 'NSW', 'SA'],
-    ... "2022/01/02 00:00:00",
-    ... "2022/01/02 00:05:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 01:05:00",
     ... '5-min',
     ... 'adjusted',
     ... [],
     ... 'Generator',
     ... 'D:/nemosis_data_cache')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
-    0   2022-01-02 00:05:00   [-1000, -100)  9120.23281
-    1   2022-01-02 00:05:00       [-100, 0)   252.16273
-    2   2022-01-02 00:05:00         [0, 50)  1387.00000
-    3   2022-01-02 00:05:00       [50, 100)  1798.00000
-    4   2022-01-02 00:05:00      [100, 200)  1371.00000
-    5   2022-01-02 00:05:00      [200, 300)  1957.00000
-    6   2022-01-02 00:05:00      [300, 500)   935.00000
-    7   2022-01-02 00:05:00     [500, 1000)   217.00000
-    8   2022-01-02 00:05:00    [1000, 5000)   231.00000
-    9   2022-01-02 00:05:00   [5000, 10000)    15.00000
-    10  2022-01-02 00:05:00  [10000, 15500)  5367.00000
+    0   2022-01-01 01:05:00   [-1000, -100)  9642.26127
+    1   2022-01-01 01:05:00       [-100, 0)   361.94456
+    2   2022-01-01 01:05:00         [0, 50)  1348.00000
+    3   2022-01-01 01:05:00       [50, 100)  1415.00000
+    4   2022-01-01 01:05:00      [100, 200)   912.00000
+    5   2022-01-01 01:05:00      [200, 300)  1188.00000
+    6   2022-01-01 01:05:00      [300, 500)   903.00000
+    7   2022-01-01 01:05:00     [500, 1000)   272.00000
+    8   2022-01-01 01:05:00    [1000, 5000)   210.00000
+    9   2022-01-01 01:05:00   [5000, 10000)   125.00000
+    10  2022-01-01 01:05:00  [10000, 15500)  6853.00000
 
 
     Arguments:
@@ -182,30 +182,32 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
 
     >>> duid_bids(
     ... ['AGLHAL', 'BASTYAN'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 01:00:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 02:00:00",
     ... 'hourly',
     ... 'adjusted',
     ... 'D:/nemosis_data_cache')
-            INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    3748  2020-01-01 01:00:00   AGLHAL        7       60.0    564.22
-    5705  2020-01-01 01:00:00   AGLHAL       10      121.0  13646.22
-    4284  2020-01-01 01:00:00  BASTYAN        9       81.0    380.41
-    5680  2020-01-01 01:00:00  BASTYAN       10        0.0  12422.17
+         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
+    0  2022-01-01 02:00:00   AGLHAL        7       32.0    557.39
+    1  2022-01-01 02:00:00   AGLHAL       10      121.0  14541.30
+    2  2022-01-01 02:00:00  BASTYAN        2       53.0    -55.64
+    3  2022-01-01 02:00:00  BASTYAN        4       28.0     -0.91
+    4  2022-01-01 02:00:00  BASTYAN       10        0.0  14021.86
 
 
     >>> duid_bids(
     ... ['AGLHAL', 'BASTYAN'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 00:05:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 01:05:00",
     ... '5-min',
     ... 'adjusted',
     ... 'D:/nemosis_data_cache')
-           INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
-    314  2020-01-01 00:05:00   AGLHAL        7       60.0    564.22
-    471  2020-01-01 00:05:00   AGLHAL       10      121.0  13646.22
-    351  2020-01-01 00:05:00  BASTYAN        9       81.0    380.41
-    486  2020-01-01 00:05:00  BASTYAN       10        0.0  12422.17
+         INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
+    0  2022-01-01 01:05:00   AGLHAL        7       32.0    557.39
+    1  2022-01-01 01:05:00   AGLHAL       10      121.0  14541.30
+    2  2022-01-01 01:05:00  BASTYAN        2       53.0    -55.64
+    3  2022-01-01 01:05:00  BASTYAN        4       28.0     -0.91
+    4  2022-01-01 01:05:00  BASTYAN       10        0.0  14021.86
 
     Arguments:
         duids: list[str] of duids to return in result.
@@ -251,23 +253,23 @@ def stations_and_duids_in_regions_and_time_window(
 
     >>> stations_and_duids_in_regions_and_time_window(
     ... ['NSW'],
-    ... "2022/01/02 00:00:00",
-    ... "2022/01/02 01:00:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 02:00:00",
     ... "Generator",
     ... [],
     ... 'D:/nemosis_data_cache')
-             DUID             STATION NAME
-    22   BANGOWF1      Bango 973 Wind Farm
-    23   BANGOWF2      Bango 999 Wind Farm
-    45   BERYLSF1         Beryl Solar Farm
-    46   BLOWERNG  Blowering Power Station
-    48   BOCORWF1      Boco Rock Wind Farm
-    ..        ...                      ...
-    518  WALGRVG1         Wallgrove BESS 1
-    528   WELLSF1    Wellington Solar Farm
-    562  WOODLWN1       Woodlawn Wind Farm
-    538     WRSF1    White Rock Solar Farm
-    539     WRWF1     White Rock Wind Farm
+            DUID             STATION NAME
+    0   BANGOWF1      Bango 973 Wind Farm
+    1   BANGOWF2      Bango 999 Wind Farm
+    2   BERYLSF1         Beryl Solar Farm
+    3   BLOWERNG  Blowering Power Station
+    4   BOCORWF1      Boco Rock Wind Farm
+    ..       ...                      ...
+    69  WALGRVG1         Wallgrove BESS 1
+    70   WELLSF1    Wellington Solar Farm
+    71  WOODLWN1       Woodlawn Wind Farm
+    72     WRSF1    White Rock Solar Farm
+    73     WRWF1     White Rock Wind Farm
     <BLANKLINE>
     [74 rows x 2 columns]
 
@@ -325,27 +327,27 @@ def get_aggregated_dispatch_data(
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... ['NSW'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 01:05:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 02:00:00",
     ... 'hourly',
     ... 'Generator',
     ... [],
     ... 'D:/nemosis_data_cache')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-01 01:00:00      12312.53
+    0  2022-01-01 02:00:00   10402.47408
 
 
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... ['NSW'],
-    ... "2020/01/01 00:00:00",
-    ... "2020/01/01 00:10:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 01:05:00",
     ... '5-min',
     ... 'Generator',
     ... [],
     ... 'D:/nemosis_data_cache')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2020-01-01 00:05:00     11571.306
+    0  2022-01-01 01:05:00   10440.10679
 
     Arguments:
         column_name: str, which column of dispatch data to aggregate and return. Should be one of NTERVAL_DATETIME,
@@ -445,23 +447,23 @@ def get_aggregated_dispatch_data_by_duids(
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
     ... ['AGLHAL', 'BASTYAN'],
-    ... "2022/01/02 00:00:00",
-    ... "2022/01/02 01:05:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 02:00:00",
     ... 'hourly',
     ... 'D:/nemosis_data_cache')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2022-01-02 01:00:00         234.0
+    0  2022-01-01 02:00:00         234.0
 
 
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
     ... ['AGLHAL', 'BASTYAN'],
-    ... "2022/01/02 00:00:00",
-    ... "2022/01/02 00:10:00",
+    ... "2022/01/01 01:00:00",
+    ... "2022/01/01 01:05:00",
     ... '5-min',
     ... 'D:/nemosis_data_cache')
          INTERVAL_DATETIME  COLUMNVALUES
-    0  2022-01-02 00:05:00         234.0
+    0  2022-01-01 01:05:00         234.0
 
 
     Arguments:
@@ -547,22 +549,22 @@ def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
 
     >>> get_aggregated_vwap(
     ... regions=['NSW'],
-    ... start_time="2022/01/02 00:00:00",
-    ... end_time="2022/01/02 01:00:00",
+    ... start_time="2022/01/01 01:00:00",
+    ... end_time="2022/01/01 02:00:00",
     ... raw_data_cache="D:/nemosis_data_cache")
              SETTLEMENTDATE      PRICE
-    0   2022-01-02 00:05:00  110.22005
-    1   2022-01-02 00:10:00  104.30393
-    2   2022-01-02 00:15:00   85.50552
-    3   2022-01-02 00:20:00   78.07000
-    4   2022-01-02 00:25:00   85.00000
-    5   2022-01-02 00:30:00   85.00000
-    6   2022-01-02 00:35:00  103.51609
-    7   2022-01-02 00:40:00   94.31247
-    8   2022-01-02 00:45:00  103.13011
-    9   2022-01-02 00:50:00   96.08903
-    10  2022-01-02 00:55:00   86.38491
-    11  2022-01-02 01:00:00   87.05018
+    0   2022-01-01 01:05:00  107.80005
+    1   2022-01-01 01:10:00  107.80005
+    2   2022-01-01 01:15:00   91.92056
+    3   2022-01-01 01:20:00  107.80005
+    4   2022-01-01 01:25:00   91.37289
+    5   2022-01-01 01:30:00   91.38851
+    6   2022-01-01 01:35:00   92.14760
+    7   2022-01-01 01:40:00  100.27929
+    8   2022-01-01 01:45:00   91.90742
+    9   2022-01-01 01:50:00  100.30000
+    10  2022-01-01 01:55:00   85.00000
+    11  2022-01-01 02:00:00   85.00005
 
     Arguments:
         regions: list[str] of region to aggregate.
@@ -599,17 +601,17 @@ def unit_types(raw_data_cache, dispatch_type, regions):
     ... 'D:/nemosis_data_cache',
     ... 'Generator',
     ... ['NSW'])
-                  UNIT TYPE
-    64              Bagasse
-    400   Battery Discharge
-    35           Black Coal
-    432                CCGT
-    8                Engine
-    46                Hydro
-    66                 OCGT
-    479  Run of River Hydro
-    45                Solar
-    22                 Wind
+                UNIT TYPE
+    0             Bagasse
+    1   Battery Discharge
+    2          Black Coal
+    3                CCGT
+    4              Engine
+    5               Hydro
+    6                OCGT
+    7  Run of River Hydro
+    8               Solar
+    9                Wind
 
     Args:
         dispatch_type: str 'Generator' or 'Load'

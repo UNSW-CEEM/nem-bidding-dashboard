@@ -17,15 +17,15 @@ def region_data(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> region_data(
-    ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:05:00',
+    ... '2022/01/01 00:00:00',
+    ... '2022/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
-      REGIONID       SETTLEMENTDATE  TOTALDEMAND       RRP
-    0      NSW  2020-01-01 00:05:00      7245.31  49.00916
-    1      QLD  2020-01-01 00:05:00      6095.75  50.81148
-    2       SA  2020-01-01 00:05:00      1466.53  68.00000
-    3      TAS  2020-01-01 00:05:00      1010.06  81.79115
-    4      VIC  2020-01-01 00:05:00      4267.32  65.67826
+      REGIONID       SETTLEMENTDATE  TOTALDEMAND        RRP
+    0      NSW  2022-01-01 00:05:00      7206.03  124.85631
+    1      QLD  2022-01-01 00:05:00      5982.85  118.73008
+    2       SA  2022-01-01 00:05:00      1728.03  133.94970
+    3      TAS  2022-01-01 00:05:00      1148.93   40.34000
+    4      VIC  2022-01-01 00:05:00      5005.34  114.80312
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -68,23 +68,23 @@ def bid_data(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> bid_data(
-    ... '2020/01/01 00:00:00',
-    ... '2020/01/01 00:05:00',
+    ... '2022/01/01 00:00:00',
+    ... '2022/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
-           INTERVAL_DATETIME      DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE  ONHOUR
-    0    2020-01-01 00:05:00    BALBL1        1         20                0.0    -48.06   False
-    1    2020-01-01 00:05:00    RT_SA4        1       3000                0.0  -1000.00   False
-    2    2020-01-01 00:05:00    RT_SA5        1       3000                0.0  -1000.00   False
-    3    2020-01-01 00:05:00    RT_SA6        1       3000                0.0  -1000.00   False
-    4    2020-01-01 00:05:00   RT_TAS1        1       3000                0.0  -1000.00   False
-    ..                   ...       ...      ...        ...                ...       ...     ...
-    523  2020-01-01 00:05:00   GSTONE6       10          5                0.0  13557.81   False
-    524  2020-01-01 00:05:00   GUTHEGA       10         80               67.0  13253.52   False
-    525  2020-01-01 00:05:00  JBUTTERS       10          4                0.0  12309.16   False
-    526  2020-01-01 00:05:00   GSTONE1       10          5                0.0  13557.81   False
-    527  2020-01-01 00:05:00     LBBG1       10         25               25.0  14585.34   False
+           INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDVOLUMEADJUSTED  BIDPRICE  ONHOUR
+    0    2022-01-01 00:05:00  ADPBA1G        8          6              0.000    998.00   False
+    462  2022-01-01 00:05:00   REECE1        2         45             45.000    -55.03   False
+    463  2022-01-01 00:05:00   REECE1        4         74             74.000     -0.85   False
+    464  2022-01-01 00:05:00   REECE2        2         35             35.000    -54.77   False
+    465  2022-01-01 00:05:00   REECE2        4         84             84.000     -0.86   False
+    ..                   ...      ...      ...        ...                ...       ...     ...
+    235  2022-01-01 00:05:00  GUTHEGA       10         80             68.000  13599.06   False
+    236  2022-01-01 00:05:00  HALLWF1        1         95             10.840   -963.00   False
+    237  2022-01-01 00:05:00  HALLWF2        1         71              4.408   -960.60   False
+    229  2022-01-01 00:05:00  GSTONE6        8          5              5.000   4806.84   False
+    700  2022-01-01 00:05:00    YWPS4       10          9              0.000  14489.96   False
     <BLANKLINE>
-    [528 rows x 7 columns]
+    [701 rows x 7 columns]
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -141,13 +141,14 @@ def duid_info(raw_data_cache):
     5       Adelaide Desalination Plant     SA     Generator                    Solar            Photovoltaic Flat panel    ADPPV3               Solar
     6       Adelaide Desalination Plant     SA     Generator                    Solar            Photovoltaic Flat panel    ADPPV2               Solar
     ..                              ...    ...           ...                      ...                                ...       ...                 ...
-    578  Yarrawonga Hydro Power Station    VIC     Generator                    Water                    Hydro - Gravity  YWNGAHYD               Hydro
-    579            Yarwun Power Station    QLD     Generator              Natural Gas  Combined Cycle Gas Turbine (CCGT)  YARWUN_1                CCGT
-    580              Yatpool Solar Farm    VIC     Generator                    Solar   Photovoltaic Tracking Flat panel    YATSF1               Solar
-    581                Yawong Wind Farm    VIC     Generator                     Wind                     Wind - Onshore    YAWWF1                Wind
-    582                Yendon Wind Farm    VIC     Generator                     Wind                     Wind - Onshore   YENDWF1                Wind
+    576  Yarrawonga Hydro Power Station    VIC     Generator                    Water                    Hydro - Gravity  YWNGAHYD               Hydro
+    577            Yarwun Power Station    QLD     Generator              Natural Gas  Combined Cycle Gas Turbine (CCGT)  YARWUN_1                CCGT
+    578              Yatpool Solar Farm    VIC     Generator                    Solar   Photovoltaic Tracking Flat panel    YATSF1               Solar
+    579                Yawong Wind Farm    VIC     Generator                     Wind                     Wind - Onshore    YAWWF1                Wind
+    580                Yendon Wind Farm    VIC     Generator                     Wind                     Wind - Onshore   YENDWF1                Wind
     <BLANKLINE>
-    [490 rows x 7 columns]
+    [488 rows x 7 columns]
+
 
     Args:
        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
@@ -181,23 +182,23 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> unit_dispatch(
-    ... '2020/01/02 00:55:00',
-    ... '2020/01/02 01:05:00',
+    ... '2022/01/01 00:55:00',
+    ... '2022/01/01 01:05:00',
     ... 'D:/nemosis_data_cache')
-           INTERVAL_DATETIME      DUID  AVAILABILITY  TOTALCLEARED  FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL  ONHOUR
-    0    2020-01-02 01:00:00   DG_VIC1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    1    2020-01-02 01:00:00   RT_TAS1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    2    2020-01-02 01:00:00   DG_QLD1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    3    2020-01-02 01:00:00   DG_NSW1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    4    2020-01-02 01:00:00    DG_SA1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    ..                   ...       ...           ...           ...      ...                  ...                    ...             ...               ...               ...       ...     ...
-    296  2020-01-02 01:00:00      QPS3        23.000         0.000    0.000             15.00000              -15.00000        15.00000         -15.00000              23.0        23    True
-    297  2020-01-02 01:00:00  WOODLWN1        14.554        14.554   15.453             79.36401               -0.63599        79.36401          -0.63599              48.0        48    True
-    298  2020-01-02 01:00:00   RT_NSW3         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000               0.0         0    True
-    299  2020-01-02 01:00:00   HAYMSF1         0.000         0.000    0.000            500.00000             -500.00000       500.00000        -500.00000              50.0        50    True
-    300  2020-01-02 01:00:00    NBHWF1        83.310        83.310   81.000            130.50000               30.50000       130.50000          30.50000             132.0       132    True
+           INTERVAL_DATETIME      DUID  AVAILABILITY  TOTALCLEARED    FINALMW  ASBIDRAMPUPMAXAVAIL  ASBIDRAMPDOWNMINAVAIL  RAMPUPMAXAVAIL  RAMPDOWNMINAVAIL  PASAAVAILABILITY  MAXAVAIL  ONHOUR
+    0    2022-01-01 01:00:00   ADPBA1G         0.000         0.000    0.00000             10.00000              -10.00000         7.75000          -7.75000               6.0         0    True
+    250  2022-01-01 01:00:00     RRSF1         0.000         0.000    0.00000           3480.00000            -3480.00000      3480.00000       -3480.00000             116.0       116    True
+    249  2022-01-01 01:00:00    ROMA_8        34.000         0.000    0.00000             40.00000              -40.00000        40.00000         -40.00000              34.0        34    True
+    248  2022-01-01 01:00:00    ROMA_7        34.000         0.000    0.00000             40.00000              -40.00000        40.00000         -40.00000              34.0        34    True
+    247  2022-01-01 01:00:00    REECE2       119.000       118.000  117.53001            266.89001              -33.10999       266.89001         -33.10999             119.0       119    True
+    ..                   ...       ...           ...           ...        ...                  ...                    ...             ...               ...               ...       ...     ...
+    118  2022-01-01 01:00:00   GSTONE3       260.000       170.000  170.45000            193.87500              143.87500       193.35000         144.40000             260.0       260    True
+    117  2022-01-01 01:00:00   GSTONE2         0.000         0.000    0.00000             25.00000              -25.00000        25.00000         -25.00000             270.0         0    True
+    116  2022-01-01 01:00:00   GSTONE1         0.000         0.000    0.00000             15.00000              -15.00000        15.00000         -15.00000               0.0         0    True
+    125  2022-01-01 01:00:00  GUNNING1        10.042        10.042    7.97946             25.02899               -4.97101        25.02899          -4.97101              47.0        47    True
+    368  2022-01-01 01:00:00     YWPS4       370.000       370.000  370.11520            385.39746              355.39746       385.39746         355.39746             396.0       370    True
     <BLANKLINE>
-    [301 rows x 12 columns]
+    [369 rows x 12 columns]
 
     Args:
        start_time: str formatted "DD/MM/YYYY HH:MM:SS", data with date times greater than start_time are returned
@@ -247,7 +248,7 @@ def define_and_return_price_bins():
     Examples:
 
     >>> define_and_return_price_bins()
-              bin_name  lower_edge  upper_edge
+              BIN_NAME  LOWER_EDGE  UPPER_EDGE
     0    [-1000, -100)       -2000        -100
     1        [-100, 0)        -100           0
     2          [0, 50)           0          50
