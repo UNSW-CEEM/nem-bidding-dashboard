@@ -62,6 +62,8 @@ def get_duid_station_options(
         Dataframe - column 'DUID' contains unit duids, column 'STATION NAME'
             contains name of station that each unit belongs to
     """
+    if tech_types is None:
+        tech_types = []
     start_time_obj = datetime.strptime(start_time, "%Y/%m/%d %H:%M:%S")
     if duration == "Daily":
         end_time = (start_time_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")

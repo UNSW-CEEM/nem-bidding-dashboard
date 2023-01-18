@@ -205,10 +205,15 @@ _create_get_bids_by_unit_function = """
 
       IF resolution = 'hourly' THEN
         CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
-        SELECT * FROM bidding_data b WHERE onhour AND b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
+        SELECT * FROM bidding_data b WHERE onhour
+                                       AND b.interval_datetime > start_datetime
+                                       and b.interval_datetime <= end_datetime
+                                       and b.duid = ANY(duids);
       ELSE
        CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
-        SELECT * FROM bidding_data b WHERE b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
+        SELECT * FROM bidding_data b WHERE b.interval_datetime > start_datetime
+                                       and b.interval_datetime <= end_datetime
+                                       and b.duid = ANY(duids);
       END IF;
 
       IF adjusted = 'adjusted' THEN
@@ -220,7 +225,7 @@ _create_get_bids_by_unit_function = """
         SELECT t.interval_datetime, t.duid, t.bidband, t.bidvolume, t.bidprice FROM time_filtered_bids t;
       END IF;
 
-      RETURN QUERY SELECT b.interval_datetime, b.duid, b.bidband, b.bidvolume, b.bidprice FROM correct_volume_column b WHERE b.duid = ANY(duids);
+      RETURN QUERY SELECT b.interval_datetime, b.duid, b.bidband, b.bidvolume, b.bidprice FROM correct_volume_column b;
 
     END
     $func$;
@@ -233,32 +238,31 @@ _create_aggregate_dispatch_data_duids_function = """
     $func$
     BEGIN
 
-      -- set temp_buffers = 10000;
-
-      DROP TABLE IF EXISTS time_filtered_dispatch;
-      DROP TABLE IF EXISTS duids_filtered_dispatch;
+      DROP TABLE IF EXISTS filtered_dispatch;
       DROP TABLE IF EXISTS return_data;
 
       IF resolution = 'hourly' THEN
-        CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-        SELECT * FROM unit_dispatch d WHERE onhour = true AND d.interval_datetime > start_datetime and d.interval_datetime <= end_datetime;
+        CREATE TEMP TABLE filtered_dispatch ON COMMIT DROP as
+        SELECT * FROM unit_dispatch d WHERE onhour = true
+                                        AND d.interval_datetime > start_datetime
+                                        and d.interval_datetime <= end_datetime
+                                        and d.duid = ANY(duids);
       ELSE
-       CREATE TEMP TABLE time_filtered_dispatch ON COMMIT DROP as
-        SELECT * FROM unit_dispatch d WHERE d.interval_datetime > start_datetime and d.interval_datetime <= end_datetime;
+       CREATE TEMP TABLE filtered_dispatch ON COMMIT DROP as
+        SELECT * FROM unit_dispatch d WHERE d.interval_datetime > start_datetime
+                                        and d.interval_datetime <= end_datetime
+                                        and d.duid = ANY(duids);
       END IF;
 
-      CREATE TEMP TABLE duids_filtered_dispatch ON COMMIT DROP as
-      SELECT * FROM time_filtered_dispatch WHERE duid = ANY(duids);
+      UPDATE filtered_dispatch d SET asbidrampupmaxavail = d.maxavail WHERE d.asbidrampupmaxavail > d.maxavail;
+      UPDATE filtered_dispatch d SET asbidrampdownminavail = 0  WHERE d.asbidrampdownminavail < 0;
 
-      UPDATE duids_filtered_dispatch d SET asbidrampupmaxavail = d.maxavail WHERE d.asbidrampupmaxavail > d.maxavail;
-      UPDATE duids_filtered_dispatch d SET asbidrampdownminavail = 0  WHERE d.asbidrampdownminavail < 0;
-
-      UPDATE duids_filtered_dispatch d SET rampupmaxavail = d.availability WHERE d.rampupmaxavail > d.maxavail;
-      UPDATE duids_filtered_dispatch d SET rampdownminavail = 0 WHERE d.rampdownminavail < 0;
+      UPDATE filtered_dispatch d SET rampupmaxavail = d.availability WHERE d.rampupmaxavail > d.maxavail;
+      UPDATE filtered_dispatch d SET rampdownminavail = 0 WHERE d.rampdownminavail < 0;
 
       EXECUTE format('CREATE TEMP TABLE return_data ON COMMIT DROP AS SELECT d.interval_datetime,
                       SUM(d.%I) as columnvalues
-                      FROM duids_filtered_dispatch d group by d.interval_datetime;', column_name);
+                      FROM filtered_dispatch d group by d.interval_datetime;', column_name);
 
       RETURN QUERY SELECT * FROM return_data;
 
@@ -294,7 +298,9 @@ _create_get_duids_and_stations_function = """
       DROP TABLE IF EXISTS filtered_duid_info;
 
       CREATE TEMP TABLE time_filtered_bids ON COMMIT DROP as
-      SELECT DISTINCT b.duid FROM bidding_data b WHERE onhour = true and b.interval_datetime > start_datetime and b.interval_datetime <= end_datetime;
+      SELECT DISTINCT b.duid FROM bidding_data b WHERE onhour = true
+                                                   and b.interval_datetime > start_datetime
+                                                   and b.interval_datetime <= end_datetime;
 
       IF array_length(tech_types, 1) > 0 THEN
         CREATE TEMP TABLE filtered_duid_info ON COMMIT DROP as

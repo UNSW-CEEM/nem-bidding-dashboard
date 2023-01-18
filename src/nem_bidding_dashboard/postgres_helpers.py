@@ -213,12 +213,14 @@ def run_query(connection_string, query, autocommit=False):
     ... dbname='postgres',
     ... username='postgres',
     ... password=os.environ.get("SUPABASEPASSWORD"),
-    ... port=5432
+    ... port=5432,
     ... timeout_seconds=6000)
 
-    >>> run_query_return_dataframe(con_string, "CREATE INDEX bidding_data_hour_index ON bidding_data (onhour, interval_datetime DESC);")
+    >>> run_query(con_string, "DROP INDEX unit_dispatch_hour_index;")
 
-    >>> run_query_return_dataframe(con_string, "CREATE INDEX bidding_data_hour_index ON bidding_data (onhour, interval_datetime DESC);")
+    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_hour_duid_index ON bidding_data (interval_datetime DESC, onhour, duid);")
+
+    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_duid_index ON bidding_data (interval_datetime DESC, duid);")
 
     Args:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
