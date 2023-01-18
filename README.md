@@ -1,4 +1,4 @@
-# Introduction
+## Introduction
 
 nem-bidding-dashboard is a web app and python package for collating, processing and visualising data relevant to
 understanding participant behaviour in the Australian National Electricity Market wholesale spot market.
