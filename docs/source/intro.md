@@ -1,4 +1,4 @@
 # NEM Bidding Dashboard
 
-```{include} readme.md
+```{include} README.md
 ```
