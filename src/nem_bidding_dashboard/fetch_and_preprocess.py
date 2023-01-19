@@ -1,6 +1,10 @@
 import pandas as pd
 
 from nem_bidding_dashboard import fetch_data, preprocessing
+from nem_bidding_dashboard.input_validation import (
+    data_cache_exits,
+    validate_start_end_and_cache_location,
+)
 
 pd.set_option("display.width", None)
 
@@ -36,6 +40,7 @@ def region_data(start_time, end_time, raw_data_cache):
         pandas dataframe with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (the operational demand AEMO dispatches
         generation to meet), and RRP (the regional reference price for energy).
     """
+    validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
     regional_data = fetch_data.get_region_data(start_time, end_time, raw_data_cache)
     regional_data = preprocessing.remove_number_from_region_names(
         "REGIONID", regional_data
@@ -94,6 +99,7 @@ def bid_data(start_time, end_time, raw_data_cache):
     Returns:
         pandas dataframe with columns INTERVAL_DATETIME, DUID, BIDPRICE ($/MWh), BIDVOLUME (MW), BIDVOLUMEADJUSTED (MW)
     """
+    validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
     volume_bids = fetch_data.get_volume_bids(start_time, end_time, raw_data_cache)
     volume_bids = volume_bids[volume_bids["BIDTYPE"] == "ENERGY"].drop(
         columns=["BIDTYPE"]
@@ -157,6 +163,7 @@ def duid_info(raw_data_cache):
         pandas dataframe with columns DUID, REGIONID, "FUEL SOURCE - DESCRIPTOR", "DISPATCH TYPE",
         "TECHNOLOGY TYPE - DESCRIPTOR", "UNIT TYPE", "STATION NAME"
     """
+    data_cache_exits(raw_data_cache)
     duid_info = fetch_data.get_duid_data(raw_data_cache)
     duid_info = preprocessing.hard_code_fix_fuel_source_and_tech_errors(duid_info)
     duid_info = preprocessing.remove_number_from_region_names("REGION", duid_info)
@@ -210,6 +217,7 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
         ASBIDRAMPUPMAXAVAIL, ASBIDRAMPDOWNMINAVAIL, RAMPUPMAXAVAIL, RAMPDOWNMINAVAIL, PASAAVAILABILITY,
         MAXAVAIL (see unit_dispatch in Database Guide for column definitions)
     """
+    validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
     as_bid_metrics = fetch_data.get_volume_bids(start_time, end_time, raw_data_cache)
     as_bid_metrics = as_bid_metrics[as_bid_metrics["BIDTYPE"] == "ENERGY"].drop(
         columns=["BIDTYPE"]
@@ -267,7 +275,7 @@ def define_and_return_price_bins():
     price_bins = pd.DataFrame(
         {
             "BIN_NAME": [
-                "[-1000, -100)",
+                "[-2000, -100)",
                 "[-100, 0)",
                 "[0, 50)",
                 "[50, 100)",
@@ -277,10 +285,10 @@ def define_and_return_price_bins():
                 "[500, 1000)",
                 "[1000, 5000)",
                 "[5000, 10000)",
-                "[10000, 15500)",
+                "[10000, 16500)",
             ],
             "LOWER_EDGE": [-2000, -100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000],
-            "UPPER_EDGE": [-100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000, 16000],
+            "UPPER_EDGE": [-100, 0, 50, 100, 200, 300, 500, 1000, 5000, 10000, 16500],
         }
     )
     return price_bins

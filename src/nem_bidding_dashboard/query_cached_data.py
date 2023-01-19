@@ -3,22 +3,22 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from nem_bidding_dashboard import defaults, fetch_and_preprocess
+from nem_bidding_dashboard import defaults, fetch_and_preprocess, input_validation
 
 pd.set_option("display.width", None)
 
 
-def region_demand(regions, start_time, end_time, raw_data_cache):
+def region_demand(raw_data_cache, start_time, end_time, regions):
     """
     Query demand and price data from the raw data cache. To aggregate demand data is summed.
 
     Examples:
 
     >>> region_demand(
-    ... regions=['NSW'],
+    ... raw_data_cache="D:/nemosis_data_cache",
     ... start_time="2022/01/01 01:00:00",
     ... end_time="2022/01/01 01:30:00",
-    ... raw_data_cache="D:/nemosis_data_cache")
+    ... regions=['NSW'])
             SETTLEMENTDATE  TOTALDEMAND
     0  2022-01-01 01:05:00      6631.21
     1  2022-01-01 01:10:00      6655.52
@@ -37,6 +37,8 @@ def region_demand(regions, start_time, end_time, raw_data_cache):
         pd.DataFrame with columns SETTLEMENTDATE and TOTALDEMAND (demand to be meet by schedualed and
         semischedualed generators, not including schedualed loads)
     """
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
+    input_validation.data_cache_exits(raw_data_cache)
     data = fetch_and_preprocess.region_data(start_time, end_time, raw_data_cache)
     data = data.loc[data["REGIONID"].isin(regions), :]
     data = data.groupby("SETTLEMENTDATE", as_index=False).agg({"TOTALDEMAND": "sum"})
@@ -48,14 +50,14 @@ def region_demand(regions, start_time, end_time, raw_data_cache):
 
 
 def aggregate_bids(
-    regions,
+    raw_data_cache,
     start_time,
     end_time,
+    regions,
+    dispatch_type,
+    tech_types,
     resolution,
     adjusted,
-    tech_types,
-    dispatch_type,
-    raw_data_cache,
 ):
     """
     Function to query and aggregate bidding data from raw data cache database. Data is filter according to the regions,
@@ -66,14 +68,14 @@ def aggregate_bids(
     Examples:
 
     >>> aggregate_bids(
-    ... ['QLD', 'NSW', 'SA'],
+    ... 'D:/nemosis_data_cache',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
-    ... 'adjusted',
-    ... [],
+    ... ['QLD', 'NSW', 'SA'],
     ... 'Generator',
-    ... 'D:/nemosis_data_cache')
+    ... [],
+    ... 'hourly',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
     0   2022-01-01 02:00:00   [-1000, -100)  9158.02765
     1   2022-01-01 02:00:00       [-100, 0)   299.74402
@@ -89,14 +91,14 @@ def aggregate_bids(
 
 
     >>> aggregate_bids(
-    ... ['QLD', 'NSW', 'SA'],
+    ... 'D:/nemosis_data_cache',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
-    ... 'adjusted',
-    ... [],
+    ... ['QLD', 'NSW', 'SA'],
     ... 'Generator',
-    ... 'D:/nemosis_data_cache')
+    ... [],
+    ... '5-min',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
     0   2022-01-01 01:05:00   [-1000, -100)  9642.26127
     1   2022-01-01 01:05:00       [-100, 0)   361.94456
@@ -127,36 +129,29 @@ def aggregate_bids(
         pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
         BIDVOLUME (total volume bid by units within price bin).
     """
+    input_validation.validate_aggregate_bids_args(
+        regions, start_time, end_time, resolution, adjusted, tech_types, dispatch_type
+    )
+    input_validation.data_cache_exits(raw_data_cache)
     bids = fetch_and_preprocess.bid_data(start_time, end_time, raw_data_cache)
-
-    print(bids["BIDVOLUME"].sum())
 
     if resolution == "hourly":
         bids = bids[bids["INTERVAL_DATETIME"].str[14:16] == "00"].copy()
-
-    print(bids["BIDVOLUME"].sum())
 
     unit_info = fetch_and_preprocess.duid_info(raw_data_cache)
 
     unit_info = unit_info[unit_info["REGION"].isin(regions)].copy()
     unit_info = unit_info[unit_info["DISPATCH TYPE"] == dispatch_type].copy()
 
-    print(bids["BIDVOLUME"].sum())
-
     if tech_types:
         unit_info = unit_info[unit_info["UNIT TYPE"].isin(tech_types)].copy()
-    print(bids["BIDVOLUME"].sum())
-    bids = bids[bids["DUID"].isin(unit_info["DUID"])].copy()
 
-    print(unit_info.drop_duplicates()["DUID"].shape)
-    print(bids["BIDVOLUME"].sum())
+    bids = bids[bids["DUID"].isin(unit_info["DUID"])].copy()
 
     bins = fetch_and_preprocess.define_and_return_price_bins()
 
     bids["d"] = 1
     bins["d"] = 1
-
-    print(bids["BIDVOLUME"].sum())
 
     bids = pd.merge(bids, bins, on="d")
     bids = bids.drop(columns=["d"])
@@ -184,7 +179,7 @@ def aggregate_bids(
     return bids
 
 
-def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache):
+def duid_bids(raw_data_cache, start_time, end_time, duids, resolution, adjusted):
     """
     Function to query bidding data from a raw data cache. Data is filter according to the duids and time window
     provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution
@@ -193,12 +188,12 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
     Examples:
 
     >>> duid_bids(
-    ... ['AGLHAL', 'BASTYAN'],
+    ... 'D:/nemosis_data_cache',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly',
-    ... 'adjusted',
-    ... 'D:/nemosis_data_cache')
+    ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
     0  2022-01-01 02:00:00   AGLHAL        7       32.0    557.39
     1  2022-01-01 02:00:00   AGLHAL       10      121.0  14541.30
@@ -208,12 +203,12 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
 
 
     >>> duid_bids(
-    ... ['AGLHAL', 'BASTYAN'],
+    ... 'D:/nemosis_data_cache',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... '5-min',
-    ... 'adjusted',
-    ... 'D:/nemosis_data_cache')
+    ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
     0  2022-01-01 01:05:00   AGLHAL        7       32.0    557.39
     1  2022-01-01 01:05:00   AGLHAL       10      121.0  14541.30
@@ -233,6 +228,10 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
     Returns:
         pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
+    input_validation.validate_duid_bids_args(
+        duids, start_time, end_time, resolution, adjusted
+    )
+    input_validation.data_cache_exits(raw_data_cache)
     bids = fetch_and_preprocess.bid_data(start_time, end_time, raw_data_cache)
     bids = bids[bids["DUID"].isin(duids)].copy()
 
@@ -255,7 +254,7 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted, raw_data_cache)
 
 
 def stations_and_duids_in_regions_and_time_window(
-    regions, start_time, end_time, dispatch_type, tech_types, raw_data_cache
+    raw_data_cache, start_time, end_time, regions, dispatch_type, tech_types
 ):
     """
     Function to query units from given regions with bids available in the given time window, with the given dispatch
@@ -264,12 +263,12 @@ def stations_and_duids_in_regions_and_time_window(
     Examples:
 
     >>> stations_and_duids_in_regions_and_time_window(
-    ... ['NSW'],
+    ... 'D:/nemosis_data_cache',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['NSW'],
     ... "Generator",
-    ... [],
-    ... 'D:/nemosis_data_cache')
+    ... [])
             DUID             STATION NAME
     0   BANGOWF1      Bango 973 Wind Farm
     1   BANGOWF2      Bango 999 Wind Farm
@@ -297,6 +296,11 @@ def stations_and_duids_in_regions_and_time_window(
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
     """
+    input_validation.validate_stations_and_duids_in_regions_and_time_window_args(
+        regions, start_time, end_time, dispatch_type, tech_types
+    )
+    input_validation.data_cache_exits(raw_data_cache)
+
     bids = fetch_and_preprocess.bid_data(start_time, end_time, raw_data_cache)
 
     duids = bids["DUID"].unique()
@@ -319,14 +323,14 @@ def stations_and_duids_in_regions_and_time_window(
 
 
 def get_aggregated_dispatch_data(
+    raw_data_cache,
     column_name,
-    regions,
     start_time,
     end_time,
-    resolution,
+    regions,
     dispatch_type,
     tech_types,
-    raw_data_cache,
+    resolution,
 ):
     """
     Function to query dispatch data from a raw data cache. Data is filter according to the regions, time window,
@@ -337,27 +341,27 @@ def get_aggregated_dispatch_data(
     Examples:
 
     >>> get_aggregated_dispatch_data(
+    ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
+    ... ['NSW'],
     ... 'Generator',
     ... [],
-    ... 'D:/nemosis_data_cache')
+    ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00   10402.47408
 
 
     >>> get_aggregated_dispatch_data(
+    ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
+    ... ['NSW'],
     ... 'Generator',
     ... [],
-    ... 'D:/nemosis_data_cache')
+    ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00   10440.10679
 
@@ -382,6 +386,17 @@ def get_aggregated_dispatch_data(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_args(
+        column_name,
+        regions,
+        start_time,
+        end_time,
+        resolution,
+        dispatch_type,
+        tech_types,
+    )
+    input_validation.data_cache_exits(raw_data_cache)
+
     if resolution == "hourly":
         end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
             hours=1
@@ -448,7 +463,7 @@ def get_aggregated_dispatch_data(
 
 
 def get_aggregated_dispatch_data_by_duids(
-    column_name, duids, start_time, end_time, resolution, raw_data_cache
+    raw_data_cache, column_name, start_time, end_time, duids, resolution
 ):
     """
     Function to query dispatch data from a raw data cahce. Data is filter according to the duids and time window
@@ -458,23 +473,23 @@ def get_aggregated_dispatch_data_by_duids(
     Examples:
 
     >>> get_aggregated_dispatch_data_by_duids(
+    ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
-    ... 'D:/nemosis_data_cache')
+    ... ['AGLHAL', 'BASTYAN'],
+    ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00         234.0
 
 
     >>> get_aggregated_dispatch_data_by_duids(
+    ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
-    ... 'D:/nemosis_data_cache')
+    ... ['AGLHAL', 'BASTYAN'],
+    ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00         234.0
 
@@ -497,6 +512,11 @@ def get_aggregated_dispatch_data_by_duids(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_by_duids_args(
+        column_name, duids, start_time, end_time, resolution
+    )
+    input_validation.data_cache_exits(raw_data_cache)
+
     if resolution == "hourly":
         end_time_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S") + timedelta(
             hours=1
@@ -554,7 +574,7 @@ def get_aggregated_dispatch_data_by_duids(
     return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
+def get_aggregated_vwap(raw_data_cache, start_time, end_time, regions):
     """
     Function to query and aggregate price data from the raw data cache. To aggregate price data volume weighted
     averaged.
@@ -562,10 +582,10 @@ def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
     Examples:
 
     >>> get_aggregated_vwap(
-    ... regions=['NSW'],
+    ... raw_data_cache="D:/nemosis_data_cache",
     ... start_time="2022/01/01 01:00:00",
     ... end_time="2022/01/01 02:00:00",
-    ... raw_data_cache="D:/nemosis_data_cache")
+    ... regions=['NSW'])
              SETTLEMENTDATE      PRICE
     0   2022-01-01 01:05:00  107.80005
     1   2022-01-01 01:10:00  107.80005
@@ -590,7 +610,8 @@ def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
         pd.DataFrame with columns SETTLEMENTDATE, TOTALDEMAND and RRP (volume weighted avergae of energy price at
         regional reference nodes).
     """
-
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
+    input_validation.data_cache_exits(raw_data_cache)
     data = fetch_and_preprocess.region_data(start_time, end_time, raw_data_cache)
     data = data.loc[data["REGIONID"].isin(regions), :]
     data["pricebydemand"] = data["RRP"] * data["TOTALDEMAND"]
@@ -605,7 +626,7 @@ def get_aggregated_vwap(regions, start_time, end_time, raw_data_cache):
     )
 
 
-def unit_types(raw_data_cache, dispatch_type, regions):
+def unit_types(raw_data_cache, regions, dispatch_type):
     """
     Function to query distinct unit types from raw data cache.
 
@@ -613,8 +634,8 @@ def unit_types(raw_data_cache, dispatch_type, regions):
 
     >>> unit_types(
     ... 'D:/nemosis_data_cache',
-    ... 'Generator',
-    ... ['NSW'])
+    ... ['NSW'],
+    ... 'Generator')
                 UNIT TYPE
     0             Bagasse
     1   Battery Discharge
@@ -636,6 +657,8 @@ def unit_types(raw_data_cache, dispatch_type, regions):
         pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
         :py:func:`nem_bidding_dashboard.preprocessing.tech_namer_by_row`)
     """
+    input_validation.validate_unit_types_args(dispatch_type, regions)
+    input_validation.data_cache_exits(raw_data_cache)
     data = fetch_and_preprocess.duid_info(raw_data_cache)
     data = data[
         (data["DISPATCH TYPE"] == dispatch_type) & (data["REGION"].isin(regions))

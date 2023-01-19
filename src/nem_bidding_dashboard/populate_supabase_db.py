@@ -8,7 +8,7 @@ import pandas as pd
 import pytz
 from supabase import create_client
 
-from nem_bidding_dashboard import fetch_and_preprocess
+from nem_bidding_dashboard import fetch_and_preprocess, input_validation
 
 """This module is used for populating the database used by the dashboard. The functions it contains co-ordinate
  fetching historical AEMO data, pre-processing to limit the work done by the dashboard (to improve responsiveness),
@@ -71,7 +71,7 @@ def insert_data_into_supabase(table_name, data, rows_per_chunk=1000):
                 print(len(chunked_data) / original_length)
 
 
-def region_data(start_time, end_time, raw_data_cache):
+def region_data(raw_data_cache, start_time, end_time):
     """
     Function to populate database table containing electricity demand and price data by region. For this function to run
     the supabase url and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
@@ -81,22 +81,25 @@ def region_data(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> region_data(
+    ... "D:/nemosis_cache",
     ... "2020/01/01 00:00:00",
-    ... "2020/01/02 00:00:00",
-    ... "D:/nemosis_cache")
+    ... "2020/01/02 00:00:00")
 
     Arguments:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
+    input_validation.validate_start_end_and_cache_location(
+        start_time, end_time, raw_data_cache
+    )
     regional_data = fetch_and_preprocess.region_data(
         start_time, end_time, raw_data_cache
     )
     insert_data_into_supabase("demand_data", regional_data)
 
 
-def bid_data(start_time, end_time, raw_data_cache):
+def bid_data(raw_data_cache, start_time, end_time):
     """
     Function to populate database table containing bidding data by unit. For this function to run the supabase url and
     key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
@@ -106,15 +109,18 @@ def bid_data(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> bid_data(
+    ... "D:/nemosis_cache",
     ... "2020/01/01 00:00:00",
-    ... "2020/01/02 00:00:00",
-    ... "D:/nemosis_cache")
+    ... "2020/01/02 00:00:00")
 
     Arguments:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
+    input_validation.validate_start_end_and_cache_location(
+        start_time, end_time, raw_data_cache
+    )
     combined_bids = fetch_and_preprocess.bid_data(start_time, end_time, raw_data_cache)
     insert_data_into_supabase("bidding_data", combined_bids)
 
@@ -138,11 +144,12 @@ def duid_info(raw_data_cache):
         end_time: Ending datetime, formatted identical to start_time
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
+    input_validation.data_cache_exits(raw_data_cache)
     duid_info = fetch_and_preprocess.duid_info(raw_data_cache)
     insert_data_into_supabase("duid_info", duid_info)
 
 
-def unit_dispatch(start_time, end_time, raw_data_cache):
+def unit_dispatch(raw_data_cache, start_time, end_time):
     """
     Function to populate database table containing unit time series metrics. For this function to run the supabase url
     and key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
@@ -152,15 +159,18 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
     Examples:
 
     >>> unit_dispatch(
+    ... "D:/nemosis_cache",
     ... "2020/01/01 00:00:00",
-    ... "2020/01/02 00:00:00",
-    ... "D:/nemosis_cache")
+    ... "2020/01/02 00:00:00")
 
     Arguments:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
         raw_data_cache: Filepath to directory for storing data that is fetched
     """
+    input_validation.validate_start_end_and_cache_location(
+        start_time, end_time, raw_data_cache
+    )
     unit_time_series_metrics = fetch_and_preprocess.unit_dispatch(
         start_time, end_time, raw_data_cache
     )
@@ -210,28 +220,30 @@ def all_tables_two_most_recent_market_days(cache):
         two_days_before_today.isoformat().replace("T", " ").replace("-", "/")
     )
     region_data(
-        start_time=two_days_before_today, end_time=start_today, raw_data_cache=cache
+        raw_data_cache=cache, start_time=two_days_before_today, end_time=start_today
     )
     bid_data(
-        start_time=two_days_before_today, end_time=start_today, raw_data_cache=cache
+        raw_data_cache=cache, start_time=two_days_before_today, end_time=start_today
     )
     duid_info(raw_data_cache=cache)
     unit_dispatch(
-        start_time=two_days_before_today, end_time=start_today, raw_data_cache=cache
+        raw_data_cache=cache, start_time=two_days_before_today, end_time=start_today
     )
 
 
 if __name__ == "__main__":
     raw_data_cache = "D:/nemosis_data_cache"
-    for m in [12]:
-        start = "2022/{}/01 00:00:00".format((str(m)).zfill(2))
-        end = "2023/01/01 00:00:00"  # .format((str(m + 1)).zfill(2))
-        print(start)
-        print(end)
-        # populate_supabase_duid_info(raw_data_cache)
-        region_data(start, end, raw_data_cache)
-        bid_data(start, end, raw_data_cache)
-        unit_dispatch(start, end, raw_data_cache)
+
+    start = "2023/01/16 00:00:00"
+    end = "2023/01/16 08:00:00"
+    print(start)
+    print(end)
+    # populate_supabase_duid_info(raw_data_cache)
+    # region_data(start, end, raw_data_cache)
+    # bid_data(start, end, raw_data_cache)
+    # unit_dispatch(start, end, raw_data_cache)
+
+    price_bin_edges_table()
 
     # populate_supabase_duid_info(raw_data_cache)
     # populate_supabase_all_tables_two_most_recent_market_days(raw_data_cache)

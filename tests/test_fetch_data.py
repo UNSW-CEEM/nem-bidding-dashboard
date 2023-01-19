@@ -9,7 +9,7 @@ def test_fetch_data_region_data_current_and_archive(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     region_data = fetch_data.get_region_data(
-        "2020/01/01 00:00:00", "2020/01/02 00:00:00", "dummy_directory"
+        "2020/01/01 00:00:00", "2020/01/02 00:00:00", "tests/nemosis_dummy_cache"
     )
     expected_data = pd.DataFrame(
         columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "RRP"],
@@ -21,6 +21,9 @@ def test_fetch_data_region_data_current_and_archive(monkeypatch):
         ],
     )
     expected_data["SETTLEMENTDATE"] = pd.to_datetime(expected_data["SETTLEMENTDATE"])
+    expected_data = expected_data.loc[
+        :, ["SETTLEMENTDATE", "REGIONID", "TOTALDEMAND", "RRP"]
+    ]
     region_data = region_data.sort_values(["REGIONID", "SETTLEMENTDATE"]).reset_index(
         drop=True
     )
@@ -35,7 +38,7 @@ def test_fetch_data_region_data_archive(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     region_data = fetch_data.get_region_data(
-        "2020/01/01 00:00:00", "2020/01/01 01:00:00", "dummy_directory"
+        "2020/01/01 00:00:00", "2020/01/01 01:00:00", "tests/nemosis_dummy_cache"
     )
     expected_data = pd.DataFrame(
         columns=["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "RRP"],
@@ -45,6 +48,9 @@ def test_fetch_data_region_data_archive(monkeypatch):
         ],
     )
     expected_data["SETTLEMENTDATE"] = pd.to_datetime(expected_data["SETTLEMENTDATE"])
+    expected_data = expected_data.loc[
+        :, ["SETTLEMENTDATE", "REGIONID", "TOTALDEMAND", "RRP"]
+    ]
     region_data = region_data.sort_values(["REGIONID", "SETTLEMENTDATE"]).reset_index(
         drop=True
     )

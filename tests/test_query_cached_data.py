@@ -9,7 +9,10 @@ def test_region_demand_filter_regions(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     region_demand = query_cached_data.region_demand(
-        ["SA"], "dummy_start", "dummy_end", "dummy_cache"
+        "tests/nemosis_dummy_cache",
+        "2020/01/01 00:00:00",
+        "2020/01/01 06:00:00",
+        ["SA"],
     )
     expected_region_demand = pd.DataFrame(
         columns=["SETTLEMENTDATE", "TOTALDEMAND"],
@@ -30,7 +33,10 @@ def test_region_demand(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     region_demand = query_cached_data.region_demand(
-        ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
+        "tests/nemosis_dummy_cache",
+        "2020/01/01 00:00:00",
+        "2020/01/01 06:00:00",
+        ["SA", "TAS"],
     )
     expected_region_demand = pd.DataFrame(
         columns=["SETTLEMENTDATE", "TOTALDEMAND"],
@@ -52,14 +58,14 @@ def test_aggregate_bids_generator(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
-        regions=["SA", "TAS"],
+        raw_data_cache="tests/nemosis_dummy_cache",
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
-        adjusted="adjusted",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
+        adjusted="adjusted",
     )
     bids_expected = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
@@ -84,14 +90,14 @@ def test_aggregate_bids_generator_not_adjusted(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
-        regions=["SA", "TAS"],
+        raw_data_cache="tests/nemosis_dummy_cache",
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
-        adjusted="raw",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
+        adjusted="raw",
     )
     bids_expected = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
@@ -116,14 +122,14 @@ def test_aggregate_bids_load(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     bids = query_cached_data.aggregate_bids(
-        regions=["SA", "TAS"],
+        raw_data_cache="tests/nemosis_dummy_cache",
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Load",
-        adjusted="adjusted",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
+        adjusted="adjusted",
     )
     bids_expected = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "BIN_NAME", "BIDVOLUME"],
@@ -147,12 +153,12 @@ def test_duid_bids(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     bids = query_cached_data.duid_bids(
-        duids=["A", "B"],
+        raw_data_cache="tests/nemosis_dummy_cache",
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["A", "B"],
         resolution="hourly",
         adjusted="adjusted",
-        raw_data_cache="dummy",
     )
     bids_expected = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"],
@@ -185,12 +191,12 @@ def test_duid_bids_raw(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     bids = query_cached_data.duid_bids(
-        duids=["A", "B"],
+        raw_data_cache="tests/nemosis_dummy_cache",
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["A", "B"],
         resolution="hourly",
         adjusted="raw",
-        raw_data_cache="dummy",
     )
     bids_expected = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "DUID", "BIDBAND", "BIDVOLUME", "BIDPRICE"],
@@ -224,12 +230,12 @@ def stations_and_duids_in_regions_and_time_window_load(monkeypatch):
     )
     stations_and_duids = (
         query_cached_data.stations_and_duids_in_regions_and_time_window(
-            regions=["SA", "TAS"],
+            raw_data_cache="tests/nemosis_dummy_cache",
             start_time="2020/01/01 00:00:00",
             end_time="2020/01/01 05:00:00",
+            regions=["SA", "TAS"],
             dispatch_type="Load",
             tech_types=[],
-            raw_data_cache="dummy",
         )
     )
     stations_and_duids_expected = pd.DataFrame(
@@ -245,12 +251,12 @@ def stations_and_duids_in_regions_and_time_window_generator(monkeypatch):
     )
     stations_and_duids = (
         query_cached_data.stations_and_duids_in_regions_and_time_window(
-            regions=["SA", "TAS"],
+            raw_data_cache="tests/nemosis_dummy_cache",
             start_time="2020/01/01 00:00:00",
             end_time="2020/01/01 05:00:00",
+            regions=["SA", "TAS"],
             dispatch_type="Generator",
             tech_types=[],
-            raw_data_cache="dummy",
         )
     )
     stations_and_duids_expected = pd.DataFrame(
@@ -266,14 +272,14 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Load",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -297,14 +303,14 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Load",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -328,14 +334,14 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Load",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -362,14 +368,14 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Load",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -393,14 +399,14 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator(monkeyp
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -424,14 +430,14 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator(monke
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -455,14 +461,14 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -489,14 +495,14 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator(monkeypatch)
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     column_values = query_cached_data.get_aggregated_dispatch_data(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
-        regions=["SA", "TAS"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
-        resolution="hourly",
+        regions=["SA", "TAS"],
         dispatch_type="Generator",
         tech_types=[],
-        raw_data_cache="dummy",
+        resolution="hourly",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -522,12 +528,12 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail(monkeypa
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
-        duids=["B"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["B"],
         resolution="hourly",
-        raw_data_cache="dummy",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -550,12 +556,12 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail(monkey
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
-        duids=["B"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["B"],
         resolution="hourly",
-        raw_data_cache="dummy",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -578,12 +584,12 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
-        duids=["B"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["B"],
         resolution="hourly",
-        raw_data_cache="dummy",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -609,12 +615,12 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+        raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
-        duids=["B"],
         start_time="2020/01/01 00:00:00",
         end_time="2020/01/01 05:00:00",
+        duids=["B"],
         resolution="hourly",
-        raw_data_cache="dummy",
     )
     expected_column_values = pd.DataFrame(
         columns=["INTERVAL_DATETIME", "COLUMNVALUES"],
@@ -640,7 +646,10 @@ def test_get_aggregated_vwap(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     region_demand = query_cached_data.get_aggregated_vwap(
-        ["SA", "TAS"], "dummy_start", "dummy_end", "dummy_cache"
+        "tests/nemosis_dummy_cache",
+        "2020/01/01 00:00:00",
+        "2020/01/01 06:00:00",
+        ["SA", "TAS"],
     )
     expected_region_demand = pd.DataFrame(
         columns=["SETTLEMENTDATE", "PRICE"],
@@ -665,9 +674,7 @@ def test_unit_types_vwap(monkeypatch):
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
     unit_types = query_cached_data.unit_types(
-        "dummy_cache",
-        "Generator",
-        ["SA"],
+        "tests/nemosis_dummy_cache", ["SA"], "Generator"
     )
     unit_types_expected = pd.DataFrame(
         columns=["UNIT TYPE"],

@@ -9,12 +9,12 @@ postgrest.constants.DEFAULT_POSTGREST_CLIENT_TIMEOUT = (
 import pandas as pd
 from supabase import create_client
 
-from nem_bidding_dashboard import defaults
+from nem_bidding_dashboard import defaults, input_validation
 
 pd.set_option("display.width", None)
 
 
-def region_demand(regions, start_time, end_time):
+def region_demand(start_time, end_time, regions):
     """
     Query demand data from supabase. To aggregate demand data is summed. For this function to run the supabase url and
     key need to be configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and
@@ -22,10 +22,7 @@ def region_demand(regions, start_time, end_time):
 
     Examples:
 
-    >>> region_demand(
-    ... ['NSW'],
-    ... "2022/01/01 01:00:00",
-    ... "2022/01/01 01:30:00")
+    >>> region_demand("2022/01/01 01:00:00","2022/01/01 01:30:00",['NSW'])
             SETTLEMENTDATE  TOTALDEMAND
     0  2022-01-01 01:05:00      6631.21
     1  2022-01-01 01:10:00      6655.52
@@ -37,11 +34,13 @@ def region_demand(regions, start_time, end_time):
     Args:
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
+        regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
 
     Returns:
         pd.DataFrame with columns SETTLEMENTDATE, REGIONID, and TOTALDEMAND (demand to be meet by schedualed and
         semischedualed generators, not including schedualed loads)
     """
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -50,13 +49,20 @@ def region_demand(regions, start_time, end_time):
         {"regions": regions, "start_datetime": start_time, "end_datetime": end_time},
     ).execute()
     data = pd.DataFrame(data.data)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "SETTLEMENTDATE": pd.Series(dtype="str"),
+                "TOTALDEMAND": pd.Series(dtype="float"),
+            }
+        )
     data.columns = data.columns.str.upper()
     data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].str.replace("T", " ")
     return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def aggregate_bids(
-    regions, start_time, end_time, resolution, raw_adjusted, tech_types, dispatch_type
+    start_time, end_time, regions, dispatch_type, tech_types, resolution, adjusted
 ):
     """
     Function to query bidding data from supabase. Data is filtered according to the regions, dispatch type, tech types
@@ -68,13 +74,13 @@ def aggregate_bids(
     Examples:
 
     >>> aggregate_bids(
-    ... ['QLD', 'NSW', 'SA'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
-    ... 'adjusted',
+    ... ['QLD', 'NSW', 'SA'],
+    ... 'Generator',
     ... [],
-    ... 'Generator')
+    ... 'hourly',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
     0   2022-01-01 02:00:00   [-1000, -100)   9158.030
     1   2022-01-01 02:00:00       [-100, 0)    299.744
@@ -90,13 +96,13 @@ def aggregate_bids(
 
 
     >>> aggregate_bids(
-    ... ['QLD', 'NSW', 'SA'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
-    ... 'adjusted',
+    ... ['QLD', 'NSW', 'SA'],
+    ... 'Generator',
     ... [],
-    ... 'Generator')
+    ... '5-min',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME  BIDVOLUME
     0   2022-01-01 01:05:00   [-1000, -100)   9642.260
     1   2022-01-01 01:05:00       [-100, 0)    361.945
@@ -117,7 +123,7 @@ def aggregate_bids(
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
         dispatch_type: str 'Generator' or 'Load'
-        raw_adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
+        adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
             adjusted down so the total bid does not exceed the unit availability.
         tech_types: list[str] the technology types to filter for e.g. Solar, Black Coal, CCGT. An empty list
             will result in no filtering by technology
@@ -126,7 +132,9 @@ def aggregate_bids(
         pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
         BIDVOLUME (total volume bid by units within price bin).
     """
-
+    input_validation.validate_aggregate_bids_args(
+        regions, start_time, end_time, resolution, adjusted, tech_types, dispatch_type
+    )
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -138,7 +146,7 @@ def aggregate_bids(
             "end_datetime": end_time,
             "resolution": resolution,
             "dispatch_type": dispatch_type,
-            "adjusted": raw_adjusted,
+            "adjusted": adjusted,
             "tech_types": tech_types,
         },
     ).execute()
@@ -161,7 +169,7 @@ def aggregate_bids(
     return data
 
 
-def duid_bids(duids, start_time, end_time, resolution, adjusted):
+def duid_bids(start_time, end_time, duids, resolution, adjusted):
     """
     Function to query bidding data from supabase. Data is filter according to the DUID list and time window provided,
     and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution is chosen
@@ -172,9 +180,9 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     Examples:
 
     >>> duid_bids(
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
@@ -185,10 +193,9 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     4  2022-01-01 02:00:00  BASTYAN       10          0  14021.90
 
 
-    >>> duid_bids(
-    ... ['AGLHAL', 'BASTYAN'],
-    ... "2022/01/01 01:00:00",
+    >>> duid_bids("2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
@@ -209,6 +216,9 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
     Returns:
         pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
+    input_validation.validate_duid_bids_args(
+        duids, start_time, end_time, resolution, adjusted
+    )
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -223,6 +233,16 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "INTERVAL_DATETIME": pd.Series(dtype="str"),
+                "DUID": pd.Series(dtype="str"),
+                "BIDBAND": pd.Series(dtype="int64"),
+                "BIDVOLUME": pd.Series(dtype="float"),
+                "BIDPRICE": pd.Series(dtype="float"),
+            }
+        )
     data.columns = data.columns.str.upper()
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
     return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
@@ -231,7 +251,7 @@ def duid_bids(duids, start_time, end_time, resolution, adjusted):
 
 
 def stations_and_duids_in_regions_and_time_window(
-    regions, start_date, end_date, dispatch_type="Generator", tech_types=[]
+    start_time, end_time, regions, dispatch_type, tech_types
 ):
     """
     Function to query units from given regions with bids available in the given time window. Data returned is DUIDs and
@@ -241,9 +261,10 @@ def stations_and_duids_in_regions_and_time_window(
     Examples:
 
     >>> stations_and_duids_in_regions_and_time_window(
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
-    ... "2022/01/01 02:00:00")
+    ... "2022/01/01 02:00:00",
+    ... "Generator",
+    ... [])
             DUID             STATION NAME
     0   BANGOWF1      Bango 973 Wind Farm
     1   BANGOWF2      Bango 999 Wind Farm
@@ -271,6 +292,9 @@ def stations_and_duids_in_regions_and_time_window(
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
     """
+    input_validation.validate_stations_and_duids_in_regions_and_time_window_args(
+        regions, start_time, end_time, dispatch_type, tech_types
+    )
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -278,8 +302,8 @@ def stations_and_duids_in_regions_and_time_window(
         "get_duids_and_staions_in_regions_and_time_window_v2",
         {
             "regions": regions,
-            "start_datetime": start_date,
-            "end_datetime": end_date,
+            "start_datetime": start_time,
+            "end_datetime": end_time,
             "dispatch_type": dispatch_type,
             "tech_types": tech_types,
         },
@@ -292,7 +316,7 @@ def stations_and_duids_in_regions_and_time_window(
 
 
 def get_aggregated_dispatch_data(
-    column_name, regions, start_time, end_time, resolution, dispatch_type, tech_types
+    column_name, start_time, end_time, regions, dispatch_type, tech_types, resolution
 ):
     """
     Function to query dispatch and aggregate data from a postgres database. Data is filter according to the regions,
@@ -305,24 +329,24 @@ def get_aggregated_dispatch_data(
 
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
+    ... ['NSW'],
     ... 'Generator',
-    ... [])
+    ... [],
+    ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00       10402.5
 
 
     >>> get_aggregated_dispatch_data(
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
+    ... ['NSW'],
     ... 'Generator',
-    ... [])
+    ... [],
+    ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00       10440.1
 
@@ -346,6 +370,15 @@ def get_aggregated_dispatch_data(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_args(
+        column_name,
+        regions,
+        start_time,
+        end_time,
+        resolution,
+        dispatch_type,
+        tech_types,
+    )
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -373,7 +406,7 @@ def get_aggregated_dispatch_data(
 
 
 def get_aggregated_dispatch_data_by_duids(
-    column_name, duids, start_time, end_time, resolution
+    column_name, start_time, end_time, duids, resolution
 ):
     """
     Function to query dispatch data from supabase. Data is filter according to the duids and time window provided,
@@ -386,9 +419,9 @@ def get_aggregated_dispatch_data_by_duids(
 
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00           234
@@ -396,9 +429,9 @@ def get_aggregated_dispatch_data_by_duids(
 
     >>> get_aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00           234
@@ -420,6 +453,9 @@ def get_aggregated_dispatch_data_by_duids(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_by_duids_args(
+        column_name, duids, start_time, end_time, resolution
+    )
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -434,13 +470,15 @@ def get_aggregated_dispatch_data_by_duids(
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    if data.empty:
+        data = pd.DataFrame(columns=["INTERVAL_DATETIME", "COLUMNVALUES"])
     data.columns = data.columns.str.upper()
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].str.replace("T", " ")
     data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(regions, start_time, end_time):
+def get_aggregated_vwap(start_time, end_time, regions):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -450,9 +488,9 @@ def get_aggregated_vwap(regions, start_time, end_time):
     Examples:
 
     >>> get_aggregated_vwap(
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
-    ... "2022/01/01 02:00:00")
+    ... "2022/01/01 02:00:00",
+    ... ['NSW'])
              SETTLEMENTDATE      PRICE
     0   2022-01-01 01:05:00  107.80005
     1   2022-01-01 01:10:00  107.80005
@@ -475,6 +513,7 @@ def get_aggregated_vwap(regions, start_time, end_time):
     Returns:
         pd.DataFrame with column SETTLEMENTDATE and PRICE
     """
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -487,12 +526,19 @@ def get_aggregated_vwap(regions, start_time, end_time):
         },
     ).execute()
     data = pd.DataFrame(data.data)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "SETTLEMENTDATE": pd.Series(dtype="str"),
+                "PRICE": pd.Series(dtype="float"),
+            }
+        )
     data.columns = data.columns.str.upper()
     data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].str.replace("T", " ")
     return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
-def unit_types(dispatch_type, regions):
+def unit_types(regions, dispatch_type):
     """
     Function to query distinct unit types from supabase. For this function to run the supabase url and key need to be
     configured as environment variables labeled SUPABASE_BIDDING_DASHBOARD_URL and SUPABASE_BIDDING_DASHBOARD_KEY
@@ -501,8 +547,8 @@ def unit_types(dispatch_type, regions):
     Examples:
 
     >>> unit_types(
-    ... 'Generator',
-    ... ['NSW'])
+    ... ['NSW'],
+    ... 'Generator')
                 UNIT TYPE
     0             Bagasse
     1   Battery Discharge
@@ -519,6 +565,7 @@ def unit_types(dispatch_type, regions):
         pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
         :py:func:`nem_bidding_dashboard.preprocessing.tech_namer_by_row`)
     """
+    input_validation.validate_unit_types_args(dispatch_type, regions)
     url = os.environ.get("SUPABASE_BIDDING_DASHBOARD_URL")
     key = os.environ.get("SUPABASE_BIDDING_DASHBOARD_KEY")
     supabase = create_client(url, key)
@@ -527,40 +574,10 @@ def unit_types(dispatch_type, regions):
     ).execute()
     data = pd.DataFrame(data.data)
     data.columns = data.columns.str.upper()
+    if data.empty:
+        data = pd.DataFrame(columns=["UNIT TYPE"])
     return data.sort_values("UNIT TYPE").reset_index(drop=True)
 
 
 if __name__ == "__main__":
-    from time import time
-
-    duids = stations_and_duids_in_regions_and_time_window(
-        ["NSW"], "2020/01/21 00:00:00", "2020/01/30 00:00:00"
-    )
-    print(duids)
-
-    t0 = time()
-    data = aggregate_bids(
-        ["QLD", "NSW", "SA", "VIC", "TAS"],
-        "2020/01/21 00:00:00",
-        "2020/01/22 00:00:00",
-        "hourly",
-    )
-    print(time() - t0)
-    print(data)
-
-    t0 = time()
-    data = aggregate_bids(
-        ["QLD", "NSW", "SA", "VIC", "TAS"],
-        "2020/01/21 00:00:00",
-        "2020/01/22 00:00:00",
-        "5-min",
-    )
-    print(time() - t0)
-    print(data)
-
-    t0 = time()
-    data = duid_bids(
-        ["AGLHAL", "ARWF1"], "2020/01/21 00:00:00", "2020/01/30 00:00:00", "hourly"
-    )
-    print(time() - t0)
-    print(data)
+    pass

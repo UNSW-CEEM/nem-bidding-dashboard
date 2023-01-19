@@ -102,9 +102,9 @@ start = "2022/01/01 00:00:00"
 end = "2022/02/01 00:00:00"
 
 populate_postgres_db.duid_info(con_string, raw_data_cache)
-populate_postgres_db.bid_data(con_string, start, end, raw_data_cache)
-populate_postgres_db.region_data(con_string, start, end, raw_data_cache)
-populate_postgres_db.unit_dispatch(con_string, start, end, raw_data_cache)
+populate_postgres_db.bid_data(con_string, raw_data_cache, start, end)
+populate_postgres_db.region_data(con_string, raw_data_cache, start, end)
+populate_postgres_db.unit_dispatch(con_string, raw_data_cache, start, end)
 ```
 
 #### Query and aggregate bidding data from PostgresSQL database
@@ -122,15 +122,10 @@ con_string = postgres_helpers.build_connection_string(
     password='1234abcd',
     port=5433)
 
-agg_bids = query_postgres_db.aggregate_bids(
-    connection_string=con_string,
-    regions=['QLD', 'NSW', 'SA'],
-    start_time="2022/01/01 00:00:00",
-    end_time="2022/01/01 01:00:00",
-    resolution='hourly',
-    raw_adjusted='adjusted',
-    tech_types=[],
-    dispatch_type='Generator')
+agg_bids = query_postgres_db.aggregate_bids(connection_string=con_string, start_time="2022/01/01 00:00:00",
+                                            end_time="2022/01/01 01:00:00", regions=['QLD', 'NSW', 'SA'],
+                                            dispatch_type='Generator', tech_types=[], resolution='hourly',
+                                            adjusted='adjusted')
 
 print(agg_bids)
 #       INTERVAL_DATETIME        BIN_NAME   BIDVOLUME

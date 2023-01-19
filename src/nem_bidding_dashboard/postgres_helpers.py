@@ -222,6 +222,7 @@ def run_query(connection_string, query, autocommit=False):
 
     >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_duid_index ON bidding_data (interval_datetime DESC, duid);")
 
+
     Args:
         connection_string: str for connecting to PostgresSQL database, the function :py:func:`nem_bidding_dashboard.postgres_helpers.build_connection_string`
             can be used to build a properly formated connection string, or alternative any string that matches the

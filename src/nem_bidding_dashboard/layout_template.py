@@ -78,7 +78,7 @@ def build_banner():
             html.Div(
                 id="banner-text",
                 children=[
-                    html.H5("NEM Bidding Dashboard (BETA TESTING VERSION)"),
+                    html.H5("NEM Bidding Dashboard"),
                     html.A(
                         "About",
                         target="_blank",

@@ -43,7 +43,7 @@ duid_station_options = get_duid_station_options(
 )
 duid_options = sorted(duid_station_options["DUID"])  # [1:]
 station_options = sorted(list(set(duid_station_options["STATION NAME"])))
-tech_type_options = sorted(unit_types("Generator", region_options)["UNIT TYPE"])
+tech_type_options = sorted(unit_types(region_options, "Generator")["UNIT TYPE"])
 
 app.layout = layout_template.build(
     region_options,
@@ -124,7 +124,7 @@ def update_unit_type_options(
         unit type options: List of possible duids for the given filters
         unit type selected: List of possible stations for the given filters
     """
-    unit_type_options = unit_types(dispatch_type, regions)
+    unit_type_options = unit_types(regions, dispatch_type)
     return sorted(unit_type_options["UNIT TYPE"]), None
 
 

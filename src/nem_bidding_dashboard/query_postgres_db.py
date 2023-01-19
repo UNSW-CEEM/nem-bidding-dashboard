@@ -1,12 +1,12 @@
 import pandas as pd
 
-from nem_bidding_dashboard import defaults
+from nem_bidding_dashboard import defaults, input_validation
 from nem_bidding_dashboard.postgres_helpers import run_query_return_dataframe
 
 pd.set_option("display.width", None)
 
 
-def region_demand(connection_string, regions, start_time, end_time):
+def region_demand(connection_string, start_time, end_time, regions):
     """
     Query demand and price data from a postgres database. To aggregate demand data is summed.
 
@@ -23,9 +23,9 @@ def region_demand(connection_string, regions, start_time, end_time):
 
     >>> region_demand(
     ... con_string,
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
-    ... "2022/01/01 01:30:00")
+    ... "2022/01/01 01:30:00",
+    ... ['NSW'])
             SETTLEMENTDATE  TOTALDEMAND
     0  2022-01-01 01:05:00      6631.21
     1  2022-01-01 01:10:00      6655.52
@@ -42,12 +42,13 @@ def region_demand(connection_string, regions, start_time, end_time):
             can be used
         start_time: Initial datetime, formatted "DD/MM/YYYY HH:MM:SS"
         end_time: Ending datetime, formatted identical to start_time
-        raw_data_cache: Filepath to directory for caching files downloaded from AEMO
+        regions: list[str] regions to aggregate should only be QLD, NSW, VIC, SA or TAS.
 
     Returns:
         pd.DataFrame with columns SETTLEMENTDATE, and TOTALDEMAND (demand to be meet by schedualed and
         semischedualed generators, not including schedualed loads).
     """
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM aggregate_demand(
@@ -57,19 +58,26 @@ def region_demand(connection_string, regions, start_time, end_time):
                 )"""
     query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "SETTLEMENTDATE": pd.Series(dtype="datetime64[ns]"),
+                "TOTALDEMAND": pd.Series(dtype="float"),
+            }
+        )
     data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].dt.strftime("%Y-%m-%d %X")
     return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
 def aggregate_bids(
     connection_string,
-    regions,
     start_time,
     end_time,
-    resolution,
-    raw_adjusted,
-    tech_types,
+    regions,
     dispatch_type,
+    tech_types,
+    resolution,
+    adjusted,
 ):
     """
     Function to query and aggregate bidding data from postgres database. Data is filtered according to the regions,
@@ -90,13 +98,13 @@ def aggregate_bids(
 
     >>> aggregate_bids(
     ... con_string,
-    ... ['QLD', 'NSW', 'SA'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
-    ... 'adjusted',
+    ... ['QLD', 'NSW', 'SA'],
+    ... 'Generator',
     ... [],
-    ... 'Generator')
+    ... 'hourly',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
     0   2022-01-01 02:00:00   [-1000, -100)  9158.02700
     1   2022-01-01 02:00:00       [-100, 0)   299.74405
@@ -113,13 +121,13 @@ def aggregate_bids(
 
     >>> aggregate_bids(
     ... con_string,
-    ... ['QLD', 'NSW', 'SA'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
-    ... 'adjusted',
+    ... ['QLD', 'NSW', 'SA'],
+    ... 'Generator',
     ... [],
-    ... 'Generator')
+    ... '5-min',
+    ... 'adjusted')
           INTERVAL_DATETIME        BIN_NAME   BIDVOLUME
     0   2022-01-01 01:05:00   [-1000, -100)  9642.26100
     1   2022-01-01 01:05:00       [-100, 0)   361.94458
@@ -143,7 +151,7 @@ def aggregate_bids(
         end_time: Ending datetime, formatted identical to start_time
         resolution: str 'hourly' or '5-min'
         dispatch_type: str 'Generator' or 'Load'
-        raw_adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
+        adjusted: str which bid data to use aggregate 'raw' or 'adjusted'. Adjusted bid data has been
             adjusted down so the total bid does not exceed the unit availability.
         tech_types: list[str] the technology types to filter for e.g. Solar, Black Coal, CCGT. An empty list
             will result in no filtering by technology
@@ -152,6 +160,9 @@ def aggregate_bids(
         pd.DataFrame with columns INTERVAL_DATETIME, BIN_NAME (upper and lower limits of price bin) and
         BIDVOLUME (total volume bid by units within price bin).
     """
+    input_validation.validate_aggregate_bids_args(
+        regions, start_time, end_time, resolution, adjusted, tech_types, dispatch_type
+    )
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     tech_types = ['"{t}"'.format(t=t) for t in tech_types]
@@ -162,7 +173,7 @@ def aggregate_bids(
                 (timestamp '{end_time}'),
                 '{resolution}',
                 '{dispatch_type}',
-                '{raw_adjusted}',
+                '{adjusted}',
                 '{{{tech_types}}}'
                 )"""
     data = run_query_return_dataframe(connection_string, query)
@@ -183,7 +194,7 @@ def aggregate_bids(
     return data
 
 
-def duid_bids(connection_string, duids, start_time, end_time, resolution, adjusted):
+def duid_bids(connection_string, start_time, end_time, duids, resolution, adjusted):
     """
     Function to query bidding data from a postgres database. Data is filter according to the DUID list and time window
     provided, and returned on a duid basis. Data can queryed at hourly or 5 minute resolution. If an hourly resolution
@@ -202,9 +213,9 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
 
     >>> duid_bids(
     ... con_string,
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
@@ -217,9 +228,9 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
 
     >>> duid_bids(
     ... con_string,
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly',
     ... 'adjusted')
          INTERVAL_DATETIME     DUID  BIDBAND  BIDVOLUME  BIDPRICE
@@ -244,6 +255,9 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
     Returns:
         pd.DataFrame with columns INTERVAL_DATETIME, DUID, BIDBAND, BIDVOLUME, and BIDPRICE
     """
+    input_validation.validate_duid_bids_args(
+        duids, start_time, end_time, resolution, adjusted
+    )
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
     query = """SELECT * FROM get_bids_by_unit_v2(
@@ -260,6 +274,16 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
         adjusted=adjusted,
     )
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "INTERVAL_DATETIME": pd.Series(dtype="datetime64[ns]"),
+                "DUID": pd.Series(dtype="str"),
+                "BIDBAND": pd.Series(dtype="int64"),
+                "BIDVOLUME": pd.Series(dtype="float"),
+                "BIDPRICE": pd.Series(dtype="float"),
+            }
+        )
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
     data["BIDVOLUME"] = data["BIDVOLUME"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME", "DUID", "BIDBAND"]).reset_index(
@@ -268,7 +292,7 @@ def duid_bids(connection_string, duids, start_time, end_time, resolution, adjust
 
 
 def stations_and_duids_in_regions_and_time_window(
-    connection_string, regions, start_time, end_time, dispatch_type, tech_types
+    connection_string, start_time, end_time, regions, dispatch_type, tech_types
 ):
     """
     Function to query units from given regions with bids available in the given time window, with the the given dispatch
@@ -287,9 +311,9 @@ def stations_and_duids_in_regions_and_time_window(
 
     >>> stations_and_duids_in_regions_and_time_window(
     ... con_string,
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['NSW'],
     ... "Generator",
     ... [])
             DUID             STATION NAME
@@ -322,6 +346,9 @@ def stations_and_duids_in_regions_and_time_window(
     Returns:
         pd.DataFrame with columns DUID and STATION NAME
     """
+    input_validation.validate_stations_and_duids_in_regions_and_time_window_args(
+        regions, start_time, end_time, dispatch_type, tech_types
+    )
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     tech_types = ['"{t}"'.format(t=t) for t in tech_types]
@@ -342,12 +369,12 @@ def stations_and_duids_in_regions_and_time_window(
 def get_aggregated_dispatch_data(
     connection_string,
     column_name,
-    regions,
     start_time,
     end_time,
-    resolution,
+    regions,
     dispatch_type,
     tech_types,
+    resolution,
 ):
     """
     Function to query dispatch and aggregate data from a postgres database. Data is filter according to the regions,
@@ -368,12 +395,12 @@ def get_aggregated_dispatch_data(
     >>> get_aggregated_dispatch_data(
     ... con_string,
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
-    ... 'hourly',
+    ... ['NSW'],
     ... 'Generator',
-    ... [])
+    ... [],
+    ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00     10402.473
 
@@ -381,12 +408,12 @@ def get_aggregated_dispatch_data(
     >>> get_aggregated_dispatch_data(
     ... con_string,
     ... 'AVAILABILITY',
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
-    ... '5-min',
+    ... ['NSW'],
     ... 'Generator',
-    ... [])
+    ... [],
+    ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00     10440.107
 
@@ -414,6 +441,15 @@ def get_aggregated_dispatch_data(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_args(
+        column_name,
+        regions,
+        start_time,
+        end_time,
+        resolution,
+        dispatch_type,
+        tech_types,
+    )
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     tech_types = ['"{t}"'.format(t=t) for t in tech_types]
@@ -441,7 +477,7 @@ def get_aggregated_dispatch_data(
 
 
 def get_aggregated_dispatch_data_by_duids(
-    connection_string, column_name, duids, start_time, end_time, resolution
+    connection_string, column_name, start_time, end_time, duids, resolution
 ):
     """
     Function to query dispatch and aggregate data from a postgres database. Data is filter according to the DUIDs,
@@ -462,9 +498,9 @@ def get_aggregated_dispatch_data_by_duids(
     >>> get_aggregated_dispatch_data_by_duids(
     ... con_string,
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... 'hourly')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 02:00:00         234.0
@@ -473,9 +509,9 @@ def get_aggregated_dispatch_data_by_duids(
     >>> get_aggregated_dispatch_data_by_duids(
     ... con_string,
     ... 'AVAILABILITY',
-    ... ['AGLHAL', 'BASTYAN'],
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
+    ... ['AGLHAL', 'BASTYAN'],
     ... '5-min')
          INTERVAL_DATETIME  COLUMNVALUES
     0  2022-01-01 01:05:00         234.0
@@ -501,6 +537,9 @@ def get_aggregated_dispatch_data_by_duids(
     Returns:
         pd.DataFrame containing columns INTERVAL_DATETIME, COLUMNVALUES (aggregate of column specified in input)
     """
+    input_validation.validate_get_aggregated_dispatch_data_by_duids_args(
+        column_name, duids, start_time, end_time, resolution
+    )
     duids = ['"{d}"'.format(d=d) for d in duids]
     duids = ", ".join(duids)
     query = """SELECT * FROM aggregate_dispatch_data_duids_v2(
@@ -518,12 +557,19 @@ def get_aggregated_dispatch_data_by_duids(
         resolution=resolution,
     )
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "INTERVAL_DATETIME": pd.Series(dtype="datetime64[ns]"),
+                "COLUMNVALUES": pd.Series(dtype="float"),
+            }
+        )
     data["INTERVAL_DATETIME"] = data["INTERVAL_DATETIME"].dt.strftime("%Y-%m-%d %X")
     data["COLUMNVALUES"] = data["COLUMNVALUES"].astype(float)
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(connection_string, regions, start_time, end_time):
+def get_aggregated_vwap(connection_string, start_time, end_time, regions):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -542,9 +588,9 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
 
     >>> get_aggregated_vwap(
     ... con_string,
-    ... ['NSW'],
     ... "2022/01/01 01:00:00",
-    ... "2022/01/01 02:00:00")
+    ... "2022/01/01 02:00:00",
+    ... ['NSW'])
              SETTLEMENTDATE      PRICE
     0   2022-01-01 01:05:00  107.80005
     1   2022-01-01 01:10:00  107.80005
@@ -573,6 +619,7 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
         pd.DataFrame with columns SETTLEMENTDATE, TOTALDEMAND and RRP (volume weighted avergae of energy price at
         regional reference nodes).
     """
+    input_validation.validate_region_demand_args(start_time, end_time, regions)
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM aggregate_prices(
@@ -582,11 +629,18 @@ def get_aggregated_vwap(connection_string, regions, start_time, end_time):
                 )"""
     query = query.format(regions=regions, start_time=start_time, end_time=end_time)
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(
+            {
+                "SETTLEMENTDATE": pd.Series(dtype="datetime64[ns]"),
+                "PRICE": pd.Series(dtype="float"),
+            }
+        )
     data["SETTLEMENTDATE"] = data["SETTLEMENTDATE"].dt.strftime("%Y-%m-%d %X")
     return data.sort_values("SETTLEMENTDATE").reset_index(drop=True)
 
 
-def unit_types(connection_string, dispatch_type, regions):
+def unit_types(connection_string, regions, dispatch_type):
     """
     Function to query distinct unit types from postgres database.
 
@@ -601,10 +655,9 @@ def unit_types(connection_string, dispatch_type, regions):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> unit_types(
-    ... con_string,
-    ... 'Generator',
-    ... ['NSW'])
+    >>> unit_types(con_string,
+    ... ['NSW'],
+    ... 'Generator')
                 UNIT TYPE
     0             Bagasse
     1   Battery Discharge
@@ -629,6 +682,7 @@ def unit_types(connection_string, dispatch_type, regions):
         pd.DataFrame column UNIT TYPE (this is the unit type as determined by the function
         :py:func:`nem_bidding_dashboard.preprocessing.tech_namer_by_row`)
     """
+    input_validation.validate_unit_types_args(dispatch_type, regions)
     regions = ['"{r}"'.format(r=r) for r in regions]
     regions = ", ".join(regions)
     query = """SELECT * FROM distinct_unit_types_v3(
@@ -637,4 +691,6 @@ def unit_types(connection_string, dispatch_type, regions):
                 )"""
     query = query.format(dispatch_type=dispatch_type, regions=regions)
     data = run_query_return_dataframe(connection_string, query)
+    if data.empty:
+        data = pd.DataFrame(columns=["UNIT TYPE"])
     return data.sort_values("UNIT TYPE").reset_index(drop=True)

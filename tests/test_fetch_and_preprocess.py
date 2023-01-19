@@ -6,7 +6,7 @@ from nem_bidding_dashboard import fetch_and_preprocess
 
 def test_duid_info(monkeypatch):
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    duid_info = fetch_and_preprocess.duid_info("dummy_directory")
+    duid_info = fetch_and_preprocess.duid_info("tests/nemosis_dummy_cache")
     expected_duid_info = pd.read_csv("tests/test_duid_data_preprocessing_output.csv")
     pd.testing.assert_frame_equal(duid_info, expected_duid_info)
 
@@ -16,7 +16,7 @@ def test_bid_data(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     bid_data = fetch_and_preprocess.bid_data(
-        "dummy_start", "dummy_end", "dummy_directory"
+        "2020/01/01 00:00:00", "2020/01/01 06:00:00", "tests/nemosis_dummy_cache"
     )
     expected_bid_data = pd.DataFrame(
         columns=[
@@ -58,7 +58,7 @@ def test_unit_dispatch(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     unit_dispatch = fetch_and_preprocess.unit_dispatch(
-        "dummy_start", "dummy_end", "dummy_directory"
+        "2020/01/01 00:00:00", "2020/01/01 06:00:00", "tests/nemosis_dummy_cache"
     )
     expected_unit_dispatch = pd.DataFrame(
         columns=[

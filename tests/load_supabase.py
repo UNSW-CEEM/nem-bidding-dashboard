@@ -25,7 +25,7 @@ def make_calls_to_aggregate_dispatch_data():
     c = 0
     for start_time, end_time in zip(start_times, end_times):
         query_supabase_db.get_aggregated_dispatch_data(
-            "AVAILABILITY", ["NSW"], start_time, end_time, "5-min", "Generator", []
+            "AVAILABILITY", start_time, end_time, ["NSW"], "Generator", [], "5-min"
         )
         print(c)
         c += 1
@@ -36,13 +36,13 @@ def make_calls_to_aggregate_bids():
     c = 0
     for start_time, end_time in zip(start_times, end_times):
         query_supabase_db.aggregate_bids(
-            ["NSW", "QLD", "VIC", "SA", "TAS"],
             start_time,
             end_time,
-            resolution="5-min",
-            raw_adjusted="adjusted",
-            tech_types=[],
+            ["NSW", "QLD", "VIC", "SA", "TAS"],
             dispatch_type="Generator",
+            tech_types=[],
+            resolution="5-min",
+            adjusted="adjusted",
         )
         print(c)
         c += 1
@@ -53,11 +53,11 @@ def make_calls_to_get_duids_and_stations():
     c = 0
     for start_time, end_time in zip(start_times, end_times):
         query_supabase_db.stations_and_duids_in_regions_and_time_window(
-            ["NSW", "QLD", "VIC", "SA", "TAS"],
             start_time,
             end_time,
-            tech_types=[],
+            ["NSW", "QLD", "VIC", "SA", "TAS"],
             dispatch_type="Generator",
+            tech_types=[],
         )
         print(c)
         c += 1
@@ -68,29 +68,29 @@ def make_mutiple_calls():
     c = 0
     for start_time, end_time in zip(start_times, end_times):
         query_supabase_db.stations_and_duids_in_regions_and_time_window(
-            ["NSW", "QLD", "VIC", "SA", "TAS"],
             start_time,
             end_time,
-            tech_types=[],
+            ["NSW", "QLD", "VIC", "SA", "TAS"],
             dispatch_type="Generator",
+            tech_types=[],
         )
         query_supabase_db.aggregate_bids(
-            ["NSW", "QLD", "VIC", "SA", "TAS"],
             start_time,
             end_time,
-            resolution="hourly",
-            raw_adjusted="adjusted",
-            tech_types=[],
+            ["NSW", "QLD", "VIC", "SA", "TAS"],
             dispatch_type="Generator",
+            tech_types=[],
+            resolution="hourly",
+            adjusted="adjusted",
         )
         query_supabase_db.get_aggregated_dispatch_data(
             "AVAILABILITY",
-            ["NSW", "QLD", "VIC", "SA", "TAS"],
             start_time,
             end_time,
-            "hourly",
+            ["NSW", "QLD", "VIC", "SA", "TAS"],
             "Generator",
             [],
+            "hourly",
         )
         print(c)
         c += 1

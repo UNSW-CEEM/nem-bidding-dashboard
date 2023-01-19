@@ -4,6 +4,8 @@ import nemosis.custom_errors
 import pandas as pd
 from nemosis import defaults, dynamic_data_compiler, static_table
 
+from nem_bidding_dashboard.input_validation import validate_start_end_and_cache_location
+
 defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCUP"]
 
 pd.set_option("display.width", None)
@@ -37,6 +39,7 @@ def get_region_data(start_time, end_time, raw_data_cache):
     Returns: pandas dataframe with columns SETTLEMENTDATE, REGIONID, TOTALDEMAND (the operational demand AEMO dispatches
              generation to meet), and RRP (the regional reference price for energy).
     """
+    validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
     try:
         price_data = dynamic_data_compiler(
             start_time,
@@ -115,9 +118,10 @@ def get_region_data(start_time, end_time, raw_data_cache):
     price_and_demand_data = price_and_demand_data.loc[
         price_and_demand_data["INTERVENTION"] == 0
     ]
-    return price_and_demand_data.loc[
-        :, ["REGIONID", "SETTLEMENTDATE", "TOTALDEMAND", "RRP"]
+    price_and_demand_data = price_and_demand_data.loc[
+        :, ["SETTLEMENTDATE", "REGIONID", "TOTALDEMAND", "RRP"]
     ]
+    return price_and_demand_data
 
 
 def get_duid_availability_data(start_time, end_time, raw_data_cache):
@@ -159,6 +163,7 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
         pandas dataframe with columns INTERVAL_DATETIME, DUID, AVAILABILITY, TOTALCLEARED, INITIALMW,
         RAMPDOWNRATE, RAMPUPRATE
     """
+
     try:
         availability_data = dynamic_data_compiler(
             start_time,

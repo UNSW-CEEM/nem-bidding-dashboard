@@ -10,6 +10,7 @@ import defaults
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from defaults import bid_order
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
 from query_supabase_db import (
@@ -62,23 +63,17 @@ def get_duid_station_options(
         Dataframe - column 'DUID' contains unit duids, column 'STATION NAME'
             contains name of station that each unit belongs to
     """
-    if tech_types is None:
-        tech_types = []
     start_time_obj = datetime.strptime(start_time, "%Y/%m/%d %H:%M:%S")
     if duration == "Daily":
         end_time = (start_time_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")
 
         return stations_and_duids_in_regions_and_time_window(
-            regions,
-            start_time,
-            end_time,
-            dispatch_type,
-            tech_types,
+            start_time, end_time, regions, dispatch_type, tech_types
         )
     if duration == "Weekly":
         end_time = (start_time_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
         return stations_and_duids_in_regions_and_time_window(
-            regions, start_time, end_time, dispatch_type, tech_types
+            start_time, end_time, regions, dispatch_type, tech_types
         )
 
 
@@ -225,7 +220,7 @@ def plot_duid_bids(
     TODO: raw_adjusted not implemented in query_supabase.duid_bids yet, bids
         can be plotted as raw or adjusted using 'raw_adjusted' argument
     """
-    stacked_bids = duid_bids(duids, start_time, end_time, resolution, raw_adjusted)
+    stacked_bids = duid_bids(start_time, end_time, duids, resolution, raw_adjusted)
     if stacked_bids.empty:
         return None
     stacked_bids = stacked_bids.groupby(
@@ -297,7 +292,7 @@ def add_duid_dispatch_data(
     """
     for metric in dispatch_metrics:
         dispatch_data = get_aggregated_dispatch_data_by_duids(
-            DISPATCH_COLUMNS[metric]["name"], duids, start_time, end_time, resolution
+            DISPATCH_COLUMNS[metric]["name"], start_time, end_time, duids, resolution
         )
         dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
         fig.add_trace(
@@ -355,31 +350,17 @@ def plot_aggregate_bids(
         Plotly express figure (stacked bar chart)
     """
     stacked_bids = aggregate_bids(
-        regions,
         start_time,
         end_time,
+        regions,
+        dispatch_type,
+        tech_types,
         resolution,
         raw_adjusted,
-        tech_types,
-        dispatch_type,
     )
 
     if stacked_bids.empty:
         return None
-
-    bid_order = [
-        "[-1000, -100)",
-        "[-100, 0)",
-        "[0, 50)",
-        "[50, 100)",
-        "[100, 200)",
-        "[200, 300)",
-        "[300, 500)",
-        "[500, 1000)",
-        "[1000, 5000)",
-        "[5000, 10000)",
-        "[10000, 15500)",
-    ]
 
     color_map = {}
     color_sequence = [
@@ -461,7 +442,7 @@ def add_demand_trace(
         Updated plotly express figure consisting of the electricity demand curve
         plotted on top of the original figure
     """
-    demand = region_demand(regions, start_time, end_time)
+    demand = region_demand(start_time, end_time, regions)
     demand = demand.sort_values("SETTLEMENTDATE")
     fig.add_trace(
         go.Scatter(
@@ -509,12 +490,12 @@ def add_region_dispatch_data(
     for metric in dispatch_metrics:
         dispatch_data = get_aggregated_dispatch_data(
             DISPATCH_COLUMNS[metric]["name"],
-            regions,
             start_time,
             end_time,
-            resolution,
+            regions,
             dispatch_type,
             tech_types,
+            resolution,
         )
         dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
         fig.add_trace(
@@ -625,7 +606,7 @@ def plot_price(
         resolution: Either 'hourly' or '5-min'
 
     """
-    prices = get_aggregated_vwap(regions, start_time, end_time)
+    prices = get_aggregated_vwap(start_time, end_time, regions)
     prices = prices.sort_values(by="SETTLEMENTDATE")
 
     price_graph = px.line(
