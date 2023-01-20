@@ -10,8 +10,8 @@ bids of dispatch units, and stations can be visualised.
 We have additionally published the code required to run the web app as a python package, so that it can be used to help
 visualise and analyse bidding behaviour in alternative or more sophisticated ways than allowed by the web app.
 
-The development of nem-bidding-dashboard was funded by the [Digital Grid Futures Institute](https://www.dgfi.unsw.
-edu.au/)
+The development of nem-bidding-dashboard was funded by the
+[Digital Grid Futures Institute](https://www.dgfi.unsw.edu.au/)
 
 ## Web app
 
