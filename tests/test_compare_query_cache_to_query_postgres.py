@@ -112,7 +112,7 @@ def test_stations_and_duids_in_regions_and_time_window(
 def test_get_aggregated_dispatch_data(
     column_name, regions, time_pair, resolution, dispatch_type, tech_types
 ):
-    aggregated_dispatch_cache = query_cached_data.get_aggregated_dispatch_data(
+    aggregated_dispatch_cache = query_cached_data.aggregated_dispatch_data(
         test_cache,
         column_name,
         time_pair[0],
@@ -122,7 +122,7 @@ def test_get_aggregated_dispatch_data(
         tech_types,
         resolution,
     )
-    aggregated_dispatch_postgres = query_postgres_db.get_aggregated_dispatch_data(
+    aggregated_dispatch_postgres = query_postgres_db.aggregated_dispatch_data(
         con_string,
         column_name,
         time_pair[0],
@@ -144,13 +144,11 @@ def test_get_aggregated_dispatch_data(
 def test_get_aggregated_dispatch_data_by_duids(
     column_name, duids, time_pair, resolution
 ):
-    aggregated_dispatch_cache = query_cached_data.get_aggregated_dispatch_data_by_duids(
+    aggregated_dispatch_cache = query_cached_data.aggregated_dispatch_data_by_duids(
         test_cache, column_name, time_pair[0], time_pair[1], duids, resolution
     )
-    aggregated_dispatch_postgres = (
-        query_postgres_db.get_aggregated_dispatch_data_by_duids(
-            con_string, column_name, time_pair[0], time_pair[1], duids, resolution
-        )
+    aggregated_dispatch_postgres = query_postgres_db.aggregated_dispatch_data_by_duids(
+        con_string, column_name, time_pair[0], time_pair[1], duids, resolution
     )
     aggregated_dispatch_postgres["COLUMNVALUES"] = aggregated_dispatch_postgres[
         "COLUMNVALUES"
@@ -163,10 +161,10 @@ def test_get_aggregated_dispatch_data_by_duids(
 @pytest.mark.parametrize("regions", region_combos)
 @pytest.mark.parametrize("time_pair", query_time_windows)
 def test_get_aggregated_vwap(regions, time_pair):
-    aggregated_vwap_cache = query_cached_data.get_aggregated_vwap(
+    aggregated_vwap_cache = query_cached_data.aggregated_vwap(
         test_cache, time_pair[0], time_pair[1], regions
     )
-    aggregated_vwap_postgres = query_postgres_db.get_aggregated_vwap(
+    aggregated_vwap_postgres = query_postgres_db.aggregated_vwap(
         con_string, time_pair[0], time_pair[1], regions
     )
     pd.testing.assert_frame_equal(aggregated_vwap_cache, aggregated_vwap_postgres)

@@ -271,7 +271,7 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -302,7 +302,7 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -333,7 +333,7 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -367,7 +367,7 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -398,7 +398,7 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_up_max_avail_generator(monkeyp
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -429,7 +429,7 @@ def test_get_aggregated_dispatch_data_as_bid_ramp_down_min_avail_generator(monke
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -460,7 +460,7 @@ def test_get_aggregated_dispatch_data_ramp_up_max_avail_generator(monkeypatch):
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -494,7 +494,7 @@ def test_get_aggregated_dispatch_data_ramp_down_min_avail_generator(monkeypatch)
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
     monkeypatch.setattr("nem_bidding_dashboard.fetch_data.static_table", static_table)
-    column_values = query_cached_data.get_aggregated_dispatch_data(
+    column_values = query_cached_data.aggregated_dispatch_data(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -527,7 +527,7 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_up_max_avail(monkeypa
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+    column_values = query_cached_data.aggregated_dispatch_data_by_duids(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -555,7 +555,7 @@ def test_get_aggregated_dispatch_data_by_duids_as_bid_ramp_down_min_avail(monkey
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+    column_values = query_cached_data.aggregated_dispatch_data_by_duids(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="ASBIDRAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -583,7 +583,7 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_up_max_avail(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+    column_values = query_cached_data.aggregated_dispatch_data_by_duids(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPUPMAXAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -614,7 +614,7 @@ def test_get_aggregated_dispatch_data_by_duids_ramp_down_min_avail(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    column_values = query_cached_data.get_aggregated_dispatch_data_by_duids(
+    column_values = query_cached_data.aggregated_dispatch_data_by_duids(
         raw_data_cache="tests/nemosis_dummy_cache",
         column_name="RAMPDOWNMINAVAIL",
         start_time="2020/01/01 00:00:00",
@@ -645,7 +645,7 @@ def test_get_aggregated_vwap(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    region_demand = query_cached_data.get_aggregated_vwap(
+    region_demand = query_cached_data.aggregated_vwap(
         "tests/nemosis_dummy_cache",
         "2020/01/01 00:00:00",
         "2020/01/01 06:00:00",

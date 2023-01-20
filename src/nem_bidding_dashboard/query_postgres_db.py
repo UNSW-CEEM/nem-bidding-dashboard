@@ -366,7 +366,7 @@ def stations_and_duids_in_regions_and_time_window(
     return data.sort_values("DUID").reset_index(drop=True)
 
 
-def get_aggregated_dispatch_data(
+def aggregated_dispatch_data(
     connection_string,
     column_name,
     start_time,
@@ -392,7 +392,7 @@ def get_aggregated_dispatch_data(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... con_string,
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -405,7 +405,7 @@ def get_aggregated_dispatch_data(
     0  2022-01-01 02:00:00     10402.473
 
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... con_string,
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -476,7 +476,7 @@ def get_aggregated_dispatch_data(
     return data
 
 
-def get_aggregated_dispatch_data_by_duids(
+def aggregated_dispatch_data_by_duids(
     connection_string, column_name, start_time, end_time, duids, resolution
 ):
     """
@@ -495,7 +495,7 @@ def get_aggregated_dispatch_data_by_duids(
     ... password='1234abcd',
     ... port=5433)
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... con_string,
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -506,7 +506,7 @@ def get_aggregated_dispatch_data_by_duids(
     0  2022-01-01 02:00:00         234.0
 
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... con_string,
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -569,7 +569,7 @@ def get_aggregated_dispatch_data_by_duids(
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(connection_string, start_time, end_time, regions):
+def aggregated_vwap(connection_string, start_time, end_time, regions):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -586,7 +586,7 @@ def get_aggregated_vwap(connection_string, start_time, end_time, regions):
     ... password='1234abcd',
     ... port=5433)
 
-    >>> get_aggregated_vwap(
+    >>> aggregated_vwap(
     ... con_string,
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",

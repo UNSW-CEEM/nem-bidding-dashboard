@@ -315,7 +315,7 @@ def stations_and_duids_in_regions_and_time_window(
     return data.sort_values("DUID").reset_index(drop=True)
 
 
-def get_aggregated_dispatch_data(
+def aggregated_dispatch_data(
     column_name, start_time, end_time, regions, dispatch_type, tech_types, resolution
 ):
     """
@@ -327,7 +327,7 @@ def get_aggregated_dispatch_data(
 
     Examples:
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
@@ -339,7 +339,7 @@ def get_aggregated_dispatch_data(
     0  2022-01-01 02:00:00       10402.5
 
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
@@ -405,7 +405,7 @@ def get_aggregated_dispatch_data(
     return data
 
 
-def get_aggregated_dispatch_data_by_duids(
+def aggregated_dispatch_data_by_duids(
     column_name, start_time, end_time, duids, resolution
 ):
     """
@@ -417,7 +417,7 @@ def get_aggregated_dispatch_data_by_duids(
 
     Examples:
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
@@ -427,7 +427,7 @@ def get_aggregated_dispatch_data_by_duids(
     0  2022-01-01 02:00:00           234
 
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 01:05:00",
@@ -478,7 +478,7 @@ def get_aggregated_dispatch_data_by_duids(
     return data.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(start_time, end_time, regions):
+def aggregated_vwap(start_time, end_time, regions):
     """
     Function to query aggregated Volume Weighted Average Price from supabase. Data is filter according to the regions
     and time window provided. Data can queryed at hourly or 5 minute resolution. Prices are weighted by demand in each
@@ -487,7 +487,7 @@ def get_aggregated_vwap(start_time, end_time, regions):
 
     Examples:
 
-    >>> get_aggregated_vwap(
+    >>> aggregated_vwap(
     ... "2022/01/01 01:00:00",
     ... "2022/01/01 02:00:00",
     ... ['NSW'])

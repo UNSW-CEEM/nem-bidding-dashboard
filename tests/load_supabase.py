@@ -24,7 +24,7 @@ def make_calls_to_aggregate_dispatch_data():
     start_times, end_times = get_test_intervals(100)
     c = 0
     for start_time, end_time in zip(start_times, end_times):
-        query_supabase_db.get_aggregated_dispatch_data(
+        query_supabase_db.aggregated_dispatch_data(
             "AVAILABILITY", start_time, end_time, ["NSW"], "Generator", [], "5-min"
         )
         print(c)
@@ -83,7 +83,7 @@ def make_mutiple_calls():
             resolution="hourly",
             adjusted="adjusted",
         )
-        query_supabase_db.get_aggregated_dispatch_data(
+        query_supabase_db.aggregated_dispatch_data(
             "AVAILABILITY",
             start_time,
             end_time,

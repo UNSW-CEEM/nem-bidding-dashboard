@@ -15,10 +15,10 @@ from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
 from query_supabase_db import (
     aggregate_bids,
+    aggregated_dispatch_data,
+    aggregated_dispatch_data_by_duids,
+    aggregated_vwap,
     duid_bids,
-    get_aggregated_dispatch_data,
-    get_aggregated_dispatch_data_by_duids,
-    get_aggregated_vwap,
     region_demand,
     stations_and_duids_in_regions_and_time_window,
 )
@@ -291,7 +291,7 @@ def add_duid_dispatch_data(
             plotted over it
     """
     for metric in dispatch_metrics:
-        dispatch_data = get_aggregated_dispatch_data_by_duids(
+        dispatch_data = aggregated_dispatch_data_by_duids(
             DISPATCH_COLUMNS[metric]["name"], start_time, end_time, duids, resolution
         )
         dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
@@ -488,7 +488,7 @@ def add_region_dispatch_data(
             plotted over it
     """
     for metric in dispatch_metrics:
-        dispatch_data = get_aggregated_dispatch_data(
+        dispatch_data = aggregated_dispatch_data(
             DISPATCH_COLUMNS[metric]["name"],
             start_time,
             end_time,
@@ -606,7 +606,7 @@ def plot_price(
         resolution: Either 'hourly' or '5-min'
 
     """
-    prices = get_aggregated_vwap(start_time, end_time, regions)
+    prices = aggregated_vwap(start_time, end_time, regions)
     prices = prices.sort_values(by="SETTLEMENTDATE")
 
     price_graph = px.line(

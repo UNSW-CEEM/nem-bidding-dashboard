@@ -11,7 +11,7 @@ defaults.table_columns["BIDPEROFFER_D"] += ["PASAAVAILABILITY", "ROCDOWN", "ROCU
 pd.set_option("display.width", None)
 
 
-def get_region_data(start_time, end_time, raw_data_cache):
+def region_data(start_time, end_time, raw_data_cache):
     """
     Fetch electricity price and demand data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Attempts to
     pull data from AEMO monthly archive tables DISPATCHPRICE and DISPATCHREGIONSUM, if all the required data cannot
@@ -20,7 +20,7 @@ def get_region_data(start_time, end_time, raw_data_cache):
 
     Examples:
 
-    >>> get_region_data(
+    >>> region_data(
     ... '2022/01/01 00:00:00',
     ... '2022/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
@@ -124,7 +124,7 @@ def get_region_data(start_time, end_time, raw_data_cache):
     return price_and_demand_data
 
 
-def get_duid_availability_data(start_time, end_time, raw_data_cache):
+def duid_availability_data(start_time, end_time, raw_data_cache):
     """
     Fetch unit availability and other dispatch values using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_.
     Attempts to pull data from AEMO monthly archive table DISPATCHLOAD, if all the required data cannot be fetched from
@@ -135,7 +135,7 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
 
     Examples:
 
-    >>> get_duid_availability_data(
+    >>> duid_availability_data(
     ... '2022/01/01 00:00:00',
     ... '2022/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
@@ -247,7 +247,7 @@ def get_duid_availability_data(start_time, end_time, raw_data_cache):
     ]
 
 
-def get_duid_data(raw_data_cache):
+def duid_data(raw_data_cache):
     """
     Fetch unit data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data is sourced from AEMO's
     NEM Registration and Exemption List workbook (Generators and Scheduled Loads tab). This only includes currently
@@ -256,7 +256,7 @@ def get_duid_data(raw_data_cache):
 
     Examples:
 
-    >>> get_duid_data('D:/nemosis_data_cache')
+    >>> duid_data('D:/nemosis_data_cache')
                            STATION NAME REGION DISPATCH TYPE FUEL SOURCE - DESCRIPTOR       TECHNOLOGY TYPE - DESCRIPTOR      DUID
     0       Adelaide Desalination Plant    SA1     Generator                     Grid               Battery and Inverter   ADPBA1G
     1       Adelaide Desalination Plant    SA1          Load                     Grid               Battery and Inverter   ADPBA1L
@@ -299,7 +299,7 @@ def get_duid_data(raw_data_cache):
     return duid_data
 
 
-def get_volume_bids(start_time, end_time, raw_data_cache):
+def volume_bids(start_time, end_time, raw_data_cache):
     """
     Fetch unit volume bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
     archive tables BIDPEROFFER_D and current tables BIDMOVE_COMPETE. This should allow all historical AEMO
@@ -307,7 +307,7 @@ def get_volume_bids(start_time, end_time, raw_data_cache):
 
     Examples:
 
-    >>> get_volume_bids(
+    >>> volume_bids(
     ... '2022/01/01 00:00:00',
     ... '2022/01/01 01:00:00',
     ... 'D:/nemosis_data_cache')
@@ -367,7 +367,7 @@ def get_volume_bids(start_time, end_time, raw_data_cache):
     return volume_bids
 
 
-def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
+def price_bids(start_time: str, end_time: str, raw_data_cache: str):
     """
     Fetch unit price bid data using `NEMOSIS <https://github.com/UNSW-CEEM/NEMOSIS>`_. Data source from AEMO monthly
     archive tables BIDPDAYOFFER_D and current tables BIDMOVE_COMPETE. This should allow all historical AEMO
@@ -375,7 +375,7 @@ def get_price_bids(start_time: str, end_time: str, raw_data_cache: str):
 
     Examples:
 
-    >>> get_price_bids(
+    >>> price_bids(
     ... '2022/01/01 00:00:00',
     ... '2022/01/01 00:05:00',
     ... 'D:/nemosis_data_cache')
@@ -439,5 +439,5 @@ if __name__ == "__main__":
     # print(duid_data)
     # x = 1
     t0 = time.time()
-    get_volume_bids("2020/01/23 00:00:00", "2020/01/24 00:00:00", raw_data_cache)
+    volume_bids("2020/01/23 00:00:00", "2020/01/24 00:00:00", raw_data_cache)
     print(t0 - time.time())

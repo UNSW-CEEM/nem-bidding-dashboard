@@ -204,10 +204,10 @@ This example demonstrates retrieving regional price and demand data:
 
 from nem_bidding_dashboard import fetch_data
 
-regional_data =  fetch_data.get_region_data(
-    start_time='2022/01/01 00:00:00',
-    end_time='2022/01/01 00:05:00',
-    raw_data_cache='D:/nemosis_data_cache')
+regional_data = fetch_data.region_data(
+   start_time='2022/01/01 00:00:00',
+   end_time='2022/01/01 00:05:00',
+   raw_data_cache='D:/nemosis_data_cache')
 
 print(regional_data)
 #   REGIONID      SETTLEMENTDATE  TOTALDEMAND        RRP

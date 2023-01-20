@@ -29,7 +29,7 @@ agg_bids = query_cached_data.aggregate_bids(
 
 agg_bids.to_csv("agg_bids.csv")
 
-dispatch_data = query_cached_data.get_aggregated_dispatch_data(
+dispatch_data = query_cached_data.aggregated_dispatch_data(
     raw_data_cache,
     dispatch_data_column,
     start_time,
@@ -51,7 +51,7 @@ region_demand = query_cached_data.region_demand(
     raw_data_cache, start_time, end_time, regions
 )
 
-aggregated_vwap = query_cached_data.get_aggregated_vwap(
+aggregated_vwap = query_cached_data.aggregated_vwap(
     raw_data_cache, start_time, end_time, regions
 )
 

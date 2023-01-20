@@ -41,7 +41,7 @@ To get the raw data used by nem-bidding-dashboard before preprocessing use funct
 ```python
 from nem_bidding_dashboard import fetch_data
 
-volume_bids = fetch_data.get_volume_bids(
+volume_bids = fetch_data.volume_bids(
     start_time='2022/01/01 00:00:00',
     end_time='2022/01/01 00:05:00',
     raw_data_cache='D:/nemosis_data_cache')

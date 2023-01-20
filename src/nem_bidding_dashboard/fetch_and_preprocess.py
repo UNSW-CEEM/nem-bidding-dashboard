@@ -41,7 +41,7 @@ def region_data(start_time, end_time, raw_data_cache):
         generation to meet), and RRP (the regional reference price for energy).
     """
     validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
-    regional_data = fetch_data.get_region_data(start_time, end_time, raw_data_cache)
+    regional_data = fetch_data.region_data(start_time, end_time, raw_data_cache)
     regional_data = preprocessing.remove_number_from_region_names(
         "REGIONID", regional_data
     )
@@ -100,13 +100,13 @@ def bid_data(start_time, end_time, raw_data_cache):
         pandas dataframe with columns INTERVAL_DATETIME, DUID, BIDPRICE ($/MWh), BIDVOLUME (MW), BIDVOLUMEADJUSTED (MW)
     """
     validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
-    volume_bids = fetch_data.get_volume_bids(start_time, end_time, raw_data_cache)
+    volume_bids = fetch_data.volume_bids(start_time, end_time, raw_data_cache)
     volume_bids = volume_bids[volume_bids["BIDTYPE"] == "ENERGY"].drop(
         columns=["BIDTYPE"]
     )
-    price_bids = fetch_data.get_price_bids(start_time, end_time, raw_data_cache)
+    price_bids = fetch_data.price_bids(start_time, end_time, raw_data_cache)
     price_bids = price_bids[price_bids["BIDTYPE"] == "ENERGY"].drop(columns=["BIDTYPE"])
-    availability = fetch_data.get_duid_availability_data(
+    availability = fetch_data.duid_availability_data(
         start_time, end_time, raw_data_cache
     )
     combined_bids = preprocessing.stack_unit_bids(volume_bids, price_bids)
@@ -164,7 +164,7 @@ def duid_info(raw_data_cache):
         "TECHNOLOGY TYPE - DESCRIPTOR", "UNIT TYPE", "STATION NAME"
     """
     data_cache_exits(raw_data_cache)
-    duid_info = fetch_data.get_duid_data(raw_data_cache)
+    duid_info = fetch_data.duid_data(raw_data_cache)
     duid_info = preprocessing.hard_code_fix_fuel_source_and_tech_errors(duid_info)
     duid_info = preprocessing.remove_number_from_region_names("REGION", duid_info)
     duid_info = preprocessing.tech_namer(duid_info)
@@ -218,7 +218,7 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
         MAXAVAIL (see unit_dispatch in Database Guide for column definitions)
     """
     validate_start_end_and_cache_location(start_time, end_time, raw_data_cache)
-    as_bid_metrics = fetch_data.get_volume_bids(start_time, end_time, raw_data_cache)
+    as_bid_metrics = fetch_data.volume_bids(start_time, end_time, raw_data_cache)
     as_bid_metrics = as_bid_metrics[as_bid_metrics["BIDTYPE"] == "ENERGY"].drop(
         columns=["BIDTYPE"]
     )
@@ -233,7 +233,7 @@ def unit_dispatch(start_time, end_time, raw_data_cache):
             "PASAAVAILABILITY",
         ],
     ]
-    after_dispatch_metrics = fetch_data.get_duid_availability_data(
+    after_dispatch_metrics = fetch_data.duid_availability_data(
         start_time, end_time, raw_data_cache
     )
     unit_time_series_metrics = preprocessing.calculate_unit_time_series_metrics(

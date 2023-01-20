@@ -322,7 +322,7 @@ def stations_and_duids_in_regions_and_time_window(
     )
 
 
-def get_aggregated_dispatch_data(
+def aggregated_dispatch_data(
     raw_data_cache,
     column_name,
     start_time,
@@ -340,7 +340,7 @@ def get_aggregated_dispatch_data(
 
     Examples:
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -353,7 +353,7 @@ def get_aggregated_dispatch_data(
     0  2022-01-01 02:00:00   10402.47408
 
 
-    >>> get_aggregated_dispatch_data(
+    >>> aggregated_dispatch_data(
     ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -462,7 +462,7 @@ def get_aggregated_dispatch_data(
     return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_dispatch_data_by_duids(
+def aggregated_dispatch_data_by_duids(
     raw_data_cache, column_name, start_time, end_time, duids, resolution
 ):
     """
@@ -472,7 +472,7 @@ def get_aggregated_dispatch_data_by_duids(
 
     Examples:
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -483,7 +483,7 @@ def get_aggregated_dispatch_data_by_duids(
     0  2022-01-01 02:00:00         234.0
 
 
-    >>> get_aggregated_dispatch_data_by_duids(
+    >>> aggregated_dispatch_data_by_duids(
     ... 'D:/nemosis_data_cache',
     ... 'AVAILABILITY',
     ... "2022/01/01 01:00:00",
@@ -574,14 +574,14 @@ def get_aggregated_dispatch_data_by_duids(
     return dispatch.sort_values(["INTERVAL_DATETIME"]).reset_index(drop=True)
 
 
-def get_aggregated_vwap(raw_data_cache, start_time, end_time, regions):
+def aggregated_vwap(raw_data_cache, start_time, end_time, regions):
     """
     Function to query and aggregate price data from the raw data cache. To aggregate price data volume weighted
     averaged.
 
     Examples:
 
-    >>> get_aggregated_vwap(
+    >>> aggregated_vwap(
     ... raw_data_cache="D:/nemosis_data_cache",
     ... start_time="2022/01/01 01:00:00",
     ... end_time="2022/01/01 02:00:00",

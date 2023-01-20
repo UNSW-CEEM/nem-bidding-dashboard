@@ -19,7 +19,7 @@ agg_bids = query_cached_data.duid_bids(
 
 agg_bids.to_csv("duids_bids.csv")
 
-dispatch_data = query_cached_data.get_aggregated_dispatch_data_by_duids(
+dispatch_data = query_cached_data.aggregated_dispatch_data_by_duids(
     raw_data_cache, dispatch_data_column, start_time, end_time, duids, resolution
 )
 
@@ -34,7 +34,7 @@ region_demand = query_cached_data.region_demand(
     raw_data_cache, start_time, end_time, regions
 )
 
-aggregated_vwap = query_cached_data.get_aggregated_vwap(
+aggregated_vwap = query_cached_data.aggregated_vwap(
     raw_data_cache, start_time, end_time, regions
 )
 

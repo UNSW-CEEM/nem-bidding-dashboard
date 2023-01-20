@@ -8,7 +8,7 @@ def test_fetch_data_region_data_current_and_archive(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    region_data = fetch_data.get_region_data(
+    region_data = fetch_data.region_data(
         "2020/01/01 00:00:00", "2020/01/02 00:00:00", "tests/nemosis_dummy_cache"
     )
     expected_data = pd.DataFrame(
@@ -37,7 +37,7 @@ def test_fetch_data_region_data_archive(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    region_data = fetch_data.get_region_data(
+    region_data = fetch_data.region_data(
         "2020/01/01 00:00:00", "2020/01/01 01:00:00", "tests/nemosis_dummy_cache"
     )
     expected_data = pd.DataFrame(
@@ -64,7 +64,7 @@ def test_fetch_data_availability_data_current_and_archive(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    unit_dispatch = fetch_data.get_duid_availability_data(
+    unit_dispatch = fetch_data.duid_availability_data(
         "2020/01/01 00:00:00", "2020/01/02 00:00:00", "dummy_directory"
     )
     expected_data = pd.DataFrame(
@@ -99,7 +99,7 @@ def test_fetch_data_availability_data_archive(monkeypatch):
     monkeypatch.setattr(
         "nem_bidding_dashboard.fetch_data.dynamic_data_compiler", dynamic_data_compiler
     )
-    unit_dispatch = fetch_data.get_duid_availability_data(
+    unit_dispatch = fetch_data.duid_availability_data(
         "2020/01/01 00:00:00", "2020/01/01 01:00:00", "dummy_directory"
     )
     expected_data = pd.DataFrame(
