@@ -13,11 +13,6 @@ visualise and analyse bidding behaviour in alternative or more sophisticated way
 The development of nem-bidding-dashboard was funded by the [Digital Grid Futures Institute](https://www.dgfi.unsw.
 edu.au/)
 
-## Status
-
-Underdevelopment and not recommended for use yet, check back here in early 2023 to see if a production version has been
-launched.
-
 ## Web app
 
 nem-bidding-dashboard is hosted as a web app here: [http://nembiddingdashboard.org](http://nembiddingdashboard.org)
