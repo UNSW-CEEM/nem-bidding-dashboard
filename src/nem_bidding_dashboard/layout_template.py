@@ -105,6 +105,12 @@ def build_banner():
                         target="_blank",
                         style={"color": "black", "margin-left": "10px"},
                     ),
+                    html.A(
+                        "Access data",
+                        href="https://github.com/UNSW-CEEM/nem-bidding-dashboard",
+                        target="_blank",
+                        style={"color": "black", "margin-left": "10px"},
+                    ),
                 ],
             ),
         ],

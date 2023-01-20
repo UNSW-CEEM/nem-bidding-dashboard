@@ -4,14 +4,14 @@ nem-bidding-dashboard is a web app and python package for collating, processing 
 understanding participant behaviour in the Australian National Electricity Market wholesale spot market.
 
 The web app is intended to make reviewing the bidding behaviour of market participants as easy as possible. Aggregate
-behaviour can be visualised as at a whole of market, regional, or technology level. Alternatively, the non-aggregated
+behaviour can be visualised at a whole of market, regional, or technology level. Alternatively, the non-aggregated
 bids of dispatch units, and stations can be visualised.
 
-We have additionally published the code required to run the web app as a python package, so that it can used to help
-analysis and visualise bidding behaviour in alternative or more sophisticated ways than allowed by the web app.
+We have additionally published the code required to run the web app as a python package, so that it can be used to help
+visualise and analyse bidding behaviour in alternative or more sophisticated ways than allowed by the web app.
 
-The development of nem-bidding-dashboard up to December 2022 was funded by the
-[Digital Grid Futures Institute](https://www.dgfi.unsw.edu.au/)
+The development of nem-bidding-dashboard was funded by the [Digital Grid Futures Institute](https://www.dgfi.unsw.
+edu.au/)
 
 ## Status
 
@@ -36,7 +36,7 @@ The python api can be used to:
 
 ### Quick examples
 
-Below are some quick examples that provide at taste of the api capabilities, see the full set of examples and api
+Below are some quick examples that provide a taste of the api capabilities, see the full set of examples and api
 documentation for a complete guide.
 
 #### Get raw data
@@ -110,7 +110,7 @@ populate_postgres_db.unit_dispatch(con_string, raw_data_cache, start, end)
 #### Query and aggregate bidding data from PostgresSQL database
 
 Filter bids by time and region, and then aggregate into price bands. Other functions in the module `query_postgres_db`
-provide querying an aggregation and functionality for each table in the db.
+provide querying and aggregation and for each table in the db.
 
 ```python
 from nem_bidding_dashboard import postgres_helpers, query_postgres_db
@@ -122,9 +122,13 @@ con_string = postgres_helpers.build_connection_string(
     password='1234abcd',
     port=5433)
 
-agg_bids = query_postgres_db.aggregate_bids(connection_string=con_string, start_time="2022/01/01 00:00:00",
-                                            end_time="2022/01/01 01:00:00", regions=['QLD', 'NSW', 'SA'],
-                                            dispatch_type='Generator', tech_types=[], resolution='hourly',
+agg_bids = query_postgres_db.aggregate_bids(connection_string=con_string,
+                                            start_time="2022/01/01 00:00:00",
+                                            end_time="2022/01/01 01:00:00",
+                                            regions=['QLD', 'NSW', 'SA'],
+                                            dispatch_type='Generator',
+                                            tech_types=[],
+                                            resolution='hourly',
                                             adjusted='adjusted')
 
 print(agg_bids)
@@ -149,7 +153,8 @@ Interested in contributing? Check out the [contributing guidelines](https://gith
 Please note that this project is released with a [Code of Conduct](https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/master/CONDUCT.md). By contributing to this project, you
 agree to abide by its terms.
 
-## License
+## License and Disclaimer
 
 `nem-bidding-dashboard` was created by `Nicholas Gorman` and `Patrick Chambers`. It is licensed under the terms of the
-`BSD-3-Clause license`.
+[`BSD-3-Clause license`](https://github.com/UNSW-CEEM/nem-bidding-dashboard/blob/master/LICENSE). Please, also read the
+disclaimer accompanying the licence
