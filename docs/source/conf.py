@@ -23,7 +23,7 @@ copyright = "2022, Nicholas Gorman and Patrick Chambers"
 author = "Nicholas Gorman and Patrick Chambers"
 
 # The full version, including alpha/beta/rc tags
-release = "0.7.0"
+release = "0.10.0"
 
 
 # -- General configuration ---------------------------------------------------
