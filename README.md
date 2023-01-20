@@ -15,7 +15,7 @@ The development of nem-bidding-dashboard was funded by the
 
 ## Web app
 
-nem-bidding-dashboard is hosted as a web app here: [https://nembiddingdashboard.org](http://nembiddingdashboard.org)
+nem-bidding-dashboard is hosted as a web app here: [https://nembiddingdashboard.org](https://nembiddingdashboard.org)
 
 ## Python package / API
 
