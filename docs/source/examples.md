@@ -284,11 +284,11 @@ print(agg_bids)
 
 ```
 
-## Getting the data behind the Web App visualisation
+## Getting the data behind the Web App visualisations
 
-Unfortunately, due to cloud computing resource constraints we can't provide the data behind the Web App visualisations
-directly through the Web App interface. However, the guide provided here walks you through accessing this data using
-our Python API. The guide assumes you have Python installed on your computer and a basic grasp of how to use it.
+Unfortunately, we have yet set up data access directly through the Web App interface. However, the guide provided here
+walks you through accessing this data using our Python API. The guide assumes you have Python installed on your computer
+and a basic grasp of how to use it.
 
 1. Install nem-bidding-dashboard
 

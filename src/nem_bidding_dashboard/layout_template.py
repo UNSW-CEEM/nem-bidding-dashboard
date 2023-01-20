@@ -107,7 +107,7 @@ def build_banner():
                     ),
                     html.A(
                         "Access data",
-                        href="https://github.com/UNSW-CEEM/nem-bidding-dashboard",
+                        href="https://nem-bidding-dashboard.readthedocs.io/en/latest/examples.html#getting-the-data-behind-the-web-app-visualisation",
                         target="_blank",
                         style={"color": "black", "margin-left": "10px"},
                     ),
