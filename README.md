@@ -15,7 +15,7 @@ edu.au/)
 
 ## Web app
 
-nem-bidding-dashboard is hosted as a web app here: [http://nembiddingdashboard.org](http://nembiddingdashboard.org)
+nem-bidding-dashboard is hosted as a web app here: [https://nembiddingdashboard.org](http://nembiddingdashboard.org)
 
 ## Python package / API
 

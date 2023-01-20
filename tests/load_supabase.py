@@ -64,7 +64,7 @@ def make_calls_to_get_duids_and_stations():
 
 
 def make_mutiple_calls():
-    start_times, end_times = get_test_intervals(100)
+    start_times, end_times = get_test_intervals(1000)
     c = 0
     for start_time, end_time in zip(start_times, end_times):
         query_supabase_db.stations_and_duids_in_regions_and_time_window(
