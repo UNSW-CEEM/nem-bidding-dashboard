@@ -118,9 +118,76 @@ def build_banner():
 
 
 def get_settings_content(
-    duid_options, station_options, tech_type_options, region_options, initial_regions
+    initial_start_date_obj,
+    initial_duration,
+    duid_options,
+    station_options,
+    tech_type_options,
+    region_options,
+    initial_regions,
 ):
     settings_content = [
+        html.Div(
+            id="time-window-div",
+            children=[
+                html.Div(
+                    id="datetime-duration-selector",
+                    children=[
+                        html.H6(
+                            children="Starting datetime", className="selector-title"
+                        ),
+                        html.Div(
+                            id="datetime-picker",
+                            children=[
+                                dcc.DatePickerSingle(
+                                    id="start-date-picker",
+                                    date=initial_start_date_obj,
+                                    display_format="DD/MM/YY",
+                                ),
+                                dcc.Dropdown(
+                                    className="start-time-picker",
+                                    id="start-hour-picker",
+                                    options=[f"{x:02}" for x in range(0, 25)],
+                                    value="00",
+                                    clearable=False,
+                                ),
+                                dcc.Dropdown(
+                                    className="start-time-picker",
+                                    id="start-minute-picker",
+                                    options=[f"{x:02}" for x in range(0, 61, 5)],
+                                    value="00",
+                                    clearable=False,
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+                html.Div(
+                    className="tooltip",
+                    children=[
+                        html.Pre(
+                            (
+                                "The Weekly option displays bidding and dispatch data at an hourly resolution, down \n"
+                                + "down sampling by selecting data for 5-minute dispatch interval ending on the hour. \n"
+                                + "The Daily option displays bidding and dispatch data for each 5-minute dispatch interval."
+                            ),
+                            className="tooltiptext",
+                        ),
+                        html.H6(children="Duration", className="selector-title"),
+                        dcc.RadioItems(
+                            id="duration-selector",
+                            options=["Weekly", "Daily"],
+                            value=initial_duration,
+                            inline=True,
+                        ),
+                    ],
+                ),
+                html.Div(
+                    id="error-message-div",
+                    children=[html.P(id="error-message", children=[])],
+                ),
+            ],
+        ),
         html.Div(
             id="tech-type-div",
             children=[
@@ -266,6 +333,7 @@ graph_content = dls.Dot(
         figure={
             "layout": go.Layout(margin={"t": 20}),
         },
+        style={"height": "60vh", "min-height": "480px"},
     )
 )
 
@@ -280,67 +348,9 @@ def get_content(
     tech_type_options,
 ):
     content = [
-        html.Div(
-            html.H6(id="graph-name", children=title),
-        ),
-        html.Div(
-            html.H6(
-                id="datetime-duration-title",
-                className="selector-title",
-                children="Pick starting datetime and duration:",
-            )
-        ),
-        html.Div(
-            id="datetime-duration-selector",
-            children=[
-                html.Div(
-                    id="datetime-picker",
-                    children=[
-                        dcc.DatePickerSingle(
-                            id="start-date-picker",
-                            date=initial_start_date_obj,
-                            display_format="DD/MM/YY",
-                        ),
-                        dcc.Dropdown(
-                            className="start-time-picker",
-                            id="start-hour-picker",
-                            options=[f"{x:02}" for x in range(0, 25)],
-                            value="00",
-                            clearable=False,
-                        ),
-                        dcc.Dropdown(
-                            className="start-time-picker",
-                            id="start-minute-picker",
-                            options=[f"{x:02}" for x in range(0, 61, 5)],
-                            value="00",
-                            clearable=False,
-                        ),
-                    ],
-                ),
-                html.Div(
-                    className="tooltip",
-                    children=[
-                        html.Pre(
-                            (
-                                "The Weekly option displays bidding and dispatch data at an hourly resolution, down \n"
-                                + "down sampling by selecting data for 5-minute dispatch interval ending on the hour. \n"
-                                + "The Daily option displays bidding and dispatch data for each 5-minute dispatch interval."
-                            ),
-                            className="tooltiptext",
-                        ),
-                        dcc.RadioItems(
-                            id="duration-selector",
-                            options=["Weekly", "Daily"],
-                            value=initial_duration,
-                            inline=True,
-                        ),
-                    ],
-                ),
-            ],
-        ),
-        html.Div(
-            id="error-message-div", children=[html.P(id="error-message", children=[])]
-        ),
+        # html.Div(
+        #     html.H6(id="graph-name", children=title),
+        # ),
         html.Div(
             id="graph-box",
             children=graph_content,
@@ -348,6 +358,8 @@ def get_content(
         html.Div(
             id="graph-selectors",
             children=get_settings_content(
+                initial_start_date_obj,
+                initial_duration,
                 duid_options,
                 station_options,
                 tech_type_options,

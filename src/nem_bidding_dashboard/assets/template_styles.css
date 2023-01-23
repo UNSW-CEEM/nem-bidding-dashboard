@@ -863,18 +863,6 @@ body::after {
 
 }
 
-
-#datetime-duration-selector {
-  margin: 15px 50px 0px 50px;
-  display: flex;
-  flex-direction: row;
-  /* align-items: center; */
-  gap: 10px;
-  font-weight: 400;
-  font-family: Arial, Helvetica, sans-serif;
-  text-transform: uppercase;
-}
-
 #datetime-picker {
   display: flex;
   flex-direction: row;

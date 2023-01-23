@@ -3,12 +3,13 @@ This program runs a Dash application displaying info about the National
 Electricity Market (NEM).
 """
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import List, Tuple
 
 import dash
 import layout_template
 import plotly.graph_objects as go
+import pytz
 from create_plots import (
     DISPATCH_COLUMNS,
     add_demand_trace,
@@ -16,7 +17,6 @@ from create_plots import (
     add_region_dispatch_data,
     adjust_fig_layout,
     get_duid_station_options,
-    get_graph_name,
     plot_bids,
     update_colorbar_length,
 )
@@ -34,7 +34,9 @@ application = app.server
 region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
 initial_regions = region_options
 # Sets initial start date to be yesterday, will require database updating daily
-initial_start_date_obj = date.today() - timedelta(days=7)
+initial_start_date_obj = datetime.now(
+    pytz.timezone("Australia/Brisbane")
+).date() - timedelta(days=7)
 # initial_start_date_obj = date(2022, 1, 1)
 initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
 initial_duration = "Weekly"
@@ -97,6 +99,8 @@ def update_duid_station_options(
     if start_date is None:
         return dash.no_update, dash.no_update
     start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+    if tech_types is None:
+        tech_types = []
     duid_options = get_duid_station_options(
         start_date, regions, duration, tech_types, dispatch_type
     )
@@ -181,6 +185,8 @@ def update_duids_from_station(
 
     if trigger_id in ["duid-dropdown", "station-dropdown"] and stations:
         start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
+        if tech_types is None:
+            tech_types = []
         duid_options = get_duid_station_options(
             start_date, regions, duration, tech_types, dispatch_type
         )
@@ -205,7 +211,6 @@ def update_duids_from_station(
 
 @app.callback(
     Output("graph", "figure"),
-    Output("graph-name", "children"),
     Output("error-message", "children"),
     Input("start-date-picker", "date"),
     Input("start-hour-picker", "value"),
@@ -233,7 +238,7 @@ def update_main_plot(
     dispatch_type: str,
     dispatch_metrics: List[str],
     fig: Figure,
-) -> Tuple[Figure, str, str]:
+) -> Tuple[Figure, str]:
     """
     Callback to update the graph when the user interacts with any of the graph
     selectors.
@@ -267,7 +272,6 @@ def update_main_plot(
     if start_date is None:
         return (
             dash.no_update,
-            dash.no_update,
             "Invalid date format, should be DD/MM/YY.",
         )
 
@@ -292,7 +296,7 @@ def update_main_plot(
         if "Demand" in trace_names and "Demand" not in price_demand_checkbox:
             fig.update_traces(visible=False, selector={"name": "Demand"})
             update_colorbar_length(fig)
-            return fig, dash.no_update, ""
+            return fig, ""
         if "Demand" in price_demand_checkbox:
             if "Demand" not in trace_names:
                 fig = add_demand_trace(fig, start_date, end_date, regions)
@@ -302,7 +306,7 @@ def update_main_plot(
             "Price" not in trace_names and "Price" not in price_demand_checkbox
         ):
             update_colorbar_length(fig)
-            return fig, dash.no_update, ""
+            return fig, ""
     if trigger == "dispatch-checklist":
         trace_names = [trace["name"] for trace in fig["data"]]
         dispatch_options = DISPATCH_COLUMNS.keys()
@@ -329,7 +333,7 @@ def update_main_plot(
             else:
                 fig.update_traces(visible=True, selector={"name": name})
         update_colorbar_length(fig)
-        return fig, dash.no_update, ""
+        return fig, ""
 
     show_demand = "Demand" in price_demand_checkbox
     show_price = "Price" in price_demand_checkbox
@@ -348,12 +352,11 @@ def update_main_plot(
         dispatch_metrics,
     )
     if not fig:
-        return dash.no_update, dash.no_update, "No data found using current filters"
+        return dash.no_update, "No data found using current filters"
     fig = adjust_fig_layout(fig)
-    graph_name = get_graph_name(duids)
     update_colorbar_length(fig)
 
-    return fig, graph_name, ""
+    return fig, ""
 
 
 @app.callback(

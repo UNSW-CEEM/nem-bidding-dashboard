@@ -250,7 +250,7 @@ def plot_duid_bids(
     fig.update_traces(
         hovertemplate="%{x}<br>Bid Price: $%{customdata[0]:.0f}<br>Bid Volume: %{y:.0f} MW"
     )
-    fig.update_layout(height=400)
+
     if resolution == "hourly":
         fig.update_xaxes(
             title="Time (Bid stack for dispatch intervals ending on the hour)"
@@ -349,6 +349,9 @@ def plot_aggregate_bids(
     Returns:
         Plotly express figure (stacked bar chart)
     """
+    if tech_types is None:
+        tech_types = []
+
     stacked_bids = aggregate_bids(
         start_time,
         end_time,
@@ -396,7 +399,6 @@ def plot_aggregate_bids(
         hovertemplate="Price range %{customdata[0]}: %{y:.0f} MW<extra></extra>"
     )
 
-    fig.update_layout(height=600)
     if resolution == "hourly":
         fig.update_xaxes(
             title="Time (Bid stack for dispatch intervals ending on the hour)"
@@ -487,6 +489,8 @@ def add_region_dispatch_data(
         Plotly figure consisting of 'fig' with the given dispatch metrics
             plotted over it
     """
+    if tech_types is None:
+        tech_types = []
     for metric in dispatch_metrics:
         dispatch_data = aggregated_dispatch_data(
             DISPATCH_COLUMNS[metric]["name"],
@@ -565,7 +569,7 @@ def add_price_subplot(
     plot.add_trace(price_trace, row=2, col=1)
 
     plot.update_layout(
-        {"barmode": "stack", "height": 600},
+        {"barmode": "stack"},
     )
     plot.update_yaxes(title_text="Volume (MW)", row=1, col=1)
     plot.update_yaxes(title_text="Average electricity<br>price ($/MW/h)", row=2, col=1)
