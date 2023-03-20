@@ -9,7 +9,6 @@ from typing import List, Tuple
 import dash
 import layout_template
 import plotly.graph_objects as go
-import pytz
 from create_plots import (
     DISPATCH_COLUMNS,
     add_demand_trace,
@@ -28,34 +27,7 @@ app = Dash(__name__)
 app.title = "NEM Bidding Dashboard"
 
 application = app.server
-
-
-# Initial state of the dashboard
-region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
-initial_regions = region_options
-# Sets initial start date to be yesterday, will require database updating daily
-initial_start_date_obj = datetime.now(
-    pytz.timezone("Australia/Brisbane")
-).date() - timedelta(days=7)
-# initial_start_date_obj = date(2022, 1, 1)
-initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
-initial_duration = "Weekly"
-duid_station_options = get_duid_station_options(
-    initial_start_date_str, initial_regions, initial_duration
-)
-duid_options = sorted(duid_station_options["DUID"])  # [1:]
-station_options = sorted(list(set(duid_station_options["STATION NAME"])))
-tech_type_options = sorted(unit_types(region_options, "Generator")["UNIT TYPE"])
-
-app.layout = layout_template.build(
-    region_options,
-    initial_regions,
-    initial_start_date_obj,
-    initial_duration,
-    duid_options,
-    station_options,
-    tech_type_options,
-)
+app.layout = layout_template.call
 
 
 @app.callback(

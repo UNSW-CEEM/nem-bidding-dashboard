@@ -5,11 +5,15 @@ TODO:
     Documentation
 """
 
+from datetime import datetime, timedelta
+
 import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import plotly.graph_objects as go
-from create_plots import DISPATCH_COLUMNS
+import pytz
+from create_plots import DISPATCH_COLUMNS, get_duid_station_options
 from dash import dcc, html
+from query_supabase_db import unit_types
 
 
 def build_info_popup():
@@ -440,4 +444,33 @@ def build(
                 ),
             ),
         ],
+    )
+
+
+def call():
+    # Initial state of the dashboard
+    region_options = ["NSW", "VIC", "TAS", "SA", "QLD"]
+    initial_regions = region_options
+    # Sets initial start date to be yesterday, will require database updating daily
+    initial_start_date_obj = datetime.now(
+        pytz.timezone("Australia/Brisbane")
+    ).date() - timedelta(days=7)
+    # initial_start_date_obj = date(2022, 1, 1)
+    initial_start_date_str = initial_start_date_obj.strftime("%Y/%m/%d %H:%M:%S")
+    initial_duration = "Weekly"
+    duid_station_options = get_duid_station_options(
+        initial_start_date_str, initial_regions, initial_duration
+    )
+    duid_options = sorted(duid_station_options["DUID"])  # [1:]
+    station_options = sorted(list(set(duid_station_options["STATION NAME"])))
+    tech_type_options = sorted(unit_types(region_options, "Generator")["UNIT TYPE"])
+
+    return build(
+        region_options,
+        initial_regions,
+        initial_start_date_obj,
+        initial_duration,
+        duid_options,
+        station_options,
+        tech_type_options,
     )
