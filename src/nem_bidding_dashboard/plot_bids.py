@@ -59,6 +59,34 @@ app.layout = layout_template.build(
 
 
 @app.callback(
+    dash.dependencies.Output("start-date-picker", "date"),
+    [
+        dash.dependencies.Input("increase-date-button", "n_clicks"),
+        dash.dependencies.Input("decrease_date-button", "n_clicks"),
+        dash.dependencies.Input("duration-selector", "value"),
+    ],
+    [dash.dependencies.State("start-date-picker", "date")],
+)
+def update_date(increase_clicks, decrease_clicks, duration, current_date):
+
+    if duration == "Daily":
+        days = 1
+    else:
+        days = 7
+
+    if increase_clicks:
+        return (
+            datetime.strptime(current_date, "%Y-%m-%d") + timedelta(days=days)
+        ).strftime("%Y-%m-%d")
+    elif decrease_clicks:
+        return (
+            datetime.strptime(current_date, "%Y-%m-%d") - timedelta(days=days)
+        ).strftime("%Y-%m-%d")
+    else:
+        return current_date
+
+
+@app.callback(
     Output("duid-dropdown", "options"),
     Output("station-dropdown", "options"),
     Input("tech-type-dropdown", "value"),
