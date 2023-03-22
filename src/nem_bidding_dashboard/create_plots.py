@@ -10,10 +10,11 @@ import defaults
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import postgres_helpers
 from defaults import bid_order
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
-from query_supabase_db import (
+from query_postgres_db import (
     aggregate_bids,
     aggregated_dispatch_data,
     aggregated_dispatch_data_by_duids,
@@ -42,6 +43,15 @@ DISPATCH_COLUMNS = {
 }
 
 
+con_string = postgres_helpers.build_connection_string(
+    hostname="localhost",
+    dbname="bidding_dashboard_db",
+    username="bidding_dashboard_maintainer",
+    password="1234abcd",
+    port=5433,
+)
+
+
 def get_duid_station_options(
     start_time: str,
     regions: List[str],
@@ -68,12 +78,12 @@ def get_duid_station_options(
         end_time = (start_time_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")
 
         return stations_and_duids_in_regions_and_time_window(
-            start_time, end_time, regions, dispatch_type, tech_types
+            con_string, start_time, end_time, regions, dispatch_type, tech_types
         )
     if duration == "Weekly":
         end_time = (start_time_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
         return stations_and_duids_in_regions_and_time_window(
-            start_time, end_time, regions, dispatch_type, tech_types
+            con_string, start_time, end_time, regions, dispatch_type, tech_types
         )
 
 
@@ -220,7 +230,9 @@ def plot_duid_bids(
     TODO: raw_adjusted not implemented in query_supabase.duid_bids yet, bids
         can be plotted as raw or adjusted using 'raw_adjusted' argument
     """
-    stacked_bids = duid_bids(start_time, end_time, duids, resolution, raw_adjusted)
+    stacked_bids = duid_bids(
+        con_string, start_time, end_time, duids, resolution, raw_adjusted
+    )
     if stacked_bids.empty:
         return None
     stacked_bids = stacked_bids.groupby(
@@ -292,7 +304,12 @@ def add_duid_dispatch_data(
     """
     for metric in dispatch_metrics:
         dispatch_data = aggregated_dispatch_data_by_duids(
-            DISPATCH_COLUMNS[metric]["name"], start_time, end_time, duids, resolution
+            con_string,
+            DISPATCH_COLUMNS[metric]["name"],
+            start_time,
+            end_time,
+            duids,
+            resolution,
         )
         dispatch_data = dispatch_data.sort_values(by=["INTERVAL_DATETIME"])
         fig.add_trace(
@@ -353,6 +370,7 @@ def plot_aggregate_bids(
         tech_types = []
 
     stacked_bids = aggregate_bids(
+        con_string,
         start_time,
         end_time,
         regions,
@@ -408,6 +426,7 @@ def plot_aggregate_bids(
 
     if show_demand:
         fig = add_demand_trace(fig, start_time, end_time, regions)
+
     if dispatch_metrics:
         fig = add_region_dispatch_data(
             fig,
@@ -444,7 +463,7 @@ def add_demand_trace(
         Updated plotly express figure consisting of the electricity demand curve
         plotted on top of the original figure
     """
-    demand = region_demand(start_time, end_time, regions)
+    demand = region_demand(con_string, start_time, end_time, regions)
     demand = demand.sort_values("SETTLEMENTDATE")
     fig.add_trace(
         go.Scatter(
@@ -454,7 +473,8 @@ def add_demand_trace(
             name="Demand",
             legendgroup="dispatch_traces",
             legendgrouptitle_text="Dispatch Data",
-        )
+        ),
+        # secondary_y=True
     )
     fig.update_traces(
         hovertemplate="Demand: %{y:.0f} MW<extra></extra>", selector={"name": "Demand"}
@@ -493,6 +513,7 @@ def add_region_dispatch_data(
         tech_types = []
     for metric in dispatch_metrics:
         dispatch_data = aggregated_dispatch_data(
+            con_string,
             DISPATCH_COLUMNS[metric]["name"],
             start_time,
             end_time,
@@ -552,6 +573,7 @@ def add_price_subplot(
         shared_xaxes=True,
         row_heights=[0.66, 0.34],
         vertical_spacing=0.0,
+        specs=[[{}], [{"secondary_y": True}]],
     )
 
     bid_traces = []
@@ -568,11 +590,29 @@ def add_price_subplot(
     price_trace["name"] = "Price"
     plot.add_trace(price_trace, row=2, col=1)
 
+    if True:
+        demand = region_demand(con_string, start_time, end_time, regions)
+        demand = demand.sort_values("SETTLEMENTDATE")
+        plot.add_trace(
+            go.Scatter(
+                x=demand["SETTLEMENTDATE"],
+                y=demand["TOTALDEMAND"],
+                marker=dict(color="blue", size=4),
+                name="Demand p",
+                legendgroup="dispatch_traces",
+                legendgrouptitle_text="Dispatch Data",
+            ),
+            row=2,
+            col=1,
+            secondary_y=True,
+        )
+
     plot.update_layout(
         {"barmode": "stack"},
     )
     plot.update_yaxes(title_text="Volume (MW)", row=1, col=1)
     plot.update_yaxes(title_text="Average electricity<br>price ($/MW/h)", row=2, col=1)
+    plot.update_yaxes(title_text="Volume (MW)", row=2, col=1, secondary_y=True)
     plot.update_layout(coloraxis_colorbar_title="Bid Price ($/MW/h)")
     if resolution == "hourly":
         plot.update_xaxes(
@@ -610,7 +650,7 @@ def plot_price(
         resolution: Either 'hourly' or '5-min'
 
     """
-    prices = aggregated_vwap(start_time, end_time, regions)
+    prices = aggregated_vwap(con_string, start_time, end_time, regions)
     prices = prices.sort_values(by="SETTLEMENTDATE")
 
     price_graph = px.line(

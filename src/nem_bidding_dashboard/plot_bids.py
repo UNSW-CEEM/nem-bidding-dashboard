@@ -62,23 +62,25 @@ app.layout = layout_template.build(
     dash.dependencies.Output("start-date-picker", "date"),
     [
         dash.dependencies.Input("increase-date-button", "n_clicks"),
-        dash.dependencies.Input("decrease_date-button", "n_clicks"),
+        dash.dependencies.Input("decrease-date-button", "n_clicks"),
         dash.dependencies.Input("duration-selector", "value"),
     ],
     [dash.dependencies.State("start-date-picker", "date")],
 )
 def update_date(increase_clicks, decrease_clicks, duration, current_date):
+    ctx = dash.callback_context
+    triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
 
     if duration == "Daily":
         days = 1
     else:
         days = 7
 
-    if increase_clicks:
+    if triggered_input == "increase-date-button":
         return (
             datetime.strptime(current_date, "%Y-%m-%d") + timedelta(days=days)
         ).strftime("%Y-%m-%d")
-    elif decrease_clicks:
+    elif triggered_input == "decrease-date-button":
         return (
             datetime.strptime(current_date, "%Y-%m-%d") - timedelta(days=days)
         ).strftime("%Y-%m-%d")
@@ -96,6 +98,8 @@ def update_date(increase_clicks, decrease_clicks, duration, current_date):
     Input("start-minute-picker", "value"),
     Input("duration-selector", "value"),
     Input("region-checklist", "value"),
+    State("duid-dropdown", "options"),
+    State("station-dropdown", "options"),
 )
 def update_duid_station_options(
     tech_types: List[str],
@@ -105,6 +109,8 @@ def update_duid_station_options(
     minute: str,
     duration: str,
     regions: List[str],
+    initial_duid_options: List[str],
+    initial_station_options: List[str],
 ) -> Tuple[List[str], str]:
     """
     Update the possible duid and station options based on the time period,
@@ -124,6 +130,7 @@ def update_duid_station_options(
         duid options: List of possible duids for the given filters
         station options: List of possible stations for the given filters
     """
+    print("update_duid_station_options")
     if start_date is None:
         return dash.no_update, dash.no_update
     start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
@@ -132,7 +139,13 @@ def update_duid_station_options(
     duid_options = get_duid_station_options(
         start_date, regions, duration, tech_types, dispatch_type
     )
-    return sorted(duid_options["DUID"]), sorted(list(set(duid_options["STATION NAME"])))
+    new_duid_options = sorted(duid_options["DUID"])
+    if new_duid_options == initial_duid_options:
+        new_duid_options = dash.no_update
+    new_station_options = sorted(list(set(duid_options["STATION NAME"])))
+    if new_station_options == initial_station_options:
+        new_station_options = dash.no_update
+    return new_duid_options, new_station_options
 
 
 @app.callback(
@@ -156,6 +169,7 @@ def update_unit_type_options(
         unit type options: List of possible duids for the given filters
         unit type selected: List of possible stations for the given filters
     """
+    print("unit_type_options")
     unit_type_options = unit_types(regions, dispatch_type)
     return sorted(unit_type_options["UNIT TYPE"]), None
 
@@ -207,7 +221,9 @@ def update_duids_from_station(
             the 'duid-dropdown' was the component that triggered the callback,
             this value is empty.
     """
+    print("update_duids_from_station")
     trigger_id = dash.callback_context.triggered_id
+    print(trigger_id)
     if not trigger_id:
         return dash.no_update, dash.no_update
 
@@ -296,6 +312,15 @@ def update_main_plot(
         error message: message shown if graph does not have the required
             data to be displayed
     """
+    print("update_main_plot")
+    ctx = dash.callback_context
+    triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
+    print(triggered_input)
+
+    # if triggered_input == 'duid-dropdown':
+    #     previous_duids = ctx.states['duid-dropdown.value']
+    #     if previous_duids == duids:
+    #         raise PreventUpdate
 
     if start_date is None:
         return (

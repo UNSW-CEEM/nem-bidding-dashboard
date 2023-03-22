@@ -165,7 +165,7 @@ def get_settings_content(
                 html.Div(
                     [
                         html.Button(
-                            "\U00002190", id="decrease_date-button", n_clicks=0
+                            "\U00002190", id="decrease-date-button", n_clicks=0
                         ),
                         html.Button(
                             "\U00002192", id="increase-date-button", n_clicks=0
