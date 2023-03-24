@@ -1,7 +1,7 @@
-import defaults
+from nem_bidding_dashboard import defaults
 
 if defaults.data_source == "postgres":
-    import query_postgres_db
+    from nem_bidding_dashboard import query_postgres_db
 
     def aggregate_bids(
         start_time, end_time, regions, dispatch_type, tech_types, resolution, adjusted
@@ -71,8 +71,11 @@ if defaults.data_source == "postgres":
             tech_types,
         )
 
+    def unit_types(regions, dispatch_type):
+        return query_postgres_db.unit_types(defaults.con_string, regions, dispatch_type)
+
 elif defaults.data_source == "supabase":
-    from query_supabase_db import (
+    from nem_bidding_dashboard.query_supabase_db import (
         aggregate_bids,
         aggregated_dispatch_data,
         aggregated_dispatch_data_by_duids,
@@ -80,6 +83,7 @@ elif defaults.data_source == "supabase":
         duid_bids,
         region_demand,
         stations_and_duids_in_regions_and_time_window,
+        unit_types,
     )
 
     aggregate_bids
@@ -89,6 +93,7 @@ elif defaults.data_source == "supabase":
     duid_bids
     region_demand
     stations_and_duids_in_regions_and_time_window
+    unit_types
 
 else:
     raise ValueError(

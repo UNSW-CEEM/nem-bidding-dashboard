@@ -6,15 +6,13 @@ used in the app callbacks in plot_bids.py.
 from datetime import datetime, timedelta
 from typing import List
 
-import defaults
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from defaults import bid_order
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
 
-from nem_bidding_dashboard import query_functions_for_dashboard
+from nem_bidding_dashboard import defaults, query_functions_for_dashboard
 
 DISPATCH_COLUMNS = {
     "Availability": {"name": "AVAILABILITY", "color": "red"},
@@ -367,14 +365,16 @@ def plot_aggregate_bids(
         return None
 
     color_map = {}
-    for i in range(len(bid_order)):
-        color_map[bid_order[i]] = defaults.discrete_color_scale[color_scheme][i]
+    for i in range(len(defaults.bid_order)):
+        color_map[defaults.bid_order[i]] = defaults.discrete_color_scale[color_scheme][
+            i
+        ]
 
     fig = px.bar(
         stacked_bids,
         x="INTERVAL_DATETIME",
         y="BIDVOLUME",
-        category_orders={"BIN_NAME": bid_order},
+        category_orders={"BIN_NAME": defaults.bid_order},
         color="BIN_NAME",
         color_discrete_map=color_map,
         labels={"BIN_NAME": "Bid Price ($/MW/h)", "PRICE": "Average Electricity Price"},

@@ -11,9 +11,13 @@ import dash_bootstrap_components as dbc
 import dash_loading_spinners as dls
 import plotly.graph_objects as go
 import pytz
-from create_plots import DISPATCH_COLUMNS, get_duid_station_options
 from dash import dcc, html
-from query_supabase_db import unit_types
+
+from nem_bidding_dashboard.create_plots import (
+    DISPATCH_COLUMNS,
+    get_duid_station_options,
+)
+from nem_bidding_dashboard.query_functions_for_dashboard import unit_types
 
 
 def build_info_popup():

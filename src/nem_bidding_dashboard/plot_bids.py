@@ -7,9 +7,12 @@ from datetime import datetime, timedelta
 from typing import List, Tuple
 
 import dash
-import layout_template
 import plotly.graph_objects as go
-from create_plots import (
+from dash import Dash, Input, Output, State
+from plotly.graph_objects import Figure
+
+from nem_bidding_dashboard import layout_template
+from nem_bidding_dashboard.create_plots import (
     DISPATCH_COLUMNS,
     add_demand_trace,
     add_duid_dispatch_data,
@@ -19,9 +22,7 @@ from create_plots import (
     plot_bids,
     update_colorbar_length,
 )
-from dash import Dash, Input, Output, State
-from plotly.graph_objects import Figure
-from query_supabase_db import unit_types
+from nem_bidding_dashboard.query_functions_for_dashboard import unit_types
 
 app = Dash(__name__)
 app.title = "NEM Bidding Dashboard"
