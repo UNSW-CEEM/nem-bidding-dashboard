@@ -270,13 +270,13 @@ if __name__ == "__main__":
         password="1234abcd",
         port=5433,
     )
-    # for m in [1]:
-    #     start = "2022/{}/01 00:00:00".format((str(m)).zfill(2))
-    #     end = "2022/{}/01 00:00:00".format((str(m + 1)).zfill(2))
-    #     print(start)
-    #     print(end)
-    #     duid_info(con_string, raw_data_cache)
-    #     bid_data(con_string, start, end, raw_data_cache)
-    #     region_data(con_string, start, end, raw_data_cache)
-    #     unit_dispatch(con_string, start, end, raw_data_cache)
+    for m in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+        start = "2022/{}/01 00:00:00".format((str(m)).zfill(2))
+        end = "2022/{}/01 00:00:00".format((str(m + 1)).zfill(2))
+        print(start)
+        print(end)
+        duid_info(con_string, raw_data_cache)
+        bid_data(con_string, raw_data_cache, start, end)
+        region_data(con_string, raw_data_cache, start, end)
+        unit_dispatch(con_string, raw_data_cache, start, end)
     price_bin_edges_table(con_string)

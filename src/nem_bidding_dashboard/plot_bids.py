@@ -267,6 +267,7 @@ def update_duids_from_station(
     Input("tech-type-dropdown", "value"),
     Input("dispatch-type-selector", "value"),
     Input("dispatch-checklist", "value"),
+    Input("colour-dropdown", "value"),
     State("graph", "figure"),
 )
 def update_main_plot(
@@ -281,6 +282,7 @@ def update_main_plot(
     tech_types: List[str],
     dispatch_type: str,
     dispatch_metrics: List[str],
+    color_scheme: str,
     fig: Figure,
 ) -> Tuple[Figure, str]:
     """
@@ -303,6 +305,7 @@ def update_main_plot(
         tech_types: List of unit types to show bidding data for
         dispatch_type: Either 'Generator' or 'Load'
         dispatch_metrics: List of dispatch metrics to plot on main graph
+        color_scheme: Name of the color scheme to use.
         fig: The current graph figure. If main filters remain the same, this
             figure is updated by adding or hiding traces, reducing loading time
     Returns:
@@ -355,8 +358,33 @@ def update_main_plot(
                 fig = add_demand_trace(fig, start_date, end_date, regions)
             else:
                 fig.update_traces(visible=True, selector={"name": "Demand"})
-        if ("Price" in trace_names and "Price" in price_demand_checkbox) or (
-            "Price" not in trace_names and "Price" not in price_demand_checkbox
+        if (
+            "Demand on secondary plot" not in price_demand_checkbox
+            and "Demand on secondary plot" in trace_names
+        ):
+            fig.update_traces(
+                visible=False, selector={"name": "Demand on secondary plot"}
+            )
+            update_colorbar_length(fig)
+            return fig, ""
+        if (
+            "Demand on secondary plot" in price_demand_checkbox
+            and "Price" in trace_names
+            and "Demand on secondary plot" in trace_names
+        ):
+            fig.update_traces(
+                visible=True, selector={"name": "Demand on secondary plot"}
+            )
+        if (
+            "Price" in trace_names
+            and "Price" in price_demand_checkbox
+            and "Demand on secondary plot" in trace_names
+            and "Demand on secondary plot" in price_demand_checkbox
+        ) or (
+            "Price" not in trace_names
+            and "Price" not in price_demand_checkbox
+            and "Demand on secondary plot" not in trace_names
+            and "Demand on secondary plot" not in price_demand_checkbox
         ):
             update_colorbar_length(fig)
             return fig, ""
@@ -389,8 +417,10 @@ def update_main_plot(
         return fig, ""
 
     show_demand = "Demand" in price_demand_checkbox
+    show_demand_lower = "Demand on secondary plot" in price_demand_checkbox
     show_price = "Price" in price_demand_checkbox
     raw_adjusted = "raw" if raw_adjusted == "Raw Bids" else "adjusted"
+    print("plot_bids")
     fig = plot_bids(
         start_date,
         end_date,
@@ -398,11 +428,13 @@ def update_main_plot(
         regions,
         duids,
         show_demand,
+        show_demand_lower,
         show_price,
         raw_adjusted,
         tech_types,
         dispatch_type,
         dispatch_metrics,
+        color_scheme,
     )
     if not fig:
         return dash.no_update, "No data found using current filters"

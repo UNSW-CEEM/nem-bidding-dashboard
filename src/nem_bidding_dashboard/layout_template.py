@@ -316,21 +316,42 @@ def get_settings_content(
             ],
         ),
         html.Div(
-            id="show-demand-div",
-            className="tooltip",
-            children=[
-                html.Pre(
-                    "Demand: summed across selected regions. \n"
-                    "Price: volume weighted average across selected regions.",
-                    className="tooltiptext",
+            [
+                html.Div(
+                    id="show-demand-div",
+                    className="tooltip",
+                    children=[
+                        html.Pre(
+                            "Demand: summed across selected regions. \n"
+                            "Demand on secondary plot: same as demand but plotted on the lower graph. \n"
+                            "Price: volume weighted average across selected regions.",
+                            className="tooltiptext",
+                        ),
+                        html.H6("Show other Metrics", className="selector-title"),
+                        dcc.Checklist(
+                            id="price-demand-checkbox",
+                            options=["Demand", "Demand on secondary plot", "Price"],
+                            value=["Demand", "Price"],
+                        ),
+                    ],
                 ),
-                html.H6("Show other Metrics", className="selector-title"),
-                dcc.Checklist(
-                    id="price-demand-checkbox",
-                    options=["Demand", "Price"],
-                    value=["Demand", "Price"],
+                html.Div(
+                    id="choose-color-scheme-div",
+                    className="tooltip",
+                    children=[
+                        html.Pre(
+                            "Choose the colour scheme.",
+                            className="tooltiptext",
+                        ),
+                        html.H6("Choose colour scheme", className="selector-title"),
+                        dcc.Dropdown(
+                            id="colour-dropdown",
+                            options=["original", "divergent"],
+                            value="original",
+                        ),
+                    ],
                 ),
-            ],
+            ]
         ),
     ]
     return settings_content

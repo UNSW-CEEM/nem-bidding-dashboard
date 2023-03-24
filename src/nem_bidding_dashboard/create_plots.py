@@ -10,19 +10,11 @@ import defaults
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import postgres_helpers
 from defaults import bid_order
 from plotly.graph_objects import Figure
 from plotly.subplots import make_subplots
-from query_postgres_db import (
-    aggregate_bids,
-    aggregated_dispatch_data,
-    aggregated_dispatch_data_by_duids,
-    aggregated_vwap,
-    duid_bids,
-    region_demand,
-    stations_and_duids_in_regions_and_time_window,
-)
+
+from nem_bidding_dashboard import query_functions_for_dashboard
 
 DISPATCH_COLUMNS = {
     "Availability": {"name": "AVAILABILITY", "color": "red"},
@@ -41,15 +33,6 @@ DISPATCH_COLUMNS = {
     "PASA Availability": {"name": "PASAAVAILABILITY", "color": "hotpink"},
     "Max Availability": {"name": "MAXAVAIL", "color": "brown"},
 }
-
-
-con_string = postgres_helpers.build_connection_string(
-    hostname="localhost",
-    dbname="bidding_dashboard_db",
-    username="bidding_dashboard_maintainer",
-    password="1234abcd",
-    port=5433,
-)
 
 
 def get_duid_station_options(
@@ -77,13 +60,18 @@ def get_duid_station_options(
     if duration == "Daily":
         end_time = (start_time_obj + timedelta(days=1)).strftime("%Y/%m/%d %H:%M:%S")
 
-        return stations_and_duids_in_regions_and_time_window(
-            con_string, start_time, end_time, regions, dispatch_type, tech_types
+        return (
+            query_functions_for_dashboard.stations_and_duids_in_regions_and_time_window(
+                start_time, end_time, regions, dispatch_type, tech_types
+            )
         )
     if duration == "Weekly":
         end_time = (start_time_obj + timedelta(days=7)).strftime("%Y/%m/%d %H:%M:%S")
-        return stations_and_duids_in_regions_and_time_window(
-            con_string, start_time, end_time, regions, dispatch_type, tech_types
+
+        return (
+            query_functions_for_dashboard.stations_and_duids_in_regions_and_time_window(
+                start_time, end_time, regions, dispatch_type, tech_types
+            )
         )
 
 
@@ -117,11 +105,13 @@ def plot_bids(
     regions: List[str],
     duids: List[str],
     show_demand: bool,
+    show_demand_lower: bool,
     show_price: bool,
     raw_adjusted: str,
     tech_types: List[str],
     dispatch_type: bool,
     dispatch_metrics: List[str],
+    color_scheme: str,
 ) -> Figure:
     """
     Plots volume bids over time based on the given parameters. See
@@ -137,6 +127,8 @@ def plot_bids(
             timeframe and regions will be plotted
         show_demand: True if electricity demand is to be plotted over figure,
             otherwise False
+        show_demand_lower: True if electricity demand is to be plotted over lower figure,
+            otherwise False
         show_price: Bool. If True, the figure returned will consist of 2
             subplots, 1 showing bids and 1 showing average electricity prices
             over the same timeframe. If False, only bids will be plotted.
@@ -145,6 +137,7 @@ def plot_bids(
         tech_types: List of unit types to show bidding data for
         dispatch_type: Either 'Generator' or 'Load'
         dispatch_metrics: List of dispatch metrics to plot on main graph
+        color_scheme: Name of the color scheme to use
     Returns:
             Plotly express figure if show_price is False. Plotly go subplot if
             show_price is True.
@@ -164,33 +157,23 @@ def plot_bids(
             tech_types,
             dispatch_type,
             dispatch_metrics,
+            color_scheme,
         )
 
     if not fig:
         return None
 
     if show_price:
-        fig = add_price_subplot(fig, start_time, end_time, regions, resolution)
+        fig = add_price_subplot(
+            fig, start_time, end_time, regions, resolution, show_demand_lower
+        )
 
     if not duids:
         fig.update_layout(hovermode="x unified")
         fig.update_traces(xaxis="x1", row=1)
     else:
-
-        def price_to_frac(p):
-            return (p - defaults.market_price_floor) / (
-                defaults.market_price_cap - defaults.market_price_floor
-            )
-
         fig.update_layout(
-            coloraxis_colorscale=[
-                (price_to_frac(defaults.market_price_floor), "blue"),
-                (price_to_frac(0), "purple"),
-                (price_to_frac(100), "red"),
-                (price_to_frac(500), "orange"),
-                (price_to_frac(1000), "yellow"),
-                (price_to_frac(defaults.market_price_cap), "green"),
-            ],
+            coloraxis_colorscale=defaults.continuous_color_scales[color_scheme],
             coloraxis_cmin=defaults.market_price_floor,
             coloraxis_cmax=defaults.market_price_cap,
         )
@@ -230,8 +213,8 @@ def plot_duid_bids(
     TODO: raw_adjusted not implemented in query_supabase.duid_bids yet, bids
         can be plotted as raw or adjusted using 'raw_adjusted' argument
     """
-    stacked_bids = duid_bids(
-        con_string, start_time, end_time, duids, resolution, raw_adjusted
+    stacked_bids = query_functions_for_dashboard.duid_bids(
+        start_time, end_time, duids, resolution, raw_adjusted
     )
     if stacked_bids.empty:
         return None
@@ -303,8 +286,7 @@ def add_duid_dispatch_data(
             plotted over it
     """
     for metric in dispatch_metrics:
-        dispatch_data = aggregated_dispatch_data_by_duids(
-            con_string,
+        dispatch_data = query_functions_for_dashboard.aggregated_dispatch_data_by_duids(
             DISPATCH_COLUMNS[metric]["name"],
             start_time,
             end_time,
@@ -339,6 +321,7 @@ def plot_aggregate_bids(
     tech_types: List[str],
     dispatch_type: str,
     dispatch_metrics: List[str],
+    color_scheme: str,
 ) -> Figure:
     """
     Plots a stacked bar chart showing the aggregate bids for the specified
@@ -363,14 +346,14 @@ def plot_aggregate_bids(
         tech_types: List of unit types to show bidding data for
         dispatch_type: Either 'Generator' or 'Load'
         dispatch_metrics: List of dispatch metrics to plot over graph
+        color_scheme: name of the color scheme to use.
     Returns:
         Plotly express figure (stacked bar chart)
     """
     if tech_types is None:
         tech_types = []
 
-    stacked_bids = aggregate_bids(
-        con_string,
+    stacked_bids = query_functions_for_dashboard.aggregate_bids(
         start_time,
         end_time,
         regions,
@@ -384,21 +367,8 @@ def plot_aggregate_bids(
         return None
 
     color_map = {}
-    color_sequence = [
-        "lightsalmon",
-        "yellow",
-        "red",
-        "orange",
-        "#00cc96",
-        "#636efa",
-        "purple",
-        "cyan",
-        "fuchsia",
-        "palegreen",
-        "lightblue",
-    ]
     for i in range(len(bid_order)):
-        color_map[bid_order[i]] = color_sequence[i]
+        color_map[bid_order[i]] = defaults.discrete_color_scale[color_scheme][i]
 
     fig = px.bar(
         stacked_bids,
@@ -463,7 +433,7 @@ def add_demand_trace(
         Updated plotly express figure consisting of the electricity demand curve
         plotted on top of the original figure
     """
-    demand = region_demand(con_string, start_time, end_time, regions)
+    demand = query_functions_for_dashboard.region_demand(start_time, end_time, regions)
     demand = demand.sort_values("SETTLEMENTDATE")
     fig.add_trace(
         go.Scatter(
@@ -474,7 +444,6 @@ def add_demand_trace(
             legendgroup="dispatch_traces",
             legendgrouptitle_text="Dispatch Data",
         ),
-        # secondary_y=True
     )
     fig.update_traces(
         hovertemplate="Demand: %{y:.0f} MW<extra></extra>", selector={"name": "Demand"}
@@ -512,8 +481,7 @@ def add_region_dispatch_data(
     if tech_types is None:
         tech_types = []
     for metric in dispatch_metrics:
-        dispatch_data = aggregated_dispatch_data(
-            con_string,
+        dispatch_data = query_functions_for_dashboard.aggregated_dispatch_data(
             DISPATCH_COLUMNS[metric]["name"],
             start_time,
             end_time,
@@ -541,7 +509,12 @@ def add_region_dispatch_data(
 
 
 def add_price_subplot(
-    fig: Figure, start_time: str, end_time: str, regions: List[str], resolution: str
+    fig: Figure,
+    start_time: str,
+    end_time: str,
+    regions: List[str],
+    resolution: str,
+    show_demand_lower: bool,
 ) -> Figure:
     """
     Takes a plotly express figure plotting bids and puts it into a plotly go
@@ -559,6 +532,7 @@ def add_price_subplot(
         end_time: Ending datetime, formatted identical to start_time
         regions: list of specified regions
         resolution: Either 'hourly' or '5-min'
+        show_demand_lower: True if demand is to be plotted as well otherwise False
     Returns:
         plotly go subplot containing original bid plot on top and electricity
         price below
@@ -590,22 +564,8 @@ def add_price_subplot(
     price_trace["name"] = "Price"
     plot.add_trace(price_trace, row=2, col=1)
 
-    if True:
-        demand = region_demand(con_string, start_time, end_time, regions)
-        demand = demand.sort_values("SETTLEMENTDATE")
-        plot.add_trace(
-            go.Scatter(
-                x=demand["SETTLEMENTDATE"],
-                y=demand["TOTALDEMAND"],
-                marker=dict(color="blue", size=4),
-                name="Demand p",
-                legendgroup="dispatch_traces",
-                legendgrouptitle_text="Dispatch Data",
-            ),
-            row=2,
-            col=1,
-            secondary_y=True,
-        )
+    if show_demand_lower:
+        add_demand_trace_to_lower_plot(plot, start_time, end_time, regions)
 
     plot.update_layout(
         {"barmode": "stack"},
@@ -631,6 +591,24 @@ def add_price_subplot(
     return plot
 
 
+def add_demand_trace_to_lower_plot(plot, start_time, end_time, regions):
+    demand = query_functions_for_dashboard.region_demand(start_time, end_time, regions)
+    demand = demand.sort_values("SETTLEMENTDATE")
+    plot.add_trace(
+        go.Scatter(
+            x=demand["SETTLEMENTDATE"],
+            y=demand["TOTALDEMAND"],
+            marker=dict(color="blue", size=4),
+            name="Demand on secondary plot",
+            legendgroup="dispatch_traces",
+            legendgrouptitle_text="Dispatch Data",
+        ),
+        row=2,
+        col=1,
+        secondary_y=True,
+    )
+
+
 def plot_price(
     start_time: str, end_time: str, regions: List[str], resolution: str
 ) -> Figure:
@@ -650,7 +628,9 @@ def plot_price(
         resolution: Either 'hourly' or '5-min'
 
     """
-    prices = aggregated_vwap(con_string, start_time, end_time, regions)
+    prices = query_functions_for_dashboard.aggregated_vwap(
+        start_time, end_time, regions
+    )
     prices = prices.sort_values(by="SETTLEMENTDATE")
 
     price_graph = px.line(
