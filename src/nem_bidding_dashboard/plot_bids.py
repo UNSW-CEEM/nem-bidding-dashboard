@@ -130,7 +130,6 @@ def update_duid_station_options(
         duid options: List of possible duids for the given filters
         station options: List of possible stations for the given filters
     """
-    print("update_duid_station_options")
     if start_date is None:
         return dash.no_update, dash.no_update
     start_date = f'{start_date.replace("-", "/")} {hour}:{minute}:00'
@@ -169,7 +168,6 @@ def update_unit_type_options(
         unit type options: List of possible duids for the given filters
         unit type selected: List of possible stations for the given filters
     """
-    print("unit_type_options")
     unit_type_options = unit_types(regions, dispatch_type)
     return sorted(unit_type_options["UNIT TYPE"]), None
 
@@ -221,9 +219,7 @@ def update_duids_from_station(
             the 'duid-dropdown' was the component that triggered the callback,
             this value is empty.
     """
-    print("update_duids_from_station")
     trigger_id = dash.callback_context.triggered_id
-    print(trigger_id)
     if not trigger_id:
         return dash.no_update, dash.no_update
 
@@ -315,15 +311,6 @@ def update_main_plot(
         error message: message shown if graph does not have the required
             data to be displayed
     """
-    print("update_main_plot")
-    ctx = dash.callback_context
-    triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
-    print(triggered_input)
-
-    # if triggered_input == 'duid-dropdown':
-    #     previous_duids = ctx.states['duid-dropdown.value']
-    #     if previous_duids == duids:
-    #         raise PreventUpdate
 
     if start_date is None:
         return (
@@ -420,7 +407,6 @@ def update_main_plot(
     show_demand_lower = "Demand on secondary plot" in price_demand_checkbox
     show_price = "Price" in price_demand_checkbox
     raw_adjusted = "raw" if raw_adjusted == "Raw Bids" else "adjusted"
-    print("plot_bids")
     fig = plot_bids(
         start_date,
         end_date,

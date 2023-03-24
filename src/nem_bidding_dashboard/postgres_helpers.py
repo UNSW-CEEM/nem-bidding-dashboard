@@ -216,11 +216,13 @@ def run_query(connection_string, query, autocommit=False):
     ... port=5432,
     ... timeout_seconds=6000)
 
-    >>> run_query(con_string, "DROP INDEX unit_dispatch_hour_index;")
+    # >>> run_query(con_string, "DROP INDEX unit_dispatch_time_hour_duid_index;")
+    #
+    # >>> run_query(con_string, "DROP INDEX unit_dispatch_time_duid_index;")
 
-    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_hour_duid_index ON bidding_data (interval_datetime DESC, onhour, duid);")
+    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_hour_duid_index ON unit_dispatch (interval_datetime DESC, onhour, duid);")
 
-    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_duid_index ON bidding_data (interval_datetime DESC, duid);")
+    >>> run_query(con_string, "CREATE INDEX unit_dispatch_time_duid_index ON unit_dispatch (interval_datetime DESC, duid);")
 
 
     Args:

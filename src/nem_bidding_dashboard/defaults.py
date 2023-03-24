@@ -17,7 +17,7 @@ bid_order = [
     "[10000, 16500)",
 ]
 
-data_source = "local"
+data_source = "supabase"
 
 con_string = postgres_helpers.build_connection_string(
     hostname="localhost",
@@ -40,7 +40,21 @@ continuous_color_scales = {
         (price_to_frac(500), "orange"),
         (price_to_frac(1000), "yellow"),
         (price_to_frac(market_price_cap), "green"),
-    ]
+    ],
+    "divergent": [
+        (price_to_frac(market_price_floor), "#313695"),
+        (price_to_frac(-100), "#4575b4"),
+        (price_to_frac(0), "#FFFFFF"),
+        (price_to_frac(50), "#ffffbf"),
+        (price_to_frac(100), "#fee090"),
+        (price_to_frac(200), "#fdae61"),
+        (price_to_frac(300), "#f46d43"),
+        (price_to_frac(500), "#d73027"),
+        (price_to_frac(1000), "#a50026"),
+        (price_to_frac(5000), "#941a30"),
+        (price_to_frac(10000), "#822b38"),
+        (price_to_frac(market_price_cap), "#822b38"),
+    ],
 }
 
 discrete_color_scale = {
@@ -56,5 +70,18 @@ discrete_color_scale = {
         "fuchsia",
         "palegreen",
         "lightblue",
-    ]
+    ],
+    "divergent": [
+        "#313695",
+        "#4575b4",
+        "#FFFFFF",
+        "#ffffbf",
+        "#fee090",
+        "#fdae61",
+        "#f46d43",
+        "#d73027",
+        "#a50026",
+        "#941a30",
+        "#822b38",
+    ],
 }

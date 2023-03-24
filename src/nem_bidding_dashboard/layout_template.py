@@ -56,7 +56,7 @@ def build_info_popup():
                     ),
                     dcc.Markdown(
                         """Development by [Nicholas Gorman](https://www.linkedin.com/in/nicholas-gorman-32433a20b/)
-                        and Patrick Chambers"""
+                        and [Patrick Chambers](https://www.linkedin.com/in/patrick-chambers-b17247195/)"""
                     ),
                 ]
             ),
@@ -347,7 +347,7 @@ def get_settings_content(
                         dcc.Dropdown(
                             id="colour-dropdown",
                             options=["original", "divergent"],
-                            value="original",
+                            value="divergent",
                         ),
                     ],
                 ),

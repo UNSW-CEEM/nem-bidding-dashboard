@@ -1,6 +1,6 @@
 import defaults
 
-if defaults.data_source == "local":
+if defaults.data_source == "postgres":
     import query_postgres_db
 
     def aggregate_bids(
@@ -71,7 +71,7 @@ if defaults.data_source == "local":
             tech_types,
         )
 
-elif defaults.data_source == "remote":
+elif defaults.data_source == "supabase":
     from query_supabase_db import (
         aggregate_bids,
         aggregated_dispatch_data,

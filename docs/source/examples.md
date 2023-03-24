@@ -181,8 +181,27 @@ print(agg_bids)
 
 ### Run web app locally
 
-When the functionality to run the web app locally with a local postgres database is complete an example will be added
-here.
+The web app functionality can run locally once a local postgres database has been setup and populated with data.
+
+```python
+
+from nem_bidding_dashboard import postgres_helpers, defaults
+
+# Override the default dashboard configurations
+defaults.con_string = postgres_helpers.build_connection_string(
+    hostname='localhost',
+    dbname='bidding_dashboard_db',
+    username='bidding_dashboard_maintainer',
+    password='1234abcd',
+    port=5433)
+
+defaults.data_source = 'postgres'
+
+from nem_bidding_dashboard import plot_bids
+
+#Launch the dashboard. You may need to click the url in the terminal printout.
+plot_bids.application.run(debug=True, port=8080)
+```
 
 ## Using the file cache backend
 
