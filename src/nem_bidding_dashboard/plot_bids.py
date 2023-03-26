@@ -222,6 +222,16 @@ def update_duids_from_station(
         return None, None
 
 
+def check_trace_visible(fig, name):
+    for trace in fig["data"]:
+        if trace["name"] == name:
+            if trace["visible"] is None or trace["visible"]:
+                return True
+            else:
+                return trace["visible"]
+    raise ValueError("Trace not in Figure.")
+
+
 @app.callback(
     Output("graph", "figure"),
     Output("error-message", "children"),
@@ -309,7 +319,11 @@ def update_main_plot(
     if trigger == "price-demand-checkbox":
         trace_names = [trace["name"] for trace in fig["data"]]
 
-        if "Demand" in trace_names and "Demand" not in price_demand_checkbox:
+        if (
+            "Demand" in trace_names
+            and "Demand" not in price_demand_checkbox
+            and check_trace_visible(fig, "Demand")
+        ):
             fig.update_traces(visible=False, selector={"name": "Demand"})
             update_colorbar_length(fig)
             return fig, ""
@@ -321,6 +335,7 @@ def update_main_plot(
         if (
             "Demand on secondary plot" not in price_demand_checkbox
             and "Demand on secondary plot" in trace_names
+            and check_trace_visible(fig, "Demand on secondary plot")
         ):
             fig.update_traces(
                 visible=False, selector={"name": "Demand on secondary plot"}
@@ -348,6 +363,7 @@ def update_main_plot(
         ):
             update_colorbar_length(fig)
             return fig, ""
+
     if trigger == "dispatch-checklist":
         trace_names = [trace["name"] for trace in fig["data"]]
         dispatch_options = DISPATCH_COLUMNS.keys()

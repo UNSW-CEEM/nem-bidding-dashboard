@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nem-bidding-dashboard"
-version = "1.0.7"
+version = "1.0.8"
 description = "A dashboard for visualising bidding data from the Australian National Electricity Market"
 authors = ["Patrick Chambers", "Nicholas Gorman"]
 license = "BSD 3-clause"
